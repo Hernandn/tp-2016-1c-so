@@ -37,13 +37,27 @@ int main(void)
 	listen(servidor, 100);
 
 	struct sockaddr_in direccionCliente;
-	unsigned int tamanoDireccion;
+	unsigned int tamanoDireccion = sizeof(struct sockaddr_in);
 	int cliente = accept(servidor, (void*)  &direccionCliente, &tamanoDireccion);
 
 	printf("Recibi una conexion en %d!!\n", cliente);
 	send(cliente, "Hola a todos y todas!!!", 50, 0 );
 
-	for(;;);
+	char *buffer = malloc(21);
+
+	int bytesRecibidos = recv(cliente, buffer, 20, 0);
+	if(bytesRecibidos < 0)
+	{
+		perror("O te desconectaste o algo paso");
+		return 1;
+	}
+
+		buffer[bytesRecibidos]= '\0';
+		printf("Me llegaron %d bytes con %s", bytesRecibidos, buffer);
+
+		free(buffer);
+		for(;;);
+
 	return 0;
 }
 
