@@ -32,6 +32,4 @@
 *.dSYM/
 
 Debug
-.cproject
-.project
 .gitignore
