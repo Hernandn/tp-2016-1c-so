@@ -33,8 +33,13 @@ int main(void)
 	printf("Estoy escuchando\n");
 	listen(servidor, 100);
 
+	struct sockaddr_in direccionCliente;
+	unsigned int tamanoDireccion;
+	int cliente = accept(servidor, (void*)  &direccionCliente, &tamanoDireccion);
+
+	printf("Recibi una conexion en %d!!\n", cliente);
+
 	for(;;);
 	return 0;
 }
-
 
