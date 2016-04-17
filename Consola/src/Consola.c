@@ -38,6 +38,20 @@ int main(void) {
 
 	while (exit_consola) {
 		char mensaje[1000];
+		char* buffer = malloc(5);
+
+		int bytesRecibidos = recv(my_socket, buffer, 4, MSG_WAITALL);
+		if (bytesRecibidos < 0) {
+			perror("El chabón se desconectó o bla.");
+			return 1;
+		}
+
+		buffer[bytesRecibidos] = '\0';
+		printf("Me llegaron %d bytes con %s", bytesRecibidos, buffer);
+
+		free(buffer);
+
+		puts("");
 		puts("Ingrese mensaje:");
 		scanf("%s", mensaje);
 
