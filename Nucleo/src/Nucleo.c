@@ -25,6 +25,9 @@ int main(void)
 
 	int servidor = socket(AF_INET, SOCK_STREAM, 0);
 
+	int activado = 1;
+	setsockopt(servidor, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
+
 	if (bind(servidor, (void*) &direccionServidor, sizeof(direccionServidor)) != 0)
 	{
 		perror("fallo el bind capo!!");
@@ -38,6 +41,7 @@ int main(void)
 	int cliente = accept(servidor, (void*)  &direccionCliente, &tamanoDireccion);
 
 	printf("Recibi una conexion en %d!!\n", cliente);
+	send(cliente, "Hola a todos y todas!!!", 50, 0 );
 
 	for(;;);
 	return 0;
