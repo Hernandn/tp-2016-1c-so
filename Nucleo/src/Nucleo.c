@@ -41,14 +41,14 @@ int main(void)
 	int cliente = accept(servidor, (void*)  &direccionCliente, &tamanoDireccion);
 
 	printf("Recibi una conexion en %d!!\n", cliente);
-	send(cliente, "Hola a todos y todas!!!", 50, 0 );
+	send(cliente, "Hola a todos y todas\n", 50, 0 );
 
-	char *buffer = malloc(21);
+	char *buffer = malloc(15);
 
-	int bytesRecibidos = recv(cliente, buffer, 20, 0);
+	int bytesRecibidos = recv(cliente, buffer, 14, 0);
 	if(bytesRecibidos < 0)
 	{
-		perror("O te desconectaste o algo paso");
+		perror("O te desconectaste o algo paso\n");
 		return 1;
 	}
 
@@ -56,7 +56,6 @@ int main(void)
 		printf("Me llegaron %d bytes con %s", bytesRecibidos, buffer);
 
 		free(buffer);
-		for(;;);
 
 	return 0;
 }
