@@ -9,7 +9,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-//#include <commons/log.h>
+#include <commons/log.h>
 #include<sys/socket.h>
 #include<sys/types.h>
 #include<netinet/in.h>
@@ -30,7 +30,7 @@ int main(void)
 
 	if (bind(servidor, (void*) &direccionServidor, sizeof(direccionServidor)) != 0)
 	{
-		perror("fallo el bind capo!!");
+		perror("fallo el bind capo!!\n");
 		return 1;
 	}
 	printf("Estoy escuchando\n");
@@ -41,7 +41,7 @@ int main(void)
 	int cliente = accept(servidor, (void*)  &direccionCliente, &tamanoDireccion);
 
 	printf("Recibi una conexion en %d!!\n", cliente);
-	send(cliente, "Hola a todos y todas\n", 50, 0 );
+	send(cliente, "Hola a todos y todas\n", 20, 0 );
 
 	char *buffer = malloc(15);
 
@@ -53,7 +53,7 @@ int main(void)
 	}
 
 		buffer[bytesRecibidos]= '\0';
-		printf("Me llegaron %d bytes con %s", bytesRecibidos, buffer);
+		printf("Me llegaron %d bytes con %s\n", bytesRecibidos, buffer);
 
 		free(buffer);
 
