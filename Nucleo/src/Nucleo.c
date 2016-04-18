@@ -9,7 +9,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <commons/log.h>
+//#include <commons/log.h>
 #include<sys/socket.h>
 #include<sys/types.h>
 #include<netinet/in.h>
