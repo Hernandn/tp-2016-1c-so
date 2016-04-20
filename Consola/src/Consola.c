@@ -24,11 +24,11 @@ struct configuration {
 	char* ip_nucleo;
 };
 
-struct configuration configurar ();
+struct configuration* configurar ();
 
 int main(int argc, char* argv[]) {
 
-	struct configuration config = configurar();
+	struct configuration* config = configurar();
 	char* programa;
 
 	if(argc < 2){
@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
 	programa = argv[argc - 1];
 
 	printf("Ejecutando: %s\n",programa);
-/*
+
 	int my_socket, exit_consola = 1;
 	struct sockaddr_in serv_addr;
 
@@ -86,24 +86,24 @@ int main(int argc, char* argv[]) {
 			send(my_socket, mensaje, strlen(mensaje), 0);
 	}
 
-	close(my_socket);*/
+	close(my_socket);
 
 	return EXIT_SUCCESS;
 }
 
-struct configuration configurar(){
+struct configuration* configurar(){
 
-	struct configuration config;
+	struct configuration* config = malloc(sizeof(struct configuration));
 
 	t_config* nConfig = config_create(CONSOLA_CONFIG_PATH);
 	if(nConfig==NULL){
 		puts("No se encontro el archivo de configuracion");
 		exit (1);
 	}
-	config.puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
-	printf("Puerto de nucleo: %d\n",config.puerto_nucleo);
-	config.ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
-	printf("Ip de nucleo: %s\n",config.ip_nucleo);
+	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
+	printf("Puerto de nucleo: %d\n",config->puerto_nucleo);
+	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
+	printf("Ip de nucleo: %s\n",config->ip_nucleo);
 
 	return config;
 }
