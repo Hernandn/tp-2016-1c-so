@@ -70,7 +70,14 @@ int main(void)
 	int cliente = accept(servidor, (void*)  &direccionCliente, &tamanoDireccion);
 
 	printf("Recibi una conexion en %d!!\n", cliente);
-	send(cliente, "Hola a todos y todas\n", 20, 0 );
+	send(cliente, "Hola estoy listo\n", 20, 0 );
+
+	int seguir = 1;
+	char *msj = malloc(30);
+
+	while(seguir)
+	{
+
 
 	char *buffer = malloc(15);
 
@@ -85,6 +92,23 @@ int main(void)
 		printf("Me llegaron %d bytes con %s\n", bytesRecibidos, buffer);
 
 		free(buffer);
+
+
+		puts("");
+		puts("Ingrese mensaje:");
+		scanf("%s", msj);
+
+		if(!strcmp(msj,"exit"))
+		{
+			strcpy(msj,"Cerrando consola");
+			seguir = 0;
+		}
+
+		send(cliente, msj, strlen(msj), 0 );
+
+	}
+	free(msj);
+	close(cliente);
 
 	return 0;
 }
