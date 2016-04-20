@@ -17,10 +17,14 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
+#include "CPU.h"
 
 int abrirConexionInet();
 int leerSocket(int fd, char *datos, int longitud);
 int escribirSocket(int fd, char *datos, int longitud);
+char* serializarMensaje(Package *package);
+void fillPackage(Package *package, int msgCode, char* message);
+int getLongitudPackage(Package *package);
 
 int main(void){
 
@@ -43,13 +47,18 @@ int main(void){
 	}
 
 	/* Se escribe el número de cliente que nos ha enviado el servidor */
-	printf ("Soy cliente %d\n", buffer);
+	printf ("Soy el CPU %d\n", buffer);
 
 	/* Bucle infinito. Envia al servidor el número de cliente y espera un
 	 * segundo */
+	Package package;
 	while (1)
 	{
-		escribirSocket(socket, (char *)&buffer, sizeof(int));
+		fillPackage(&package,SOLICITAR_BYTES_PAGINA,"20,200,64");
+		//escribirSocket(socket, (char *)&buffer, sizeof(int));
+		char* serializedPkg = serializarMensaje(&package);
+		escribirSocket(socket, (char *)serializedPkg, getLongitudPackage(&package));
+
 		sleep(3);
 	}
 }
@@ -194,4 +203,36 @@ int escribirSocket(int fd, char *datos, int longitud)
 	* Devolvemos el total de caracteres leidos
 	*/
 	return escrito;
+}
+
+
+char* serializarMensaje(Package *package){
+
+	char *serializedPackage = malloc(getLongitudPackage(package));
+
+	int offset = 0;
+	int size_to_send;
+
+	size_to_send =  sizeof(package->msgCode);
+	memcpy(serializedPackage + offset, &(package->msgCode), size_to_send);
+	offset += size_to_send;
+
+	size_to_send =  sizeof(package->message_long);
+	memcpy(serializedPackage + offset, &(package->message_long), size_to_send);
+	offset += size_to_send;
+
+	size_to_send =  package->message_long;
+	memcpy(serializedPackage + offset, package->message, size_to_send);
+
+	return serializedPackage;
+}
+
+void fillPackage(Package *package, int msgCode, char* message){
+	strcpy(package->message,message);
+	package->message_long = strlen(package->message)+sizeof(char);
+	package->msgCode = (uint32_t)msgCode;
+}
+
+int getLongitudPackage(Package *package){
+	return sizeof(package->msgCode)+sizeof(package->message_long)+(sizeof(char)*package->message_long);
 }

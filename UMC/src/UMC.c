@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include "UMC.h"
 
 #define MAX_CLIENTES 10
 
@@ -29,6 +30,7 @@ int abrirSocketInet();
 int leerSocket(int fd, char *datos, int longitud);
 int escribirSocket(int fd, char *datos, int longitud);
 int aceptarConexionCliente (int descriptor);
+int recieve_and_deserialize(Package *package, int socketCliente);
 
 /*
  * Programa principal.
@@ -94,9 +96,11 @@ int main(void) {
 		{
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
+				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
-				if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-					printf ("Cliente %d envía %d\n", i+1, buffer);
+				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
+				if(recieve_and_deserialize(&package,socketCliente[i]) > 0)
+					printf ("Cliente %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
 				else
 				{
 					/* Se indica que el cliente ha cerrado la conexión y se
@@ -378,4 +382,75 @@ int aceptarConexionCliente (int descriptor)
 	*/
 	return hijo;
 }
+
+int recieve_and_deserialize(Package *package, int socketCliente){
+
+	int leidos = 0;
+	int aux = 0;
+
+	int buffer_size;
+	char *buffer = malloc(buffer_size = sizeof(uint32_t));
+
+
+	aux = recv(socketCliente, buffer, sizeof(package->msgCode), 0);
+	memcpy(&(package->msgCode), buffer, buffer_size);
+	if (!aux) return 0;
+	leidos+=aux;
+
+	aux = recv(socketCliente, buffer, sizeof(package->message_long), 0);
+	memcpy(&(package->message_long), buffer, buffer_size);
+	if (!aux) return 0;
+	leidos+=aux;
+
+	aux = recv(socketCliente, package->message, package->message_long, 0);
+	if (!aux) return 0;
+	leidos+=aux;
+
+	/*
+	int aux = 0;
+
+	aux = read (socketCliente, package->msgCode, sizeof(package->msgCode));
+	if(validarLectura()<0)
+		return -1;
+	leidos+=aux;
+
+	aux = read (socketCliente, package->message_long, sizeof(package->message_long));
+	if(validarLectura()<0)
+		return -1;
+	leidos+=aux;
+
+	aux = read (socketCliente, package->message, sizeof(char)*package->message_long);
+	if(validarLectura()<0)
+		return -1;
+	leidos+=aux;
+	*/
+
+	free(buffer);
+
+	return leidos;
+}
+
+int validarLectura(int aux){
+	if (aux >= 0)
+	{
+		return aux;
+	}
+	else
+	{
+		if (aux == -1)
+		{
+			switch (errno)
+			{
+				case EINTR:
+				case EAGAIN:
+					usleep (100);
+					break;
+				default:
+					return -1;
+			}
+		}
+	}
+	return 1;
+}
+
 
