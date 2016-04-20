@@ -31,7 +31,7 @@ int main(void)
 	//hay que ver como sacar el length de este array de strings
 	char** array1 = config_get_array_value(nConfig,SEM_IDS);
 	int i;
-	for(i=0;i<3;i++){
+	for(i=0;array1[i]!=NULL;i++){
 		printf("array[%d]: %s\n",i,array1[i]);
 	}
 	/*
