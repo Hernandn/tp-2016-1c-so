@@ -17,12 +17,6 @@ build/mllibs.so: create-dirs $(OBJS)
 build/sockets/%.o: sockets/%.c
 	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 
-build/sockets/client/%.o: sockets/client/%.c
-	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
-	
-build/sockets/server/%.o: sockets/server/%.c
-	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
-
 # Add debug parameters and compile
 debug: CC += -DDEBUG -g
 debug: all
@@ -32,8 +26,9 @@ clean:
 	$(RM) build
 
 install: all
+	mkdir -p /usr/include/mllibs
 	cp -u build/mllibs.so /usr/lib
-	cp --parents -u $(H_SRCS) /usr/include
+	cp --parents -u $(H_SRCS) /usr/include/mllibs
 
 uninstall:
 	rm -f /usr/lib/mllibs.so
