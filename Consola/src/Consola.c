@@ -25,22 +25,12 @@
 #include "consola.h"
 
 
-
-struct configuration {
-	int puerto_nucleo;
-	char* ip_nucleo;
-};
-
-struct configuration* configurar ();
-
 int main(int argc, char* argv[]) {
 
-	struct configuration* config = configurar();
+	Configuration* config = configurar();
 	char* programa;
 	FILE* fp;
-	int socket;
-	int buffer;
-	int error;
+
 
 	if(argc < 2){
 		puts("Consola debe recibir un programa ANSISOP como argumento\n");
@@ -62,36 +52,15 @@ int main(int argc, char* argv[]) {
 		printf("%c",fgetc(fp));
 	}
 
-	socket = abrirConexionInetConServer(config->ip_nucleo,config->puerto_nucleo);
-	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
+	comunicacionConNucleo(config);
 
-	if (error < 1)
-	{
-			printf ("Me han cerrado la conexión\n");
-			exit(-1);
-	}
-
-	printf ("Soy la consola %d\n", buffer);
-
-	Package package;
-	while (1)
-	{
-		fillPackage(&package,ANSISOP_PROGRAM,"20,200,64");
-		//escribirSocket(socket, (char *)&buffer, sizeof(int));
-		char* serializedPkg = serializarMensaje(&package);
-		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
-
-		sleep(3);
-	}
-
-	close(socket);
 	fclose(fp);
 	return EXIT_SUCCESS;
 }
 
-struct configuration* configurar(){
+Configuration* configurar(){
 
-	struct configuration* config = malloc(sizeof(struct configuration));
+	Configuration* config = malloc(sizeof(Configuration));
 
 	t_config* nConfig = config_create(CONSOLA_CONFIG_PATH);
 	if(nConfig==NULL){
