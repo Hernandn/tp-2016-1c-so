@@ -11,13 +11,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <commons/log.h>
 #include <commons/config.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <netinet/in.h>
+#include <mllibs/sockets/client.h>
+#include <mllibs/sockets/package.h>
 #include "configuration.h"
+#include "consola.h"
 
 struct configuration {
 	int puerto_nucleo;
@@ -30,6 +32,10 @@ int main(int argc, char* argv[]) {
 
 	struct configuration* config = configurar();
 	char* programa;
+	FILE* fp;
+	int socket;
+	int buffer;
+	int error;
 
 	if(argc < 2){
 		puts("Consola debe recibir un programa ANSISOP como argumento\n");
@@ -42,52 +48,39 @@ int main(int argc, char* argv[]) {
 
 	printf("Ejecutando: %s\n",programa);
 
-	int my_socket, exit_consola = 1;
-	struct sockaddr_in serv_addr;
-
-	puts("Consola iniciada");
-
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	serv_addr.sin_port = htons(8080);
-
-	my_socket = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-	if (connect(my_socket, (void*) &serv_addr, sizeof(serv_addr)) != 0) {
-		perror("No se pudo conectar");
-		return 1;
+	if((fp=fopen(programa,"r"))==NULL){
+		printf("Error al abrir el programa %s",programa);
+		return EXIT_FAILURE;
 	}
 
-	puts("Socket conectado");
-
-	while (exit_consola) {
-		char mensaje[1000];
-		char* buffer = malloc(5);
-
-		int bytesRecibidos = recv(my_socket, buffer, 4, MSG_WAITALL);
-		if (bytesRecibidos < 0) {
-			perror("El chabón se desconectó o bla.");
-			return 1;
-		}
-
-		buffer[bytesRecibidos] = '\0';
-		printf("Me llegaron %d bytes con %s", bytesRecibidos, buffer);
-
-		free(buffer);
-
-		puts("");
-		puts("Ingrese mensaje:");
-		scanf("%s", mensaje);
-
-		if(!strcmp(mensaje,"exit")){
-			strcpy(mensaje,"Cerrando consola");
-			exit_consola = 0;
-		}
-			send(my_socket, mensaje, strlen(mensaje), 0);
+	while(!feof(fp)){
+		printf("%c",fgetc(fp));
 	}
 
-	close(my_socket);
+	socket = abrirConexionInetConServer(config->ip_nucleo,config->puerto_nucleo);
+	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
 
+	if (error < 1)
+	{
+			printf ("Me han cerrado la conexión\n");
+			exit(-1);
+	}
+
+	printf ("Soy la consola %d\n", buffer);
+
+	Package package;
+	while (1)
+	{
+		fillPackage(&package,ANSISOP_PROGRAM,"20,200,64");
+		//escribirSocket(socket, (char *)&buffer, sizeof(int));
+		char* serializedPkg = serializarMensaje(&package);
+		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
+
+		sleep(3);
+	}
+
+	close(socket);
+	fclose(fp);
 	return EXIT_SUCCESS;
 }
 
