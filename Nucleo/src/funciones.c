@@ -153,6 +153,7 @@ void handleConsolas(void* arguments){
 
 void handleCPUs(void* arguments){
 	arg_struct *args = arguments;
+	t_log* logger = args->logger;
 	int socketServidor;				/* Descriptor del socket servidor */
 	int *socketCliente = args->cpuSockets;/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -205,14 +206,15 @@ void handleCPUs(void* arguments){
 				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0)
-					printf ("CPU %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
+					log_debug(logger,"CPU %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+				}
 				else
 				{
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					printf ("CPU %d ha cerrado la conexión\n", i+1);
+					log_info(logger,"CPU %d ha cerrado la conexión\n", i+1);
 					socketCliente[i] = -1;
 				}
 			}
