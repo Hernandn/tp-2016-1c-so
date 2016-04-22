@@ -6,6 +6,8 @@
  */
 
 #include <mllibs/sockets/package.h>
+#include <commons/log.h>
+#include "configuration.h"
 
 #ifndef NUCLEO_H_
 #define NUCLEO_H_
@@ -29,7 +31,7 @@ typedef struct arg_struct {
 } arg_struct;
 
 //prototipos de funciones
-void handleClients(t_log* logger);
+void handleClients(Configuration* config, t_log* logger);
 void handleConsolas();
 void handleCPUs();
 int elegirRandomCPU(int cpuSockets[]);

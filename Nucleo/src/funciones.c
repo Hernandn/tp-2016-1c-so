@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <commons/log.h>
+#include <commons/config.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -72,6 +74,7 @@ void handleClients(Configuration* config, t_log* logger){
 
 void handleConsolas(void* arguments){
 	arg_struct *args = arguments;
+	t_log* logger = args->logger;
 	int socketServidor;				/* Descriptor del socket servidor */
 	int *socketCliente = args->consolaSockets;/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -125,8 +128,9 @@ void handleConsolas(void* arguments){
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0)
-					printf ("Consola %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+					log_debug(logger,"Consola %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
+						log_debug(logger,"Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
 					}
 				else
@@ -134,7 +138,7 @@ void handleConsolas(void* arguments){
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					printf ("Consola %d ha cerrado la conexión\n", i+1);
+					log_info(logger,"Consola %d ha cerrado la conexión\n", i+1);
 					socketCliente[i] = -1;
 				}
 			}

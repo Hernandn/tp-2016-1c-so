@@ -5,6 +5,8 @@
  *      Author: utnso
  */
 
+#include "configuration.h"
+
 #ifndef CPU_H_
 #define CPU_H_
 
@@ -19,10 +21,15 @@
 //---------------------
 #define NEW_ANSISOP_PROGRAM 10
 
+typedef struct arg_struct {
+	Configuration* config;
+    t_log* logger;
+} arg_struct;
 
 //prototipos de funciones
 void conectarConUMC();
 void conectarConNucleo();
+Configuration* configurar(t_log* logger);
 
 
 #endif /* CPU_H_ */

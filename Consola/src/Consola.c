@@ -29,7 +29,7 @@
 int main(int argc, char* argv[]) {
 
 	//creo el log
-	t_log* logger = log_create("consola.log","ELESTAC",true, LOG_LEVEL_INFO);
+	t_log* logger = log_create("consola.log","ELESTAC",true, LOG_LEVEL_DEBUG);
 
 	Configuration* config = configurar();
 	char* programa;

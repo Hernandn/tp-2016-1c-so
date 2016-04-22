@@ -22,7 +22,7 @@
 int main(void)
 {
 	//creo el log
-	t_log* logger = log_create("nucleo.log","ELESTAC",true, LOG_LEVEL_INFO);
+	t_log* logger = log_create("nucleo.log","ELESTAC",true, LOG_LEVEL_DEBUG);
 	Configuration* config = configurar(logger);
 	//probando levantar archivo de configuracion
 	/*

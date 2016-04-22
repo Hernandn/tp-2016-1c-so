@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <commons/config.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -16,15 +17,35 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
+#include <commons/log.h>
 #include "CPU.h"
+#include "configuration.h"
 
-void conectarConUMC(){
+Configuration* configurar(t_log* logger){
+
+	Configuration* config = malloc(sizeof(Configuration));
+
+	t_config* nConfig = config_create(CPU_CONFIG_PATH);
+	if(nConfig==NULL){
+		log_error(logger,"No se encontro el archivo de configuracion.");
+		exit (1);
+	}
+	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
+	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
+	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
+	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
+
+	return config;
+}
+
+void conectarConUMC(void* arguments){
+	arg_struct *args = arguments;
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
 
 	/* Se abre una conexión con el servidor */
-	socket = abrirConexionInetConServer("127.0.0.1", 6690);
+	socket = abrirConexionInetConServer(args->config->ip_umc, args->config->puerto_umc);
 
 	/* Se lee el número de cliente, dato que nos da el servidor. Se escribe
 	 * dicho número en pantalla.*/
@@ -54,13 +75,14 @@ void conectarConUMC(){
 	}
 }
 
-void conectarConNucleo(){
+void conectarConNucleo(void* arguments){
+	arg_struct *args = arguments;
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
 
 	/* Se abre una conexión con el servidor */
-	socket = abrirConexionInetConServer("127.0.0.1", 6700);
+	socket = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
 
 	/* Se lee el número de cliente, dato que nos da el servidor. Se escribe
 	 * dicho número en pantalla.*/
