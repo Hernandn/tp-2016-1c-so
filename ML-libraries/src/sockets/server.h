@@ -17,5 +17,6 @@ int leerSocketServer(int fd, char *datos, int longitud);
 int escribirSocketServer(int fd, char *datos, int longitud);
 int aceptarConexionCliente (int descriptor);
 int recieve_and_deserialize(Package *package, int socketCliente);
+int validarLectura(int aux);
 
 #endif /* SOCKETS_SERVER_SERVER_H_ */

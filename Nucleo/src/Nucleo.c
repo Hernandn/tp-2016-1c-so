@@ -17,10 +17,12 @@
 #include<netdb.h>
 #include<sys/errno.h>
 #include "configuration.h"
+#include "Nucleo.h"
 
 int main(void)
 {
 	//probando levantar archivo de configuracion
+	/*
 	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
 	printf("Archivo de configuracion: \n");
 	printf("%s: %d\n",PUERTO_PROG,config_get_int_value(nConfig,PUERTO_PROG));
@@ -29,11 +31,12 @@ int main(void)
 	printf("%s: %d\n",QUANTUM_SLEEP,config_get_int_value(nConfig,QUANTUM_SLEEP));
 
 	//hay que ver como sacar el length de este array de strings
+
 	char** array1 = config_get_array_value(nConfig,SEM_IDS);
 	int i;
 	for(i=0;array1[i]!=NULL;i++){
 		printf("array[%d]: %s\n",i,array1[i]);
-	}
+	}*/
 	/*
 	char** array2 = config_get_array_value(nConfig,SEM_INIT);
 	char** array3 = config_get_array_value(nConfig,IO_IDS);
@@ -42,11 +45,13 @@ int main(void)
 	*/
 
 
-
+	handleClients();
 
 	//--------------
 
 	/******sockets*******/
+
+	/*
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = INADDR_ANY;
@@ -109,6 +114,7 @@ int main(void)
 	}
 	free(msj);
 	close(cliente);
+	*/
 
 	return 0;
 }

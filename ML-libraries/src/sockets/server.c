@@ -15,6 +15,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include <arpa/inet.h>
 #include "server.h"
 
 /*

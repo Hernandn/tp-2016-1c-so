@@ -19,16 +19,9 @@
 //---------------------
 
 
-#define MAX_MESSAGE_SIZE 300
+//prototipos de funciones
+void conectarConUMC();
+void conectarConNucleo();
 
-/*
- * 	Es importante destacar que utilizamos el tipo uint_32, incluida en el header <stdint.h> para mantener un estandar en la cantidad
- * 	de bytes del paquete.
- */
-typedef struct Package {
-	uint32_t msgCode;
-	uint32_t message_long;
-	char message[MAX_MESSAGE_SIZE];
-} Package;
 
 #endif /* CPU_H_ */
