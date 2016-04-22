@@ -16,10 +16,15 @@
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <netinet/in.h>
+#include <sys/un.h>
+#include <netdb.h>
+#include <unistd.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
 #include "configuration.h"
 #include "consola.h"
+
+
 
 struct configuration {
 	int puerto_nucleo;
