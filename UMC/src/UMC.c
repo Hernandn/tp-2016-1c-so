@@ -19,8 +19,12 @@
 #include <netdb.h>
 #include <errno.h>
 #include "UMC.h"
+#include "configuration.h"
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
+#include <commons/config.h>
+#include <unistd.h>
+#include <commons/log.h>
 
 #define MAX_CLIENTES 10
 
@@ -33,8 +37,10 @@
  */
 int main(void) {
 
-	handleClients();
-
+	t_log* logger = log_create("cpu.log","ELESTAC",true, LOG_LEVEL_DEBUG);
+	Configuration* config = configurar(logger);
+	handleClients(config,logger);
+	return EXIT_SUCCESS;
 }
 
 

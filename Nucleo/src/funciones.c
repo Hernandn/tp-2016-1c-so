@@ -31,8 +31,12 @@ Configuration* configurar(t_log* logger){
 
 	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
 	if(nConfig==NULL){
-		log_error(logger,"No se encontro el archivo de configuracion.");
-		exit (1);
+		//para debuggear desde eclipse
+		nConfig = config_create("nucleo.conf");
+		if(nConfig==NULL){
+			log_error(logger,"No se encontro el archivo de configuracion.");
+			exit (1);
+		}
 	}
 	config->puerto_nucleo_cpu=config_get_int_value(nConfig,PUERTO_CPU);
 	config->puerto_nucleo_prog=config_get_int_value(nConfig,PUERTO_PROG);
@@ -120,7 +124,6 @@ void handleConsolas(void* arguments){
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
 		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
-		log_debug(logger,"Vuelta");
 		imprimirArraySockets(socketCliente,MAX_CONSOLAS);
 		/* Se comprueba si algún cliente ya conectado ha enviado algo */
 		for (i=0; i<numeroClientes; i++)
@@ -129,15 +132,13 @@ void handleConsolas(void* arguments){
 			{
 				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
-				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				int a = recieve_and_deserialize(&package,socketCliente[i]);
-				//log_debug(logger,"[message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
-				if(a > 0)
+				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
 					log_debug(logger,"Consola %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
 						log_debug(logger,"Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
 					}
+				}
 				else
 				{
 					/* Se indica que el cliente ha cerrado la conexión y se
@@ -264,6 +265,7 @@ void imprimirArraySockets(int sockets[], int len){
 	for(i=0;i<len;i++){
 		printf("%d,",sockets[i]);
 	}
+	printf("\n");
 }
 
 void inicializarArraySockets(arg_struct* args){

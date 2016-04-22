@@ -103,18 +103,24 @@ void conectarConNucleo(void* arguments){
 	Package package;
 	while (1)
 	{
-		log_debug(logger,"Enviando mensaje al Nucleo.\n");
-		fillPackage(&package,SOLICITAR_BYTES_PAGINA,"15,500,128");
-		char* serializedPkg = serializarMensaje(&package);
-		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
 		if(recieve_and_deserialize(&package,socket) > 0){
 			log_debug(logger,"Nucleo envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
 			if(package.msgCode==NEW_ANSISOP_PROGRAM){
 				log_debug(logger,"El Nucleo me comunica que se creo un programa nuevo.");
+				comunicarUMC(args->socketUMC,NEW_ANSISOP_PROGRAM);
 			}
 		}
 
 		sleep(3);
+	}
+}
+
+void comunicarUMC(int socketUMC, int accion){
+	if(accion==NEW_ANSISOP_PROGRAM){
+		Package package;
+		fillPackage(&package,INIT_PROGRAM,"INIT_PROGRAM");
+		char* serializedPkg = serializarMensaje(&package);
+		escribirSocketClient(socketUMC, (char *)serializedPkg, getLongitudPackage(&package));
 	}
 }
 

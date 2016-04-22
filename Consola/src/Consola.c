@@ -37,18 +37,18 @@ int main(int argc, char* argv[]) {
 
 
 	if(argc < 2){
-		puts("Consola debe recibir un programa ANSISOP como argumento\n");
+		log_error(logger,"Consola debe recibir un programa ANSISOP como argumento\n");
 		return EXIT_FAILURE;
 	}
 
-	puts("Consola iniciada");
+	log_info(logger,"Consola iniciada");
 
 	programa = argv[argc - 1];
 
-	printf("Ejecutando: %s\n",programa);
+	log_info(logger,"Ejecutando: %s\n",programa);
 
 	if((fp=fopen(programa,"r"))==NULL){
-		printf("Error al abrir el programa %s",programa);
+		log_error(logger,"Error al abrir el programa %s",programa);
 		return EXIT_FAILURE;
 	}
 

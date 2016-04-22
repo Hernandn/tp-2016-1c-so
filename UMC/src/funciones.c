@@ -17,9 +17,28 @@
 #include <errno.h>
 #include "UMC.h"
 #include <mllibs/sockets/server.h>
+#include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
+#include "configuration.h"
 
-void handleClients(){
+Configuration* configurar(t_log* logger){
+
+	Configuration* config = malloc(sizeof(Configuration));
+
+	t_config* nConfig = config_create(UMC_CONFIG_PATH);
+	if(nConfig==NULL){
+		log_error(logger,"No se encontro el archivo de configuracion.");
+		exit (1);
+	}
+	config->puerto_swap=config_get_int_value(nConfig,PUERTO_SWAP);
+	config->ip_swap = config_get_string_value(nConfig,IP_SWAP);
+	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
+	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
+
+	return config;
+}
+
+void handleClients(Configuration* config, t_log* logger){
 	int socketServidor;				/* Descriptor del socket servidor */
 	int socketCliente[MAX_CLIENTES];/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -30,7 +49,7 @@ void handleClients(){
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
-	socketServidor = abrirSocketInetServer("127.0.0.1",6690);
+	socketServidor = abrirSocketInetServer(config->ip_umc,config->puerto_umc);
 	if (socketServidor == -1)
 	{
 		perror ("Error al abrir servidor");
@@ -79,8 +98,12 @@ void handleClients(){
 				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0)
+				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
 					printf ("Cliente %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+					if(package.msgCode==INIT_PROGRAM){
+						//comunicarSWAP()
+					}
+				}
 				else
 				{
 					/* Se indica que el cliente ha cerrado la conexión y se
@@ -96,6 +119,15 @@ void handleClients(){
 		 * admite */
 		if (FD_ISSET (socketServidor, &descriptoresLectura))
 			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CLIENTES);
+	}
+}
+
+void comunicarSWAP(int socketSWAP, int accion){
+	if(accion==INIT_PROGRAM){
+		Package package;
+		fillPackage(&package,INIT_PROGRAM,"INIT_PROGRAM");
+		char* serializedPkg = serializarMensaje(&package);
+		escribirSocketClient(socketSWAP, (char *)serializedPkg, getLongitudPackage(&package));
 	}
 }
 

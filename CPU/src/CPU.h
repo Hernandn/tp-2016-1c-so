@@ -23,6 +23,7 @@
 
 typedef struct arg_struct {
 	Configuration* config;
+	int socketUMC;
     t_log* logger;
 } arg_struct;
 
@@ -30,6 +31,7 @@ typedef struct arg_struct {
 void conectarConUMC();
 void conectarConNucleo();
 Configuration* configurar(t_log* logger);
+void comunicarUMC(int socketUMC, int accion);
 
 
 #endif /* CPU_H_ */

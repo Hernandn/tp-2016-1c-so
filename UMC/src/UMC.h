@@ -5,6 +5,10 @@
  *      Author: utnso
  */
 
+#include <commons/log.h>
+#include <commons/config.h>
+#include "configuration.h"
+
 #ifndef UMC_H_
 #define UMC_H_
 
@@ -21,6 +25,8 @@
 #define MAX_CLIENTES 10 //cantidad maxima de conexiones por socket (CPUs)
 
 //prototipos de funciones
-void handleClients();
+void handleClients(Configuration* config, t_log* logger);
+void comunicarSWAP(int socketSWAP, int accion);
+Configuration* configurar(t_log* logger);
 
 #endif /* UMC_H_ */
