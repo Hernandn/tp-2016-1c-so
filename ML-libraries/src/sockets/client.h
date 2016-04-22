@@ -9,7 +9,7 @@
 #ifndef CLIENT_CLIENT_H_
 #define CLIENT_CLIENT_H_
 
-int abrirConexionInet(const char* ip, int port);
+int abrirConexionInetConServer(const char* ip, int port);
 int leerSocketClient(int fd, char *datos, int longitud);
 int escribirSocketClient(int fd, char *datos, int longitud);
 char* serializarMensaje(Package *package);
