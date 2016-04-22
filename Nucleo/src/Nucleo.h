@@ -38,5 +38,7 @@ int elegirRandomCPU(int cpuSockets[]);
 void comunicarCPU(int cpuSockets[]);
 void enviarMensajeCPU(Package* package,int socket);
 Configuration* configurar(t_log* logger);
+void imprimirArraySockets(int sockets[], int len);
+void inicializarArraySockets(arg_struct* args);
 
 #endif /* NUCLEO_H_ */

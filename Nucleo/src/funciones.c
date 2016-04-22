@@ -47,6 +47,8 @@ void handleClients(Configuration* config, t_log* logger){
 	arg_struct args;
 	args.logger = logger;
 
+	inicializarArraySockets(&args);
+
 	//abrir server para escuchar CPUs
 	args.socketServerCPU = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_cpu);
 	if (args.socketServerCPU == -1)
@@ -118,7 +120,8 @@ void handleConsolas(void* arguments){
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
 		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
-
+		log_debug(logger,"Vuelta");
+		imprimirArraySockets(socketCliente,MAX_CONSOLAS);
 		/* Se comprueba si algún cliente ya conectado ha enviado algo */
 		for (i=0; i<numeroClientes; i++)
 		{
@@ -127,7 +130,9 @@ void handleConsolas(void* arguments){
 				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0)
+				int a = recieve_and_deserialize(&package,socketCliente[i]);
+				//log_debug(logger,"[message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+				if(a > 0)
 					log_debug(logger,"Consola %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
 						log_debug(logger,"Consola %d solicito el inicio de un nuevo programa.",i+1);
@@ -251,4 +256,22 @@ void enviarMensajeCPU(Package* package,int socket){
 	fillPackage(package,NEW_ANSISOP_PROGRAM,"3000");
 	char* serializedPkg = serializarMensaje(package);
 	escribirSocketServer(socket, (char *)serializedPkg, getLongitudPackage(package));
+}
+
+void imprimirArraySockets(int sockets[], int len){
+	int i;
+	printf("Sockets -> ");
+	for(i=0;i<len;i++){
+		printf("%d,",sockets[i]);
+	}
+}
+
+void inicializarArraySockets(arg_struct* args){
+	int i;
+	for(i=0;i<MAX_CONSOLAS;i++){
+		args->consolaSockets[i]=-1;
+	}
+	for(i=0;i<MAX_CPUS;i++){
+		args->cpuSockets[i]=-1;
+	}
 }
