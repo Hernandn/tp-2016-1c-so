@@ -12,4 +12,9 @@
 #define IP_NUCLEO "IP_NUCLEO"
 #define PUERTO_NUCLEO "PUERTO_NUCLEO"
 
+typedef struct Configuration {
+	int puerto_nucleo;
+	char* ip_nucleo;
+} Configuration;
+
 #endif /* CONFIGURATION_H_ */

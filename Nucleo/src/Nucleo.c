@@ -21,6 +21,9 @@
 
 int main(void)
 {
+	//creo el log
+	t_log* logger = log_create("nucleo.log","ELESTAC",true, LOG_LEVEL_INFO);
+	Configuration* config = configurar(logger);
 	//probando levantar archivo de configuracion
 	/*
 	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
@@ -45,7 +48,7 @@ int main(void)
 	*/
 
 
-	handleClients();
+	handleClients(config,logger);
 
 	return 0;
 }

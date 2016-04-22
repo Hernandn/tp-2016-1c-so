@@ -23,15 +23,18 @@
 typedef struct arg_struct {
     int cpuSockets[MAX_CPUS];
     int consolaSockets[MAX_CONSOLAS];
-    int socketServer;
+    int socketServerCPU;
+    int socketServerConsola;
+    t_log* logger;
 } arg_struct;
 
 //prototipos de funciones
-void handleClients();
+void handleClients(t_log* logger);
 void handleConsolas();
 void handleCPUs();
 int elegirRandomCPU(int cpuSockets[]);
 void comunicarCPU(int cpuSockets[]);
 void enviarMensajeCPU(Package* package,int socket);
+Configuration* configurar(t_log* logger);
 
 #endif /* NUCLEO_H_ */

@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <mllibs/sockets/client.h>
+#include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include "CPU.h"
 
@@ -84,6 +85,13 @@ void conectarConNucleo(){
 		//escribirSocket(socket, (char *)&buffer, sizeof(int));
 		char* serializedPkg = serializarMensaje(&package);
 		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
+		if(recieve_and_deserialize(&package,socket) > 0){
+			printf ("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
+			if(package.msgCode==NEW_ANSISOP_PROGRAM){
+				printf("Se creo un programa!");
+			}
+		}
+
 
 		sleep(3);
 	}

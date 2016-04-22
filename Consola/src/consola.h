@@ -5,6 +5,8 @@
  *      Author: utnso
  */
 
+#include "configuration.h"
+
 #ifndef CONSOLA_H_
 #define CONSOLA_H_
 
@@ -15,14 +17,9 @@
 #define HANDSHAKE 12
 //---------------------
 
-typedef struct Configuration {
-	int puerto_nucleo;
-	char* ip_nucleo;
-} Configuration;
-
 //prototipos de funciones
 void handshake(Package* package,int serverSocket);
-void comunicacionConNucleo(Configuration* config);
+void comunicacionConNucleo(Configuration* config, t_log* logger);
 Configuration* configurar ();
 void iniciarProgramaAnsisop(Package* package,int serverSocket);
 

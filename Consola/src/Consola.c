@@ -21,11 +21,15 @@
 #include <unistd.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
+#include <commons/log.h>
 #include "configuration.h"
 #include "consola.h"
 
 
 int main(int argc, char* argv[]) {
+
+	//creo el log
+	t_log* logger = log_create("consola.log","ELESTAC",true, LOG_LEVEL_INFO);
 
 	Configuration* config = configurar();
 	char* programa;
@@ -52,25 +56,8 @@ int main(int argc, char* argv[]) {
 		printf("%c",fgetc(fp));
 	}
 
-	comunicacionConNucleo(config);
+	comunicacionConNucleo(config,logger);
 
 	fclose(fp);
 	return EXIT_SUCCESS;
-}
-
-Configuration* configurar(){
-
-	Configuration* config = malloc(sizeof(Configuration));
-
-	t_config* nConfig = config_create(CONSOLA_CONFIG_PATH);
-	if(nConfig==NULL){
-		puts("No se encontro el archivo de configuracion");
-		exit (1);
-	}
-	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
-	printf("Puerto de nucleo: %d\n",config->puerto_nucleo);
-	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
-	printf("Ip de nucleo: %s\n",config->ip_nucleo);
-
-	return config;
 }

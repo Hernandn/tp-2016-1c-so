@@ -21,18 +21,42 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
 #include "Nucleo.h"
+#include "configuration.h"
+
+Configuration* configurar(t_log* logger){
+
+	Configuration* config = malloc(sizeof(Configuration));
+
+	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
+	if(nConfig==NULL){
+		log_error(logger,"No se encontro el archivo de configuracion.");
+		exit (1);
+	}
+	config->puerto_nucleo_cpu=config_get_int_value(nConfig,PUERTO_CPU);
+	config->puerto_nucleo_prog=config_get_int_value(nConfig,PUERTO_PROG);
+	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
+
+	return config;
+}
 
 
-void handleClients(){
+void handleClients(Configuration* config, t_log* logger){
 
 	arg_struct args;
+	args.logger = logger;
 
-	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
-	 * algún problema */
-	args.socketServer = abrirSocketInetServer("127.0.0.1",6700);
-	if (args.socketServer == -1)
+	//abrir server para escuchar CPUs
+	args.socketServerCPU = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_cpu);
+	if (args.socketServerCPU == -1)
 	{
-		perror ("Error al abrir servidor");
+		perror ("Error al abrir servidor para CPUs");
+		exit (-1);
+	}
+	//abrir server para escuchar Consolas
+	args.socketServerConsola = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_prog);
+	if (args.socketServerConsola == -1)
+	{
+		perror ("Error al abrir servidor para Consolas");
 		exit (-1);
 	}
 
@@ -56,7 +80,7 @@ void handleConsolas(void* arguments){
 	int maximo;							/* Número de descriptor más grande */
 	int i;								/* Para bubles */
 
-	socketServidor = args->socketServer;
+	socketServidor = args->socketServerConsola;
 
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
@@ -133,7 +157,7 @@ void handleCPUs(void* arguments){
 	int maximo;							/* Número de descriptor más grande */
 	int i;								/* Para bubles */
 
-	socketServidor = args->socketServer;
+	socketServidor = args->socketServerCPU;
 
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados

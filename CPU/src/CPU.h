@@ -17,6 +17,7 @@
 #define HANDSHAKE 5
 #define SWITCH_PROCESS 6
 //---------------------
+#define NEW_ANSISOP_PROGRAM 10
 
 
 //prototipos de funciones
