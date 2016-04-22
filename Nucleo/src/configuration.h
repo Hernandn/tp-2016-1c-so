@@ -11,6 +11,8 @@
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"
 #define PUERTO_PROG "PUERTO_PROG"
 #define PUERTO_CPU "PUERTO_CPU"
+#define PUERTO_UMC "PUERTO_UMC"
+#define IP_UMC "IP_UMC"
 #define IP_NUCLEO "IP_NUCLEO"
 #define QUANTUM "QUANTUM"
 #define QUANTUM_SLEEP "QUANTUM_SLEEP"

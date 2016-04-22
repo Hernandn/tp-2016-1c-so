@@ -67,12 +67,14 @@ void conectarConUMC(void* arguments){
 	Package package;
 	while (1)
 	{
+		/*
 		fillPackage(&package,SOLICITAR_BYTES_PAGINA,"20,200,64");
 		//escribirSocket(socket, (char *)&buffer, sizeof(int));
 		char* serializedPkg = serializarMensaje(&package);
 		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
 
 		sleep(3);
+		*/
 	}
 }
 

@@ -30,7 +30,7 @@ void nuevoCliente (int servidor, int *clientes, int *nClientes, int max_clientes
 	(*nClientes)++;
 
 	/* Si se ha superado el maximo de clientes, se cierra la conexión,
-	 * se deja todo como estaba y se vuelve. */
+	 * se deja como estaba y se vuelve. */
 	if ((*nClientes) >= max_clientes)
 	{
 		close (clientes[(*nClientes) -1]);

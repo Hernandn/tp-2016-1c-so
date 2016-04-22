@@ -20,6 +20,7 @@
 #include <mllibs/sockets/package.h>
 #include <commons/log.h>
 #include "configuration.h"
+#include "Swap.h"
 
 Configuration* configurar(t_log* logger){
 
@@ -44,9 +45,12 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 	//int buffer;							/* Buffer para leer de los socket */
 	int maximo;							/* Número de descriptor más grande */
 
+	//inicializo socketUMC
+	socketUMC[0]=-1;
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
 	socketServidor = abrirSocketInetServer(config->ip_swap,config->puerto_swap);
+
 	if (socketServidor == -1)
 	{
 		perror ("Error al abrir servidor");
@@ -65,13 +69,18 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 		FD_SET (socketServidor, &descriptoresLectura);
 
 		/* Se añaden para select() los sockets con los clientes ya conectados */
-		FD_SET (socketUMC[0], &descriptoresLectura);
+		log_debug(logger,"sockets %d",socketUMC[0]);
+		if(socketUMC[0]!=-1){
+			FD_SET (socketUMC[0], &descriptoresLectura);
+			log_debug(logger,"Swap abierto");
+		}
 
 		maximo = socketUMC[0];
 
 		if (maximo < socketServidor)
 			maximo = socketServidor;
 
+		log_debug(logger,"Esperando conexion");
 		/* Espera indefinida hasta que alguno de los descriptores tenga algo
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
@@ -83,18 +92,19 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 			/* Se lee lo enviado por el cliente y se escribe en pantalla */
 			//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 			if(recieve_and_deserialize(&package,socketUMC[0]) > 0){
-				printf ("UMC envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
-				//if(package.msgCode==INIT_PROGRAM){
-					//comunicarSWAP()
-				//}
+				log_debug(logger,"UMC envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
+				if(package.msgCode==ALMACENAR_BYTES_PAGINA_SWAP){
+					log_debug(logger,"La UMC me solicito el almacenamiento de una nueva pagina.\n");
+				}
 			}
 			else
 			{
 				/* Se indica que el cliente ha cerrado la conexión y se
 				 * marca con -1 el descriptor para que compactaClaves() lo
 				 * elimine */
-				printf ("La UMC ha cerrado la conexión\n");
+				log_info(logger,"La UMC ha cerrado la conexión\n");
 				socketUMC[0] = -1;
+				numeroClientes = 0;
 			}
 		}
 

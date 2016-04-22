@@ -21,6 +21,9 @@
 #define HANDSHAKE 5
 #define SWITCH_PROCESS 6
 //---------------------
+//operaciones SWAP
+#define SOLICITAR_BYTES_PAGINA_SWAP 20
+#define ALMACENAR_BYTES_PAGINA_SWAP 21
 
 #define MAX_CLIENTES 10 //cantidad maxima de conexiones por socket (CPUs)
 
@@ -28,5 +31,6 @@
 void handleClients(Configuration* config, t_log* logger);
 void comunicarSWAP(int socketSWAP, int accion);
 Configuration* configurar(t_log* logger);
+int conectarConSwap(Configuration* config, t_log* logger);
 
 #endif /* UMC_H_ */
