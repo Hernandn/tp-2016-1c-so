@@ -56,7 +56,7 @@ void conectarConUMC(void* arguments){
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
 	{
-		log_error(logger,"Me han cerrado la conexión\n");
+		log_error(logger,"Me han cerrado la conexión.");
 		exit(-1);
 	}
 
@@ -94,7 +94,7 @@ void conectarConNucleo(void* arguments){
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
 	{
-		log_error(logger,"Me han cerrado la conexión\n");
+		log_error(logger,"Me han cerrado la conexión.");
 		exit(-1);
 	}
 
@@ -105,7 +105,7 @@ void conectarConNucleo(void* arguments){
 	while (1)
 	{
 		if(recieve_and_deserialize(&package,socket) > 0){
-			log_debug(logger,"Nucleo envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
+			log_debug(logger,"Nucleo envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
 			if(package.msgCode==NEW_ANSISOP_PROGRAM){
 				log_debug(logger,"El Nucleo me comunica que se creo un programa nuevo.");
 				comunicarUMC(args->socketUMC,NEW_ANSISOP_PROGRAM);

@@ -41,6 +41,8 @@ Configuration* configurar(t_log* logger){
 	config->puerto_nucleo_cpu=config_get_int_value(nConfig,PUERTO_CPU);
 	config->puerto_nucleo_prog=config_get_int_value(nConfig,PUERTO_PROG);
 	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
+	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
+	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
 
 	return config;
 }
@@ -50,6 +52,7 @@ void handleClients(Configuration* config, t_log* logger){
 
 	arg_struct args;
 	args.logger = logger;
+	args.config = config;
 
 	inicializarArraySockets(&args);
 
@@ -96,6 +99,9 @@ void handleConsolas(void* arguments){
 	 * por los clientes ya conectados */
 	while (1)
 	{
+		if(args->socketServerUMC==-1){
+			args->socketServerUMC = conectarConUMC(args->config,logger);
+		}
 		/* Cuando un cliente cierre la conexión, se pondrá un -1 en su descriptor
 		 * de socket dentro del array socketCliente. La función compactaClaves()
 		 * eliminará dichos -1 de la tabla, haciéndola más pequeña.
@@ -133,7 +139,7 @@ void handleConsolas(void* arguments){
 				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					log_debug(logger,"Consola %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+					log_debug(logger,"Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
 						log_debug(logger,"Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
@@ -144,7 +150,7 @@ void handleConsolas(void* arguments){
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					log_info(logger,"Consola %d ha cerrado la conexión\n", i+1);
+					log_info(logger,"Consola %d ha cerrado la conexión.", i+1);
 					socketCliente[i] = -1;
 				}
 			}
@@ -276,4 +282,26 @@ void inicializarArraySockets(arg_struct* args){
 	for(i=0;i<MAX_CPUS;i++){
 		args->cpuSockets[i]=-1;
 	}
+}
+
+int conectarConUMC(Configuration* config, t_log* logger){
+
+	int socket;		/* descriptor de conexión con el servidor */
+	int buffer;		/* buffer de lectura de datos procedentes del servidor */
+	int error;		/* error de lectura por el socket */
+
+	/* Se abre una conexión con el servidor */
+	socket = abrirConexionInetConServer(config->ip_umc, config->puerto_umc);
+
+	/* Se lee el número de cliente, dato que nos da el servidor.*/
+	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
+
+	/* Si ha habido error de lectura lo indicamos y salimos */
+	if (error < 1)
+	{
+		log_debug(logger,"UMC se encuentra desconectada.");
+	} else {
+		log_debug(logger,"Conexion con UMC satisfactoria.");
+	}
+	return socket;
 }

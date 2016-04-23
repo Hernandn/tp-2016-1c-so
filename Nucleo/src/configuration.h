@@ -27,6 +27,8 @@ typedef struct Configuration {
 	int puerto_nucleo_cpu;
 	int puerto_nucleo_prog;
 	char* ip_nucleo;
+	char* ip_umc;
+	int puerto_umc;
 } Configuration;
 
 #endif /* CONFIGURATION_H_ */

@@ -27,6 +27,8 @@ typedef struct arg_struct {
     int consolaSockets[MAX_CONSOLAS];
     int socketServerCPU;
     int socketServerConsola;
+    int socketServerUMC;
+    Configuration* config;
     t_log* logger;
 } arg_struct;
 
@@ -40,5 +42,6 @@ void enviarMensajeCPU(Package* package,int socket);
 Configuration* configurar(t_log* logger);
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
+int conectarConUMC(Configuration* config, t_log* logger);
 
 #endif /* NUCLEO_H_ */
