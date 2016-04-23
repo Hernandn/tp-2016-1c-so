@@ -111,10 +111,9 @@ void handleClients(Configuration* config, t_log* logger){
 					log_debug(logger,"Cliente %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
 					if(package.msgCode==INIT_PROGRAM){
 						comunicarSWAP(socketSwap,ALMACENAR_BYTES_PAGINA_SWAP);
+						log_debug(logger,"Se ha solicitado la inicializacion de un nuevo programa.");
 					}
-				}
-				else
-				{
+				} else {
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */

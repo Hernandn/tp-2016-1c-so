@@ -9,6 +9,7 @@
 #define CONFIGURATION_H_
 
 #define SWAP_CONFIG_PATH "../swap.conf"
+#define SWAP_CONFIG_PATH_ECLIPSE "swap.conf"
 
 #define PUERTO_SWAP "PUERTO_SWAP"
 #define IP_SWAP "IP_SWAP"

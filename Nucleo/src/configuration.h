@@ -9,6 +9,7 @@
 #define CONFIGURATION_H_
 
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"
+#define NUCLEO_CONFIG_PATH_ECLIPSE "nucleo.conf"
 #define PUERTO_PROG "PUERTO_PROG"
 #define PUERTO_CPU "PUERTO_CPU"
 #define PUERTO_UMC "PUERTO_UMC"

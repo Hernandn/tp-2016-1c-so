@@ -28,8 +28,12 @@ Configuration* configurar(t_log* logger){
 
 	t_config* nConfig = config_create(SWAP_CONFIG_PATH);
 	if(nConfig==NULL){
-		log_error(logger,"No se encontro el archivo de configuracion.");
-		exit (1);
+		//para debuggear desde eclipse
+		nConfig = config_create(SWAP_CONFIG_PATH_ECLIPSE);
+		if(nConfig==NULL){
+			log_error(logger,"No se encontro el archivo de configuracion.");
+			exit (1);
+		}
 	}
 	config->puerto_swap=config_get_int_value(nConfig,PUERTO_SWAP);
 	config->ip_swap = config_get_string_value(nConfig,IP_SWAP);
@@ -72,7 +76,6 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 		log_debug(logger,"sockets %d",socketUMC[0]);
 		if(socketUMC[0]!=-1){
 			FD_SET (socketUMC[0], &descriptoresLectura);
-			log_debug(logger,"Swap abierto");
 		}
 
 		maximo = socketUMC[0];
@@ -86,31 +89,34 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 		 * mensaje */
 		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
 
-		if (FD_ISSET (socketUMC[0], &descriptoresLectura))
-		{
-			Package package;
-			/* Se lee lo enviado por el cliente y se escribe en pantalla */
-			//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-			if(recieve_and_deserialize(&package,socketUMC[0]) > 0){
-				log_debug(logger,"UMC envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
-				if(package.msgCode==ALMACENAR_BYTES_PAGINA_SWAP){
-					log_debug(logger,"La UMC me solicito el almacenamiento de una nueva pagina.\n");
+		if(socketUMC[0]!=-1){
+			if (FD_ISSET (socketUMC[0], &descriptoresLectura))
+			{
+				Package package;
+				/* Se lee lo enviado por el cliente y se escribe en pantalla */
+				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
+				if(recieve_and_deserialize(&package,socketUMC[0]) > 0){
+					log_debug(logger,"UMC envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
+					if(package.msgCode==ALMACENAR_BYTES_PAGINA_SWAP){
+						log_debug(logger,"La UMC me solicito el almacenamiento de una nueva pagina.\n");
+					}
+				}
+				else
+				{
+					/* Se indica que el cliente ha cerrado la conexión y se
+					 * marca con -1 el descriptor para que compactaClaves() lo
+					 * elimine */
+					log_info(logger,"La UMC ha cerrado la conexión\n");
+					socketUMC[0] = -1;
+					numeroClientes = 0;
 				}
 			}
-			else
-			{
-				/* Se indica que el cliente ha cerrado la conexión y se
-				 * marca con -1 el descriptor para que compactaClaves() lo
-				 * elimine */
-				log_info(logger,"La UMC ha cerrado la conexión\n");
-				socketUMC[0] = -1;
-				numeroClientes = 0;
-			}
 		}
+
 
 		/* Se comprueba si algún cliente nuevo desea conectarse y se le
 		 * admite */
 		if (FD_ISSET (socketServidor, &descriptoresLectura))
-			nuevoCliente (socketServidor, socketUMC, &numeroClientes, 1);
+			nuevoCliente (socketServidor, socketUMC, &numeroClientes, 2);
 	}
 }

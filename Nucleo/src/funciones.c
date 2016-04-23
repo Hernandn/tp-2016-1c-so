@@ -32,7 +32,7 @@ Configuration* configurar(t_log* logger){
 	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
 	if(nConfig==NULL){
 		//para debuggear desde eclipse
-		nConfig = config_create("nucleo.conf");
+		nConfig = config_create(NUCLEO_CONFIG_PATH_ECLIPSE);
 		if(nConfig==NULL){
 			log_error(logger,"No se encontro el archivo de configuracion.");
 			exit (1);

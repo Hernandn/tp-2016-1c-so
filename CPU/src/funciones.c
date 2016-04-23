@@ -47,6 +47,7 @@ void conectarConUMC(void* arguments){
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(args->config->ip_umc, args->config->puerto_umc);
+	args->socketUMC = socket;
 
 	/* Se lee el número de cliente, dato que nos da el servidor. Se escribe
 	 * dicho número en pantalla.*/
@@ -67,14 +68,12 @@ void conectarConUMC(void* arguments){
 	Package package;
 	while (1)
 	{
-		/*
 		fillPackage(&package,SOLICITAR_BYTES_PAGINA,"20,200,64");
 		//escribirSocket(socket, (char *)&buffer, sizeof(int));
 		char* serializedPkg = serializarMensaje(&package);
 		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
 
-		sleep(3);
-		*/
+		sleep(10);
 	}
 }
 
@@ -120,7 +119,7 @@ void conectarConNucleo(void* arguments){
 void comunicarUMC(int socketUMC, int accion){
 	if(accion==NEW_ANSISOP_PROGRAM){
 		Package package;
-		fillPackage(&package,INIT_PROGRAM,"INIT_PROGRAM");
+		fillPackage(&package,INIT_PROGRAM,"INITPROGRAM");
 		char* serializedPkg = serializarMensaje(&package);
 		escribirSocketClient(socketUMC, (char *)serializedPkg, getLongitudPackage(&package));
 	}
