@@ -53,6 +53,7 @@ void handleClients(Configuration* config, t_log* logger){
 	arg_struct args;
 	args.logger = logger;
 	args.config = config;
+	args.socketServerUMC = -1;
 
 	inicializarArraySockets(&args);
 
