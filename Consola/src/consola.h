@@ -5,10 +5,15 @@
  *      Author: utnso
  */
 
-#include "configuration.h"
-
 #ifndef CONSOLA_H_
 #define CONSOLA_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <netdb.h>	//Si no lo pongo me tira error en la libreria package ¿Esta bien eso?
+#include <mllibs/sockets/package.h>
+#include <commons/log.h>
+#include "configuration.h"
 
 //codigos de operaciones de la Consola
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas
@@ -20,8 +25,6 @@
 //prototipos de funciones
 void handshake(Package* package,int serverSocket);
 void comunicacionConNucleo(Configuration* config, t_log* logger);
-Configuration* configurar (char* archConf);
 void iniciarProgramaAnsisop(Package* package,int serverSocket);
-void mostrar_ayuda();
 
 #endif /* CONSOLA_H_ */

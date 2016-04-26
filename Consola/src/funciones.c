@@ -22,23 +22,6 @@
 #include "configuration.h"
 #include "consola.h"
 
-Configuration* configurar(char* archConf){
-
-	Configuration* config = malloc(sizeof(Configuration));
-
-	t_config* nConfig = config_create(archConf);
-	if(nConfig==NULL){
-		puts("No se encontro el archivo de configuracion");
-		exit (1);
-	}
-	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
-	printf("Puerto de nucleo: %d\n",config->puerto_nucleo);
-	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
-	printf("Ip de nucleo: %s\n",config->ip_nucleo);
-
-	return config;
-}
-
 void comunicacionConNucleo(Configuration* config, t_log* logger){
 
 	log_debug(logger, "Iniciando comunicacion con Nucleo.");
@@ -93,18 +76,4 @@ void iniciarProgramaAnsisop(Package* package,int serverSocket){
 	fillPackage(package,NEW_ANSISOP_PROGRAM,"2000");
 	char* serializedPkg = serializarMensaje(package);
 	escribirSocketClient(serverSocket, (char *)serializedPkg, getLongitudPackage(package));
-}
-
-void mostrar_ayuda(){
-
-	puts("Uso: Consola [-f] programa [-c] \"archivo de configuracion\"\n");
-
-	puts("Opciones:");
-	puts("-h\t: muestra este mensaje de ayuda y termina la ejecución del programa.");
-
-	puts("Archivos:");
-	puts("-f\t: programa ansisop.");
-	puts("-c\t: archivo de configuracion. De no especificarse se el estandar.");
-	puts("(Si los archivos se colocan en este orden no hace falta poner las opciones.)");
-
 }
