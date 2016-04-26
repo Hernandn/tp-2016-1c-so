@@ -20,7 +20,8 @@
 //prototipos de funciones
 void handshake(Package* package,int serverSocket);
 void comunicacionConNucleo(Configuration* config, t_log* logger);
-Configuration* configurar ();
+Configuration* configurar (char* archConf);
 void iniciarProgramaAnsisop(Package* package,int serverSocket);
+void mostrar_ayuda();
 
 #endif /* CONSOLA_H_ */
