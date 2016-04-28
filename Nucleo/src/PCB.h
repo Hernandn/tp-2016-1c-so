@@ -51,5 +51,12 @@ PCB* buildNewPCB();
 void destroyPCB(PCB* self);
 int getNextPID();
 void inicializarEstados(Estados* estados);
+void sendToNEW(PCB* pcb, Estados* estados);
+PCB* getNextFromNEW(Estados* estados);
+PCB* getNextFromREADY(Estados* estados);
+void sendToREADY(PCB* pcb, Estados* estados);
+void sendToEXEC(PCB* pcb, Estados* estados);
+void sendToBLOCK(PCB* pcb, Estados* estados);
+void sendToEXIT(PCB* pcb, Estados* estados);
 
 #endif /* PCB_H_ */

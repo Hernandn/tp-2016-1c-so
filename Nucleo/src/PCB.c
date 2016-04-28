@@ -39,3 +39,32 @@ void inicializarEstados(Estados* estados){
 	estados->ready = queue_create();
 }
 
+void sendToNEW(PCB* pcb, Estados* estados){
+	queue_push(estados->new,pcb);
+}
+
+PCB* getNextFromNEW(Estados* estados){
+	return queue_pop(estados->new);
+}
+
+PCB* getNextFromREADY(Estados* estados){
+	return queue_pop(estados->ready);
+}
+
+void sendToREADY(PCB* pcb, Estados* estados){
+	queue_push(estados->ready,pcb);
+}
+
+//TODO: ver si hacer cola o lista de EXEC
+void sendToEXEC(PCB* pcb, Estados* estados){
+	queue_push(estados->execute,pcb);
+}
+//TODO: ver si hay que organizar distintas colas de bloqueados
+void sendToBLOCK(PCB* pcb, Estados* estados){
+	queue_push(estados->block,pcb);
+}
+
+void sendToEXIT(PCB* pcb, Estados* estados){
+	queue_push(estados->exit,pcb);
+}
+
