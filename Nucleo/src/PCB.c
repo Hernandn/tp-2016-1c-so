@@ -18,9 +18,10 @@
 int pidActual = 0;
 
 //probando
-PCB* buildNewPCB(){
+PCB* buildNewPCB(int consolaFD){
 	PCB *new = malloc(sizeof(PCB));
 	new->processID = getNextPID();
+	new->consolaFD = consolaFD;
 	new->programCounter = 2;	//ejemplo
 	new->pagesQty = 10;			//ejemplo
 	new->executedQuantums = 0;
@@ -38,12 +39,14 @@ int getNextPID(){
 	return pidActual++;
 }
 
-void inicializarEstados(Estados* estados){
+Estados* inicializarEstados(){
+	Estados* estados = malloc(sizeof(Estados));
 	estados->block = queue_create();
 	estados->execute = list_create();
 	estados->exit = queue_create();
 	estados->new = queue_create();
 	estados->ready = queue_create();
+	return estados;
 }
 
 void sendToNEW(PCB* pcb, Estados* estados){
@@ -138,10 +141,25 @@ void continueExec(int socketCPU,int pid){
 	informarCPU(socketCPU,CONTINUE_EXECUTION,pid);
 }
 
+void startExec(Estados* estados, int socketCPU){
+	PCB* proceso = getNextFromREADY(estados);
+	sendToEXEC(proceso,estados);
+	informarCPU(socketCPU,EXEC_NEW_PROCESS,proceso->processID);
+}
+
 void informarCPU(int socketCPU, int accion, int pid){
 	Package package;
 	fillPackage(&package,accion,string_itoa(pid));
 	char* serializedPkg = serializarMensaje(&package);
 	escribirSocketServer(socketCPU, (char *)serializedPkg, getLongitudPackage(&package));
+}
+
+void iniciarPrograma(Estados* estados, int consolaFD){
+	PCB* nuevo = buildNewPCB(consolaFD);
+	sendToNEW(nuevo,estados);
+	//TODO: hacer las validaciones para ver si puede pasar a READY
+	//hay que ver si hacer que apenas entran se pongan en READY o si poner en NEW y que otra funcion vaya pasando los NEW a READY
+	nuevo = getNextFromNEW(estados);
+	sendToREADY(nuevo,estados);
 }
 

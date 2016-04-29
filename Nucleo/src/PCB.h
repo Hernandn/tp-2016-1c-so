@@ -26,6 +26,7 @@ typedef struct ParCodigo {
  */
 typedef struct PCB {
 	int processID;		//identificador unico del proceso
+	int consolaFD;		//file descriptor del socket de la consola que inicio el programa
 	int programCounter;	//contador de programa
 	int pagesQty;		//cantidad de paginas de codigo ANSISOP
 	int executedQuantums;	//cantidad de quantums ya ejecutados
@@ -49,10 +50,10 @@ typedef struct Estados {
 
 
 //funciones
-PCB* buildNewPCB();
+PCB* buildNewPCB(int consolaFD);
 void destroyPCB(PCB* self);
 int getNextPID();
-void inicializarEstados(Estados* estados);
+Estados* inicializarEstados();
 void sendToNEW(PCB* pcb, Estados* estados);
 PCB* getNextFromNEW(Estados* estados);
 PCB* getNextFromREADY(Estados* estados);
@@ -67,6 +68,8 @@ int addQuantumToExecProcess(PCB* proceso, int* quantum);
 void quantumFinishedCallback(Estados* estados, int pid, int* quantum, int socketCPU);
 void switchProcess(Estados* estados, int pid, int socketCPU);
 void continueExec(int socketCPU,int pid);
+void startExec(Estados* estados, int socketCPU);
 void informarCPU(int socketCPU, int accion, int pid);
+void iniciarPrograma(Estados* estados, int consolaFD);
 
 #endif /* PCB_H_ */

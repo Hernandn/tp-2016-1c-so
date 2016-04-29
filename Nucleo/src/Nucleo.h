@@ -8,6 +8,7 @@
 #include <mllibs/sockets/package.h>
 #include <commons/log.h>
 #include "configuration.h"
+#include "PCB.h"
 
 #ifndef NUCLEO_H_
 #define NUCLEO_H_
@@ -34,7 +35,10 @@ typedef struct arg_struct {
     int socketServerCPU;
     int socketServerConsola;
     int socketServerUMC;
+    int socketServerThreads;
+    t_list* listaCPUs;
     Configuration* config;
+    Estados* estados;
     t_log* logger;
 } arg_struct;
 
@@ -55,5 +59,7 @@ Configuration* configurar(t_log* logger);
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
 int conectarConUMC(Configuration* config, t_log* logger);
+void nuevoCPU(t_list* listaCPUs, int socketCPU);
+void destroyCPU(CPU* self);
 
 #endif /* NUCLEO_H_ */

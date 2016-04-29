@@ -24,6 +24,8 @@
 #include <mllibs/sockets/package.h>
 #include "Nucleo.h"
 #include "configuration.h"
+#include "PCB.h"
+#include "planificador.h"
 
 Configuration* configurar(t_log* logger){
 
@@ -54,8 +56,12 @@ void handleClients(Configuration* config, t_log* logger){
 	args.logger = logger;
 	args.config = config;
 	args.socketServerUMC = -1;
+	args.listaCPUs = list_create();
 
 	inicializarArraySockets(&args);
+
+	Estados* estados = inicializarEstados();
+	args.estados = estados;
 
 	//abrir server para escuchar CPUs
 	args.socketServerCPU = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_cpu);
@@ -71,20 +77,30 @@ void handleClients(Configuration* config, t_log* logger){
 		perror ("Error al abrir servidor para Consolas");
 		exit (-1);
 	}
+	//abrir server para escuchar mensajes enviados por los Threads anteriores
+	args.socketServerThreads = abrirSocketInetServer(PLANIFICADOR_IP,PLANIFICADOR_PORT);
+	if (args.socketServerThreads == -1)
+	{
+		perror ("Error al abrir servidor para Threads");
+		exit (-1);
+	}
 
 	pthread_t hilo1;
 	pthread_create(&hilo1,NULL,(void*)handleConsolas,(void *)&args);
 	pthread_t hilo2;
 	pthread_create(&hilo2,NULL,(void*)handleCPUs,(void *)&args);
+	pthread_t hilo3;
+	pthread_create(&hilo3,NULL,(void*)planificar,(void *)&args);
 
 	while(1){
-
+		//TODO: no se si hace falta esto
 	}
 }
 
 void handleConsolas(void* arguments){
 	arg_struct *args = arguments;
 	t_log* logger = args->logger;
+	Estados* estados = args->estados;
 	int socketServidor;				/* Descriptor del socket servidor */
 	int *socketCliente = args->consolaSockets;/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -144,6 +160,7 @@ void handleConsolas(void* arguments){
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
 						log_debug(logger,"Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
+						iniciarPrograma(estados,socketCliente[i]);
 					}
 				}
 				else
@@ -159,14 +176,17 @@ void handleConsolas(void* arguments){
 
 		/* Se comprueba si algún cliente nuevo desea conectarse y se le
 		 * admite */
-		if (FD_ISSET (socketServidor, &descriptoresLectura))
-			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CPUS);
+		if (FD_ISSET (socketServidor, &descriptoresLectura)){
+			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CONSOLAS);
+		}
+
 	}
 }
 
 void handleCPUs(void* arguments){
 	arg_struct *args = arguments;
 	t_log* logger = args->logger;
+	t_list* listaCPUs = args->listaCPUs;
 	int socketServidor;				/* Descriptor del socket servidor */
 	int *socketCliente = args->cpuSockets;/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -235,8 +255,13 @@ void handleCPUs(void* arguments){
 
 		/* Se comprueba si algún cliente nuevo desea conectarse y se le
 		 * admite */
-		if (FD_ISSET (socketServidor, &descriptoresLectura))
+		if (FD_ISSET (socketServidor, &descriptoresLectura)){
+			int numAnterior = numeroClientes;
 			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CPUS);
+			if(numeroClientes > numAnterior){//nuevo CPU aceptado
+				nuevoCPU(listaCPUs,socketCliente[numeroClientes-1]);
+			}
+		}
 	}
 }
 
@@ -305,4 +330,15 @@ int conectarConUMC(Configuration* config, t_log* logger){
 		log_debug(logger,"Conexion con UMC satisfactoria.");
 	}
 	return socket;
+}
+
+void nuevoCPU(t_list* listaCPUs, int socketCPU){
+	CPU* nuevo = malloc(sizeof(CPU));
+	nuevo->cpuFD = socketCPU;
+	nuevo->libre = 1;	//true
+	list_add(listaCPUs,nuevo);
+}
+
+void destroyCPU(CPU* self){
+	free(self);
 }
