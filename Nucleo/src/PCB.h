@@ -9,6 +9,7 @@
 #define PCB_H_
 
 #include <commons/collections/queue.h>
+#include <commons/collections/list.h>
 
 /**
  * Estructura que representa la posicion de una linea
@@ -27,6 +28,7 @@ typedef struct PCB {
 	int processID;		//identificador unico del proceso
 	int programCounter;	//contador de programa
 	int pagesQty;		//cantidad de paginas de codigo ANSISOP
+	int executedQuantums;	//cantidad de quantums ya ejecutados
 	ParCodigo* codeIndex;		//indice de codigo
 	int* tagIndex;		//indice de etiquetas
 	int* stackIndex;		//indice del stack
@@ -39,7 +41,7 @@ typedef struct PCB {
 typedef struct Estados {
 	t_queue* new;
 	t_queue* ready;
-	t_queue* execute;
+	t_list* execute;
 	t_queue* block;
 	t_queue* exit;
 } Estados;
@@ -58,5 +60,13 @@ void sendToREADY(PCB* pcb, Estados* estados);
 void sendToEXEC(PCB* pcb, Estados* estados);
 void sendToBLOCK(PCB* pcb, Estados* estados);
 void sendToEXIT(PCB* pcb, Estados* estados);
+void sendFromEXECtoREADY(Estados* estados, int pid);
+PCB* removeFromEXEC(Estados* estados, int pid);
+PCB* getFromEXEC(Estados* estados, int pid);
+int addQuantumToExecProcess(PCB* proceso, int* quantum);
+void quantumFinishedCallback(Estados* estados, int pid, int* quantum, int socketCPU);
+void switchProcess(Estados* estados, int pid, int socketCPU);
+void continueExec(int socketCPU,int pid);
+void informarCPU(int socketCPU, int accion, int pid);
 
 #endif /* PCB_H_ */

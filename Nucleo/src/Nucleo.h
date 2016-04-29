@@ -21,7 +21,13 @@
 #define ANSISOP_PROGRAM 11
 #define HANDSHAKE 12
 //---------------------
+//codigos de operaciones con la CPU
+#define CONTINUE_EXECUTION 70
+#define ABORT_EXECUTION 71
+#define EXEC_NEW_PROCESS 72
+//---------------------
 
+//estructura de argumentos para pasarle a un thread
 typedef struct arg_struct {
     int cpuSockets[MAX_CPUS];
     int consolaSockets[MAX_CONSOLAS];
@@ -31,6 +37,12 @@ typedef struct arg_struct {
     Configuration* config;
     t_log* logger;
 } arg_struct;
+
+//contiene el estado de un CPU conectado al Nucleo
+typedef struct CPU {
+    int cpuFD;	//file descriptor del socket del cpu
+    int libre;	// 0:ocupado / 1:libre
+} CPU;
 
 //prototipos de funciones
 void handleClients(Configuration* config, t_log* logger);
