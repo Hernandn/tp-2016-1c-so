@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
 	}
 	//----------------------------------------------------------------------------------------------------------------------------/
 
-	//comunicacionConNucleo(parametros->config,logger);
+	comunicacionConNucleo(parametros->config,logger);
 
 	log_info(logger,"Fin programa\n");
 

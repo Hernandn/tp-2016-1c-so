@@ -6,6 +6,7 @@
  */
 
 #include "configuration.h"
+#include "string.h"
 
 Configuration* configurar(char* archConf,t_log* logger){
 
@@ -18,7 +19,7 @@ Configuration* configurar(char* archConf,t_log* logger){
 	}
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
 	printf("Puerto de nucleo: %d\n",config->puerto_nucleo);
-	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
+	config->ip_nucleo = strdup(config_get_string_value(nConfig,IP_NUCLEO));
 	printf("Ip de nucleo: %s\n",config->ip_nucleo);
 
 	config_destroy(nConfig);
