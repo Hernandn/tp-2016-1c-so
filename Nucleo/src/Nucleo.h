@@ -35,7 +35,7 @@ typedef struct arg_struct {
     int socketServerCPU;
     int socketServerConsola;
     int socketServerUMC;
-    int socketServerThreads;
+    int socketServerPlanificador;
     t_list* listaCPUs;
     Configuration* config;
     Estados* estados;
@@ -59,7 +59,8 @@ Configuration* configurar(t_log* logger);
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
 int conectarConUMC(Configuration* config, t_log* logger);
-void nuevoCPU(t_list* listaCPUs, int socketCPU);
+void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador);
 void destroyCPU(CPU* self);
+void eliminarCPU(t_list* listaCPUs,int socketCPU);
 
 #endif /* NUCLEO_H_ */

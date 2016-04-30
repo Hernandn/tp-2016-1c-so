@@ -14,6 +14,7 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include <mllibs/sockets/client.h>
+#include "planificador.h"
 
 int pidActual = 0;
 
@@ -154,12 +155,20 @@ void informarCPU(int socketCPU, int accion, int pid){
 	escribirSocketServer(socketCPU, (char *)serializedPkg, getLongitudPackage(&package));
 }
 
-void iniciarPrograma(Estados* estados, int consolaFD){
+void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador){
 	PCB* nuevo = buildNewPCB(consolaFD);
 	sendToNEW(nuevo,estados);
 	//TODO: hacer las validaciones para ver si puede pasar a READY
 	//hay que ver si hacer que apenas entran se pongan en READY o si poner en NEW y que otra funcion vaya pasando los NEW a READY
 	nuevo = getNextFromNEW(estados);
 	sendToREADY(nuevo,estados);
+	informarPlanificador(socketPlanificador,PROGRAM_READY,nuevo->processID);
+}
+
+void informarPlanificador(int socketPlanificador, int accion, int pid){
+	Package package;
+	fillPackage(&package,accion,string_itoa(pid));
+	char* serializedPkg = serializarMensaje(&package);
+	escribirSocketServer(socketPlanificador, (char *)serializedPkg, getLongitudPackage(&package));
 }
 

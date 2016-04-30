@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <commons/log.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -78,8 +79,8 @@ void handleClients(Configuration* config, t_log* logger){
 		exit (-1);
 	}
 	//abrir server para escuchar mensajes enviados por los Threads anteriores
-	args.socketServerThreads = abrirSocketInetServer(PLANIFICADOR_IP,PLANIFICADOR_PORT);
-	if (args.socketServerThreads == -1)
+	args.socketServerPlanificador = abrirSocketInetServer(PLANIFICADOR_IP,PLANIFICADOR_PORT);
+	if (args.socketServerPlanificador == -1)
 	{
 		perror ("Error al abrir servidor para Threads");
 		exit (-1);
@@ -160,7 +161,7 @@ void handleConsolas(void* arguments){
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
 						log_debug(logger,"Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
-						iniciarPrograma(estados,socketCliente[i]);
+						//iniciarPrograma(estados,socketCliente[i],args->socketServerPlanificador);
 					}
 				}
 				else
@@ -248,6 +249,7 @@ void handleCPUs(void* arguments){
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
 					log_info(logger,"CPU %d ha cerrado la conexión\n", i+1);
+					//eliminarCPU(listaCPUs,socketCliente[i]);
 					socketCliente[i] = -1;
 				}
 			}
@@ -259,7 +261,7 @@ void handleCPUs(void* arguments){
 			int numAnterior = numeroClientes;
 			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CPUS);
 			if(numeroClientes > numAnterior){//nuevo CPU aceptado
-				nuevoCPU(listaCPUs,socketCliente[numeroClientes-1]);
+				//nuevoCPU(listaCPUs,socketCliente[numeroClientes-1],args->socketServerPlanificador);
 			}
 		}
 	}
@@ -332,13 +334,25 @@ int conectarConUMC(Configuration* config, t_log* logger){
 	return socket;
 }
 
-void nuevoCPU(t_list* listaCPUs, int socketCPU){
+void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador){
 	CPU* nuevo = malloc(sizeof(CPU));
 	nuevo->cpuFD = socketCPU;
 	nuevo->libre = 1;	//true
 	list_add(listaCPUs,nuevo);
+	informarPlanificador(socketPlanificador,CPU_LIBRE,0);
 }
 
 void destroyCPU(CPU* self){
 	free(self);
+}
+
+void eliminarCPU(t_list* listaCPUs,int socketCPU){
+	int i;
+	CPU* aEliminar = NULL;
+	for(i=0;i<listaCPUs->elements_count;i++){
+		aEliminar = list_get(listaCPUs,i);
+		if(aEliminar->cpuFD==socketCPU){
+			list_remove_and_destroy_element(listaCPUs,i,(void*)destroyCPU);
+		}
+	}
 }

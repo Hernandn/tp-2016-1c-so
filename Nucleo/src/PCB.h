@@ -70,6 +70,7 @@ void switchProcess(Estados* estados, int pid, int socketCPU);
 void continueExec(int socketCPU,int pid);
 void startExec(Estados* estados, int socketCPU);
 void informarCPU(int socketCPU, int accion, int pid);
-void iniciarPrograma(Estados* estados, int consolaFD);
+void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador);
+void informarPlanificador(int socketPlanificador, int accion, int pid);
 
 #endif /* PCB_H_ */

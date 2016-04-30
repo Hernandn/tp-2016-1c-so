@@ -33,14 +33,15 @@ void planificar(void* arguments){
 	t_list* listaCPUs = args->listaCPUs;
 	Estados* estados = args->estados;
 	int socketServidor;				/* Descriptor del socket servidor */
-	int *socketCliente = args->cpuSockets;/* Descriptores de sockets con clientes */
+	int socketCliente[MAX_CONEXIONES];/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
 	fd_set descriptoresLectura;	/* Descriptores de interes para select() */
 	//int buffer;							/* Buffer para leer de los socket */
 	int maximo;							/* Número de descriptor más grande */
 	int i;								/* Para bubles */
 
-	socketServidor = args->socketServerThreads;
+	inicializarSockets(socketCliente);
+	socketServidor = args->socketServerPlanificador;
 
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
@@ -112,12 +113,16 @@ void planificar(void* arguments){
 
 void atenderProcesos(Estados* estados, t_list* listaCPUs){
 	CPU* cpu = getCPUlibre(listaCPUs);
-	while(cpu!=NULL && (estados->ready->elements->elements_count)>0){
+	while(cpu!=NULL && hayProcesosEnREADY(estados)){
 		startExec(estados,cpu->cpuFD);
 		cpu->libre = 0;
 
 		cpu = getCPUlibre(listaCPUs);
 	}
+}
+
+bool hayProcesosEnREADY(Estados* estados){
+	return (estados->ready->elements->elements_count)>0;
 }
 
 CPU* getCPUlibre(t_list* listaCPUs){
@@ -129,4 +134,11 @@ CPU* getCPUlibre(t_list* listaCPUs){
 		}
 	}
 	return NULL;
+}
+
+void inicializarSockets(int* sockets){
+	int i;
+	for(i=0;i<MAX_CONEXIONES;i++){
+		sockets[i]=-1;
+	}
 }

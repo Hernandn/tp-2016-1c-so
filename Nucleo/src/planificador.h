@@ -18,6 +18,8 @@
 
 void planificar(void* arguments);
 void atenderProcesos(Estados* estados, t_list* listaCPUs);
+bool hayProcesosEnREADY(Estados* estados);
 CPU* getCPUlibre(t_list* listaCPUs);
+void inicializarSockets(int* sockets);
 
 #endif /* PLANIFICADOR_H_ */
