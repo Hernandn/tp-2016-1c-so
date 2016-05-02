@@ -12,7 +12,7 @@
 #define SOLICITAR_BYTES_PAGINA_SWAP 20
 #define ALMACENAR_BYTES_PAGINA_SWAP 21
 
-void handleUMCRequests(Configuration* config, t_log* logger);
-Configuration* configurar(t_log* logger);
+void handleUMCRequests(Configuration* config);
+Configuration* configurar();
 
 #endif /* SWAP_H_ */

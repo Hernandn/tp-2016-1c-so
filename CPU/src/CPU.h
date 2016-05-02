@@ -24,13 +24,12 @@
 typedef struct arg_struct {
 	Configuration* config;
 	int socketUMC;
-    t_log* logger;
 } arg_struct;
 
 //prototipos de funciones
 void conectarConUMC();
 void conectarConNucleo();
-Configuration* configurar(t_log* logger);
+Configuration* configurar();
 void comunicarUMC(int socketUMC, int accion);
 
 

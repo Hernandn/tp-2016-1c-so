@@ -25,6 +25,7 @@
 #include <commons/config.h>
 #include <unistd.h>
 #include <commons/log.h>
+#include <mllibs/log/logger.h>
 
 #define MAX_CLIENTES 10
 
@@ -37,9 +38,15 @@
  */
 int main(void) {
 
-	t_log* logger = log_create("cpu.log","ELESTAC",true, LOG_LEVEL_DEBUG);
-	Configuration* config = configurar(logger);
-	handleClients(config,logger);
+	Configuration* config = configurar();
+
+	//creo el log
+	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
+
+	handleClients(config);
+
+	logDestroy();
+
 	return EXIT_SUCCESS;
 }
 

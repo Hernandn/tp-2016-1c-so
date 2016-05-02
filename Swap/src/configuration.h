@@ -18,6 +18,10 @@
 typedef struct Configuration {
 	int puerto_swap;
 	char* ip_swap;
+	char* log_level;
+	char* log_file;
+	char* log_program_name;
+	int log_print_console;
 } Configuration;
 
 #endif /* CONFIGURATION_H_ */

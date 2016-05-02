@@ -21,6 +21,10 @@ typedef struct Configuration {
 	char* ip_swap;
 	int puerto_umc;
 	char* ip_umc;
+	char* log_level;
+	char* log_file;
+	char* log_program_name;
+	int log_print_console;
 } Configuration;
 
 #endif /* CONFIGURATION_H_ */

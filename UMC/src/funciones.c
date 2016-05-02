@@ -19,26 +19,32 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
+#include <mllibs/log/logger.h>
 #include "configuration.h"
 
-Configuration* configurar(t_log* logger){
+Configuration* configurar(){
 
 	Configuration* config = malloc(sizeof(Configuration));
 
 	t_config* nConfig = config_create(UMC_CONFIG_PATH);
 	if(nConfig==NULL){
-		log_error(logger,"No se encontro el archivo de configuracion.");
+		printf("No se encontro el archivo de configuracion.");
 		exit (1);
 	}
 	config->puerto_swap=config_get_int_value(nConfig,PUERTO_SWAP);
 	config->ip_swap = config_get_string_value(nConfig,IP_SWAP);
 	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
 	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
+	//configuracion de log
+	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
+	config->log_file = config_get_string_value(nConfig,LOG_FILE);
+	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
+	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
 
 	return config;
 }
 
-void handleClients(Configuration* config, t_log* logger){
+void handleClients(Configuration* config){
 
 	int socketSwap = -1;
 
@@ -67,7 +73,7 @@ void handleClients(Configuration* config, t_log* logger){
 		//Compruebo si se conecto el proceso Swap
 		//No hace nada si ya estaba linkeado
 		if(socketSwap==-1){
-			socketSwap = conectarConSwap(config,logger);
+			socketSwap = conectarConSwap(config);
 		}
 
 		/* Cuando un cliente cierre la conexión, se pondrá un -1 en su descriptor
@@ -108,16 +114,16 @@ void handleClients(Configuration* config, t_log* logger){
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					log_debug(logger,"Cliente %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+					logDebug("Cliente %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
 					if(package.msgCode==INIT_PROGRAM){
 						comunicarSWAP(socketSwap,ALMACENAR_BYTES_PAGINA_SWAP);
-						log_debug(logger,"Se ha solicitado la inicializacion de un nuevo programa.");
+						logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
 					}
 				} else {
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					log_info(logger,"Cliente %d ha cerrado la conexión\n", i+1);
+					logInfo("Cliente %d ha cerrado la conexión", i+1);
 					socketCliente[i] = -1;
 				}
 			}
@@ -139,7 +145,7 @@ void comunicarSWAP(int socketSWAP, int accion){
 	}
 }
 
-int conectarConSwap(Configuration* config, t_log* logger){
+int conectarConSwap(Configuration* config){
 
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
@@ -154,9 +160,9 @@ int conectarConSwap(Configuration* config, t_log* logger){
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
 	{
-		log_debug(logger,"SWAP se encuentra desconectada.");
+		logDebug("SWAP se encuentra desconectada.");
 	} else {
-		log_debug(logger,"Conexion con SWAP satisfactoria.");
+		logDebug("Conexion con SWAP satisfactoria.");
 	}
 	return socket;
 }

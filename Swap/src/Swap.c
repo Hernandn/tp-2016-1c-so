@@ -21,12 +21,20 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
 #include <commons/log.h>
+#include <mllibs/log/logger.h>
 #include "configuration.h"
+#include "Swap.h"
 
 int main(void) {
 
-	t_log* logger = log_create("cpu.log","ELESTAC",true, LOG_LEVEL_DEBUG);
-	Configuration* config = configurar(logger);
-	handleUMCRequests(config,logger);
+	Configuration* config = configurar();
+
+	//creo el log
+	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
+
+	handleUMCRequests(config);
+
+	logDestroy();
+
 	return EXIT_SUCCESS;
 }

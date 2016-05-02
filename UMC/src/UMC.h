@@ -28,9 +28,9 @@
 #define MAX_CLIENTES 10 //cantidad maxima de conexiones por socket (CPUs)
 
 //prototipos de funciones
-void handleClients(Configuration* config, t_log* logger);
+void handleClients(Configuration* config);
 void comunicarSWAP(int socketSWAP, int accion);
-Configuration* configurar(t_log* logger);
-int conectarConSwap(Configuration* config, t_log* logger);
+Configuration* configurar();
+int conectarConSwap(Configuration* config);
 
 #endif /* UMC_H_ */

@@ -18,18 +18,16 @@
 #include<sys/errno.h>
 #include "configuration.h"
 #include "Nucleo.h"
-#include "log.h"
+#include <mllibs/log/logger.h>
 
 int main(void)
 {
+	Configuration* config = configurar();
+
 	//creo el log
-	t_log* logger = log_create("nucleo.log","ELESTAC",true, LOG_LEVEL_DEBUG);
-	//prueba log global
-	initLogMutex();
+	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
 
-	Configuration* config = configurar(logger);
-
-	handleClients(config,logger);
+	handleClients(config);
 
 	return 0;
 }

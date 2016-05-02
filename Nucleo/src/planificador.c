@@ -22,6 +22,7 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
+#include <mllibs/log/logger.h>
 #include "Nucleo.h"
 #include "configuration.h"
 #include "PCB.h"
@@ -29,7 +30,6 @@
 
 void planificar(void* arguments){
 	arg_struct *args = arguments;
-	t_log* logger = args->logger;
 	t_list* listaCPUs = args->listaCPUs;
 	Estados* estados = args->estados;
 	int socketServidor;				/* Descriptor del socket servidor */
@@ -86,7 +86,7 @@ void planificar(void* arguments){
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					log_debug(logger,"Thread %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
 					if(package.msgCode==CPU_LIBRE || package.msgCode==PROGRAM_READY){
 						atenderProcesos(estados,listaCPUs);
 					}
@@ -96,7 +96,7 @@ void planificar(void* arguments){
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					log_info(logger,"Thread %d ha cerrado la conexión\n", i+1);
+					logDebug("Thread %d ha cerrado la conexión\n", i+1);
 					socketCliente[i] = -1;
 				}
 			}

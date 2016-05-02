@@ -18,29 +18,34 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include <commons/log.h>
+#include <mllibs/log/logger.h>
 #include "CPU.h"
 #include "configuration.h"
 
-Configuration* configurar(t_log* logger){
+Configuration* configurar(){
 
 	Configuration* config = malloc(sizeof(Configuration));
 
 	t_config* nConfig = config_create(CPU_CONFIG_PATH);
 	if(nConfig==NULL){
-		log_error(logger,"No se encontro el archivo de configuracion.");
+		printf("No se encontro el archivo de configuracion.");
 		exit (1);
 	}
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
 	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
 	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
 	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
+	//configuracion de log
+	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
+	config->log_file = config_get_string_value(nConfig,LOG_FILE);
+	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
+	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
 
 	return config;
 }
 
 void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;
-	t_log* logger = args->logger;
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
@@ -56,12 +61,12 @@ void conectarConUMC(void* arguments){
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
 	{
-		log_error(logger,"Me han cerrado la conexión.");
+		logError("Me han cerrado la conexión.");
 		exit(-1);
 	}
 
 	/* Se escribe el número de cliente que nos ha enviado el servidor */
-	printf ("Soy el CPU %d\n", buffer);
+	logDebug("Soy el CPU %d", buffer);
 
 	/* Bucle infinito. Envia al servidor el número de cliente y espera un
 	 * segundo */
@@ -79,7 +84,6 @@ void conectarConUMC(void* arguments){
 
 void conectarConNucleo(void* arguments){
 	arg_struct *args = arguments;
-	t_log* logger = args->logger;
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
@@ -94,20 +98,20 @@ void conectarConNucleo(void* arguments){
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
 	{
-		log_error(logger,"Me han cerrado la conexión.");
+		logError("Me han cerrado la conexión.");
 		exit(-1);
 	}
 
 	/* Se escribe el número de cliente que nos ha enviado el servidor */
-	log_info(logger,"Soy el CPU %d\n", buffer);
+	logDebug("Soy el CPU %d", buffer);
 
 	Package package;
 	while (1)
 	{
 		if(recieve_and_deserialize(&package,socket) > 0){
-			log_debug(logger,"Nucleo envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
+			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
 			if(package.msgCode==NEW_ANSISOP_PROGRAM){
-				log_debug(logger,"El Nucleo me comunica que se creo un programa nuevo.");
+				logDebug("El Nucleo me comunica que se creo un programa nuevo.");
 				comunicarUMC(args->socketUMC,NEW_ANSISOP_PROGRAM);
 			}
 		}

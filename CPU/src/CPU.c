@@ -20,18 +20,20 @@
 #include <errno.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
-#include <pthread.h>
 #include <commons/log.h>
+#include <mllibs/log/logger.h>
+#include <pthread.h>
 #include "CPU.h"
 
 int main(void){
 
-	t_log* logger = log_create("cpu.log","ELESTAC",true, LOG_LEVEL_DEBUG);
-	Configuration* config = configurar(logger);
+	Configuration* config = configurar();
+
+	//creo el log
+	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
 
 	arg_struct args;
 	args.config=config;
-	args.logger=logger;
 
 	pthread_t hilo1;
 	pthread_create(&hilo1,NULL,(void*)conectarConUMC,(void *)&args);

@@ -39,7 +39,6 @@ typedef struct arg_struct {
     t_list* listaCPUs;
     Configuration* config;
     Estados* estados;
-    t_log* logger;
 } arg_struct;
 
 //contiene el estado de un CPU conectado al Nucleo
@@ -49,16 +48,16 @@ typedef struct CPU {
 } CPU;
 
 //prototipos de funciones
-void handleClients(Configuration* config, t_log* logger);
+void handleClients(Configuration* config);
 void handleConsolas();
 void handleCPUs();
 int elegirRandomCPU(int cpuSockets[]);
 void comunicarCPU(int cpuSockets[]);
 void enviarMensajeCPU(Package* package,int socket);
-Configuration* configurar(t_log* logger);
+Configuration* configurar();
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
-int conectarConUMC(Configuration* config, t_log* logger);
+int conectarConUMC(Configuration* config);
 void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador);
 void destroyCPU(CPU* self);
 void eliminarCPU(t_list* listaCPUs,int socketCPU);

@@ -19,10 +19,11 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include <commons/log.h>
+#include <mllibs/log/logger.h>
 #include "configuration.h"
 #include "Swap.h"
 
-Configuration* configurar(t_log* logger){
+Configuration* configurar(){
 
 	Configuration* config = malloc(sizeof(Configuration));
 
@@ -31,17 +32,22 @@ Configuration* configurar(t_log* logger){
 		//para debuggear desde eclipse
 		nConfig = config_create(SWAP_CONFIG_PATH_ECLIPSE);
 		if(nConfig==NULL){
-			log_error(logger,"No se encontro el archivo de configuracion.");
+			printf("No se encontro el archivo de configuracion.");
 			exit (1);
 		}
 	}
 	config->puerto_swap=config_get_int_value(nConfig,PUERTO_SWAP);
 	config->ip_swap = config_get_string_value(nConfig,IP_SWAP);
+	//configuracion de log
+	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
+	config->log_file = config_get_string_value(nConfig,LOG_FILE);
+	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
+	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
 
 	return config;
 }
 
-void handleUMCRequests(Configuration* config, t_log* logger){
+void handleUMCRequests(Configuration* config){
 	int socketServidor;				/* Descriptor del socket servidor */
 	int socketUMC[1];/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -73,7 +79,7 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 		FD_SET (socketServidor, &descriptoresLectura);
 
 		/* Se añaden para select() los sockets con los clientes ya conectados */
-		log_debug(logger,"sockets %d",socketUMC[0]);
+		logDebug("sockets %d",socketUMC[0]);
 		if(socketUMC[0]!=-1){
 			FD_SET (socketUMC[0], &descriptoresLectura);
 		}
@@ -83,7 +89,7 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 		if (maximo < socketServidor)
 			maximo = socketServidor;
 
-		log_debug(logger,"Esperando conexion");
+		logDebug("Esperando conexion");
 		/* Espera indefinida hasta que alguno de los descriptores tenga algo
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
@@ -96,9 +102,9 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketUMC[0]) > 0){
-					log_debug(logger,"UMC envía [message code]: %d, [Mensaje]: %s\n", package.msgCode, package.message);
+					logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
 					if(package.msgCode==ALMACENAR_BYTES_PAGINA_SWAP){
-						log_debug(logger,"La UMC me solicito el almacenamiento de una nueva pagina.\n");
+						logDebug("La UMC me solicito el almacenamiento de una nueva pagina.");
 					}
 				}
 				else
@@ -106,7 +112,7 @@ void handleUMCRequests(Configuration* config, t_log* logger){
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					log_info(logger,"La UMC ha cerrado la conexión\n");
+					logInfo("La UMC ha cerrado la conexión");
 					socketUMC[0] = -1;
 					numeroClientes = 0;
 				}
