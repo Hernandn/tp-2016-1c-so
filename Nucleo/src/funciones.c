@@ -47,6 +47,11 @@ Configuration* configurar(){
 	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
 	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
 	config->puerto_umc = config_get_int_value(nConfig,PUERTO_UMC);
+
+	//planificador
+	config->quantum = config_get_int_value(nConfig,QUANTUM);
+	config->quantum_sleep = config_get_int_value(nConfig,QUANTUM_SLEEP);
+
 	//configuracion de log
 	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
 	config->log_file = config_get_string_value(nConfig,LOG_FILE);
@@ -85,11 +90,15 @@ void handleClients(Configuration* config){
 	}
 	//abrir server para escuchar mensajes enviados por los Threads anteriores
 	args.socketServerPlanificador = abrirSocketInetServer(PLANIFICADOR_IP,PLANIFICADOR_PORT);
+	logDebug("Planificador Server creado.");
 	if (args.socketServerPlanificador == -1)
 	{
 		perror ("Error al abrir servidor para Threads");
 		exit (-1);
+	} else {
+		logDebug("Conectando con Planificador Server.");
 	}
+
 
 	pthread_t hilo1;
 	pthread_create(&hilo1,NULL,(void*)handleConsolas,(void *)&args);
@@ -121,6 +130,9 @@ void handleConsolas(void* arguments){
 	 * por los clientes ya conectados */
 	while (1)
 	{
+		if(args->socketServerUMC==-1){
+			args->socketClientPlanificador = conectarConPlanificador(PLANIFICADOR_IP,PLANIFICADOR_PORT);
+		}
 		if(args->socketServerUMC==-1){
 			args->socketServerUMC = conectarConUMC(args->config);
 		}
@@ -165,7 +177,7 @@ void handleConsolas(void* arguments){
 					if(package.msgCode==NEW_ANSISOP_PROGRAM){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
-						//iniciarPrograma(estados,socketCliente[i],args->socketServerPlanificador);
+						iniciarPrograma(estados,socketCliente[i],args->socketClientPlanificador);
 					}
 				}
 				else
@@ -252,7 +264,7 @@ void handleCPUs(void* arguments){
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
 					logInfo("CPU %d ha cerrado la conexión", i+1);
-					//eliminarCPU(listaCPUs,socketCliente[i]);
+					eliminarCPU(listaCPUs,socketCliente[i]);
 					socketCliente[i] = -1;
 				}
 			}
@@ -264,7 +276,7 @@ void handleCPUs(void* arguments){
 			int numAnterior = numeroClientes;
 			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CPUS);
 			if(numeroClientes > numAnterior){//nuevo CPU aceptado
-				//nuevoCPU(listaCPUs,socketCliente[numeroClientes-1],args->socketServerPlanificador);
+				nuevoCPU(listaCPUs,socketCliente[numeroClientes-1],args->socketClientPlanificador);
 			}
 		}
 	}
@@ -342,6 +354,8 @@ void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador){
 	nuevo->cpuFD = socketCPU;
 	nuevo->libre = 1;	//true
 	list_add(listaCPUs,nuevo);
+	logTrace("Creado nuevo CPU: %d", socketCPU);
+	logTrace("Informando Planificador(%d) [CPU LIBRE]",socketPlanificador);
 	informarPlanificador(socketPlanificador,CPU_LIBRE,0);
 }
 
@@ -358,4 +372,26 @@ void eliminarCPU(t_list* listaCPUs,int socketCPU){
 			list_remove_and_destroy_element(listaCPUs,i,(void*)destroyCPU);
 		}
 	}
+}
+
+int conectarConPlanificador(char* ip, int puerto){
+
+	int socket;		/* descriptor de conexión con el servidor */
+	int buffer;		/* buffer de lectura de datos procedentes del servidor */
+	int error;		/* error de lectura por el socket */
+	logDebug("Planificador datos ip %s puerto %d.",ip,puerto);
+	/* Se abre una conexión con el servidor */
+	socket = abrirConexionInetConServer(ip, puerto);
+	logDebug("Planificador conectado.");
+	/* Se lee el número de cliente, dato que nos da el servidor.*/
+	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
+
+	/* Si ha habido error de lectura lo indicamos y salimos */
+	if (error < 1)
+	{
+		logDebug("Planificador se encuentra desconectado.");
+	} else {
+		logDebug("Conexion con Planificador satisfactoria.");
+	}
+	return socket;
 }

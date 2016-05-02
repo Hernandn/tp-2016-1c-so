@@ -29,6 +29,8 @@ typedef struct Configuration {
 	char* ip_nucleo;
 	char* ip_umc;
 	int puerto_umc;
+	int quantum;
+	int quantum_sleep;
 	char* log_level;
 	char* log_file;
 	char* log_program_name;

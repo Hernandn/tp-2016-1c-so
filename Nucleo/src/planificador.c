@@ -43,6 +43,8 @@ void planificar(void* arguments){
 	inicializarSockets(socketCliente);
 	socketServidor = args->socketServerPlanificador;
 
+	logTrace("Iniciando Planificador");
+
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
 	 * por los clientes ya conectados */
@@ -72,21 +74,26 @@ void planificar(void* arguments){
 		if (maximo < socketServidor)
 			maximo = socketServidor;
 
+		logTrace("Planificador: Esperando conexiones");
+
 		/* Espera indefinida hasta que alguno de los descriptores tenga algo
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
 		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
 
+		logTrace("Planificador: Nueva solicitud");
+
 		/* Se comprueba si algún cliente ya conectado ha enviado algo */
 		for (i=0; i<numeroClientes; i++)
 		{
+			logTrace("Planificador: Solicitud %d",socketCliente[i]);
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
 				Package package;
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s\n", i+1, package.msgCode, package.message);
+					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
 					if(package.msgCode==CPU_LIBRE || package.msgCode==PROGRAM_READY){
 						atenderProcesos(estados,listaCPUs);
 					}
@@ -96,7 +103,7 @@ void planificar(void* arguments){
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
-					logDebug("Thread %d ha cerrado la conexión\n", i+1);
+					logDebug("Thread %d ha cerrado la conexión", i+1);
 					socketCliente[i] = -1;
 				}
 			}
@@ -106,6 +113,7 @@ void planificar(void* arguments){
 		 * admite */
 		if (FD_ISSET (socketServidor, &descriptoresLectura)){
 			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CONEXIONES);
+			logInfo("Planificador: Aceptado nuevo cliente");
 		}
 	}
 }

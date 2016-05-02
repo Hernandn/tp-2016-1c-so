@@ -36,6 +36,7 @@ typedef struct arg_struct {
     int socketServerConsola;
     int socketServerUMC;
     int socketServerPlanificador;
+    int socketClientPlanificador;
     t_list* listaCPUs;
     Configuration* config;
     Estados* estados;
@@ -61,5 +62,6 @@ int conectarConUMC(Configuration* config);
 void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador);
 void destroyCPU(CPU* self);
 void eliminarCPU(t_list* listaCPUs,int socketCPU);
+int conectarConPlanificador(char* ip, int puerto);
 
 #endif /* NUCLEO_H_ */
