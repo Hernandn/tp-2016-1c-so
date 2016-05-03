@@ -128,15 +128,15 @@ PCB* getFromEXEC(Estados* estados, int pid){
 	return NULL;
 }
 
-int addQuantumToExecProcess(PCB* proceso, int* quantum){
+int addQuantumToExecProcess(PCB* proceso, int quantum){
 	//le suma 1 a los quantums ejecutados
 	proceso->executedQuantums++;
 	logTrace("Plan: PCB:%d / Ejecutado 1 Quantum / Actual: %d/%d",proceso->processID,proceso->executedQuantums,quantum);
 	//retorna la cantidad que le quedan por ejecutar
-	return *quantum - proceso->executedQuantums;
+	return quantum - proceso->executedQuantums;
 }
 
-void quantumFinishedCallback(Estados* estados, int pid, int* quantum, int socketCPU){
+void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
 		//si se le terminaron los quantums al proceso

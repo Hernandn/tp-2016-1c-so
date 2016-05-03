@@ -22,10 +22,14 @@
 #define ANSISOP_PROGRAM 11
 #define HANDSHAKE 12
 //---------------------
-//codigos de operaciones con la CPU
+//codigos de operaciones entre CPU/Nucleo
 #define CONTINUE_EXECUTION 70
 #define ABORT_EXECUTION 71
 #define EXEC_NEW_PROCESS 72
+#define EXECUTION_FINISHED 73
+#define QUANTUM_SLEEP_CPU 74
+#define QUANTUM_FINISHED 75
+#define CPU_LIBRE 90
 //---------------------
 
 //estructura de argumentos para pasarle a un thread
@@ -54,14 +58,18 @@ void handleConsolas();
 void handleCPUs();
 int elegirRandomCPU(int cpuSockets[]);
 void comunicarCPU(int cpuSockets[]);
-void enviarMensajeCPU(Package* package,int socket);
+void enviarMensaje(int socket, int accion, char* message);
 Configuration* configurar();
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
 int conectarConUMC(Configuration* config);
 void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador);
 void destroyCPU(CPU* self);
+void liberarCPU(CPU* cpu, int socketPlanificador);
+void liberarCPUporSocketFD(int socketCPU, arg_struct *args);
+CPU* buscarCPUporSocketFD(int socketCPU, t_list* listaCPUs);
 void eliminarCPU(t_list* listaCPUs,int socketCPU);
 int conectarConPlanificador(char* ip, int puerto);
+void analizarMensajeCPU(int socketCPU , Package package, arg_struct *args);
 
 #endif /* NUCLEO_H_ */

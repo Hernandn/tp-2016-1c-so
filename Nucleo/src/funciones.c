@@ -14,6 +14,7 @@
 #include <commons/log.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
+#include <commons/string.h>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -257,6 +258,7 @@ void handleCPUs(void* arguments){
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
 					logDebug("CPU %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
+					analizarMensajeCPU(socketCliente[i],package,args);
 				}
 				else
 				{
@@ -298,14 +300,14 @@ int elegirRandomCPU(int cpuSockets[]){
 
 void comunicarCPU(int cpuSockets[]){
 	int socketCPU = elegirRandomCPU(cpuSockets);
-	Package package;
-	enviarMensajeCPU(&package,socketCPU);
+	enviarMensaje(socketCPU,NEW_ANSISOP_PROGRAM,"3000");
 }
 
-void enviarMensajeCPU(Package* package,int socket){
-	fillPackage(package,NEW_ANSISOP_PROGRAM,"3000");
-	char* serializedPkg = serializarMensaje(package);
-	escribirSocketServer(socket, (char *)serializedPkg, getLongitudPackage(package));
+void enviarMensaje(int socket, int accion, char* message){
+	Package package;
+	fillPackage(&package,accion,message);
+	char* serializedPkg = serializarMensaje(&package);
+	escribirSocketServer(socket, (char *)serializedPkg, getLongitudPackage(&package));
 }
 
 void imprimirArraySockets(int sockets[], int len){
@@ -352,15 +354,40 @@ int conectarConUMC(Configuration* config){
 void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador){
 	CPU* nuevo = malloc(sizeof(CPU));
 	nuevo->cpuFD = socketCPU;
-	nuevo->libre = 1;	//true
 	list_add(listaCPUs,nuevo);
 	logTrace("Creado nuevo CPU: %d", socketCPU);
-	logTrace("Informando Planificador(%d) [CPU LIBRE]",socketPlanificador);
-	informarPlanificador(socketPlanificador,CPU_LIBRE,0);
+	liberarCPU(nuevo,socketPlanificador);
 }
 
 void destroyCPU(CPU* self){
 	free(self);
+}
+
+//si se tiene el CPU
+void liberarCPU(CPU* cpu, int socketPlanificador){
+	cpu->libre = 1;	//true
+	logTrace("Informando Planificador(%d) [CPU LIBRE]",socketPlanificador);
+	informarPlanificador(socketPlanificador,CPU_LIBRE,0);
+}
+
+//si solo se tiene el socket del CPU
+void liberarCPUporSocketFD(int socketCPU, arg_struct *args){
+	CPU* cpu = buscarCPUporSocketFD(socketCPU,args->listaCPUs);
+	if(cpu!=NULL){
+		liberarCPU(cpu,args->socketClientPlanificador);
+	}
+}
+
+CPU* buscarCPUporSocketFD(int socketCPU, t_list* listaCPUs){
+	CPU* cpu;
+	int i;
+	for(i=0; i<listaCPUs->elements_count; i++){
+		cpu = list_get(listaCPUs,i);
+		if(cpu->cpuFD==socketCPU){
+			return cpu;
+		}
+	}
+	return NULL;
 }
 
 void eliminarCPU(t_list* listaCPUs,int socketCPU){
@@ -394,4 +421,18 @@ int conectarConPlanificador(char* ip, int puerto){
 		logDebug("Conexion con Planificador satisfactoria.");
 	}
 	return socket;
+}
+
+void analizarMensajeCPU(int socketCPU , Package package, arg_struct *args){
+	if(package.msgCode==EXECUTION_FINISHED){
+		logTrace("CPU %d me informa que finalizo de ejecutar la instruccion");
+		logTrace("Enviando al CPU la orden de Quantum Sleep");
+		enviarMensaje(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
+	} else if(package.msgCode==QUANTUM_FINISHED){
+		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
+		quantumFinishedCallback(args->estados,atoi(package.message),args->config->quantum_sleep,socketCPU);
+	} else if(package.msgCode==CPU_LIBRE){
+		logTrace("CPU %d informa que esta Libre",socketCPU);
+		liberarCPUporSocketFD(socketCPU,args);
+	}
 }
