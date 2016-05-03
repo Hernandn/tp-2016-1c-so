@@ -37,6 +37,7 @@ void mostrar_ayuda(){
 	puts("-f\t: programa ansisop.");
 	puts("-c\t: archivo de configuracion. De no especificarse se el estandar.");
 	puts("(Si los archivos se colocan en este orden no hace falta poner las opciones.)");
+	puts("(El archivo de configuracion default puede ser espesificado a travez de la variable de entorno CONF_CONSOLA)");
 
 	exit (EXIT_SUCCESS);
 }
@@ -56,6 +57,7 @@ Parameters* interpretar_parametros(int argc, char* argv[], t_log* logger){
 	Parameters* parametros = malloc(sizeof(Parameters));
 	parametros->config = NULL;
 	parametros->programa = NULL;
+	char* arch_conf_default = getenv(CONSOLA_CONFIG_PATH);
 	int i;
 
 	/*
@@ -106,15 +108,13 @@ Parameters* interpretar_parametros(int argc, char* argv[], t_log* logger){
 		}
 	}
 
-	//Si a esta altura no tengo el programa configurado algo esta mal...
-	if(parametros->programa == NULL){
-		liberar_parametros(parametros);
-		argumento_invalido(NULL, logger);
-	}
-
 	//Si no esta espesificado el archivo de configuracion se toma el default.
 	if(parametros->config == NULL){
-		parametros->config = configurar(getenv(CONSOLA_CONFIG_PATH), logger);
+		if(arch_conf_default == NULL){
+			liberar_parametros(parametros);
+			argumento_invalido(NULL,logger);
+		}
+		parametros->config = configurar(arch_conf_default, logger);
 	}
 
 	return parametros;
@@ -124,6 +124,9 @@ void liberar_parametros(Parameters* parametros){
 	//Libero la memoria tomada por la estructura de parametros interpretados
 	if(parametros != NULL){
 		if(parametros->config != NULL){
+			if(parametros->config->ip_nucleo != NULL){
+				free(parametros->config->ip_nucleo);
+			}
 			free(parametros->config);
 		}
 		free(parametros);

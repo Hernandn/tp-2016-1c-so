@@ -23,9 +23,14 @@ int main(int argc, char* argv[]){
 
 	log_info(logger,"Consola iniciada");
 
+	if(parametros->programa == NULL){
+		log_debug(logger,"No fue espesificado un programa, en este momento la consola deberia permitir usar linea de comandos para acceder al archivo");
+		return EXIT_FAILURE;
+	}
+
 	log_info(logger,"Ejecutando: %s\n",parametros->programa);
 
-	//Esto lo voy a poner en un .c aparte que cree algun tipo de estructura serializada para despues pasarle al comunicacion con nucleo
+	//Hay que decidir si mandamos el programa asi como esta o lo pasamos por el parcer primero
 	if((fp=fopen(parametros->programa,"r"))==NULL){
 		log_error(logger,"Error al abrir el programa %s",parametros->programa);
 		return EXIT_FAILURE;
