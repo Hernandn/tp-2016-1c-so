@@ -5,9 +5,16 @@
  *      Author: hernan
  */
 
-#include <stdbool.h>
+
 #ifndef LOG_LOGGER_H_
 #define LOG_LOGGER_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <commons/log.h>
+#include <commons/string.h>
 
 //Campos en archivo de configuracion
 #define LOG_LEVEL "LOG_LEVEL"

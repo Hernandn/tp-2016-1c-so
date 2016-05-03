@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <commons/config.h>
-#include <commons/log.h>
+#include <mllibs/log/logger.h>
 #include <string.h>
 
 //CONF_CONSOLA es una variable de entorno definida con el path absoluto al archivo de configuracion default
@@ -34,9 +34,9 @@ typedef struct Parameters{
 } Parameters;
 
 void mostrar_ayuda();
-void argumento_invalido(char*, t_log* logger);
+void argumento_invalido(char*);
 void liberar_parametros(Parameters*);
-Configuration* configurar (char*, t_log* logger);
-Parameters* interpretar_parametros(int, char*[], t_log*);
+Configuration* configurar (char*);
+Parameters* interpretar_parametros(int, char*[]);
 
 #endif /* CONFIGURATION_H_ */
