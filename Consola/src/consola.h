@@ -10,9 +10,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>	//Si no lo pongo me tira error en la libreria package ¿Esta bien eso?
 #include <mllibs/sockets/package.h>
-#include <commons/log.h>
+#include <mllibs/log/logger.h>
 #include "configuration.h"
 
 //codigos de operaciones de la Consola
@@ -23,8 +22,8 @@
 //---------------------
 
 //prototipos de funciones
-void handshake(Package* package,int serverSocket);
-void comunicacionConNucleo(Configuration* config, t_log* logger);
-void iniciarProgramaAnsisop(Package* package,int serverSocket);
+void handshake(Package* ,int);
+void comunicacionConNucleo(Configuration*);
+void iniciarProgramaAnsisop(Package* ,int);
 
 #endif /* CONSOLA_H_ */

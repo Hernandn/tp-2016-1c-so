@@ -6,21 +6,22 @@
  */
 
 #include "configuration.h"
-#include "string.h"
 
-Configuration* configurar(char* archConf,t_log* logger){
+Configuration* configurar(char* archConf){
 
 	Configuration* config = malloc(sizeof(Configuration));
 
 	t_config* nConfig = config_create(archConf);
 	if(nConfig==NULL){
-		log_error(logger,"No se encontro el archivo de configuracion en: %s",archConf);
+		logError("No se encontro el archivo de configuracion en: %s",archConf);
 		exit (EXIT_FAILURE);
 	}
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
-	printf("Puerto de nucleo: %d\n",config->puerto_nucleo);
+	logDebug("Puerto de nucleo: %d\n",config->puerto_nucleo);
 	config->ip_nucleo = strdup(config_get_string_value(nConfig,IP_NUCLEO));
-	printf("Ip de nucleo: %s\n",config->ip_nucleo);
+	logDebug("Ip de nucleo: %s\n",config->ip_nucleo);
+	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));
+	logDebug("Arhivo log: %s",config->log_file);
 
 	config_destroy(nConfig);
 	return config;
@@ -42,17 +43,17 @@ void mostrar_ayuda(){
 	exit (EXIT_SUCCESS);
 }
 
-void argumento_invalido(char* arg, t_log* logger){
+void argumento_invalido(char* arg){
 
 	if (arg != NULL)
-		log_error(logger,"'%s' no es un argumento válido.\n",arg);
+		logError("'%s' no es un argumento válido.\n",arg);
 	else
-		log_error(logger,"Faltan argumentos.\n");
+		logError("Faltan argumentos.\n");
 
 	exit(EXIT_FAILURE);
 }
 
-Parameters* interpretar_parametros(int argc, char* argv[], t_log* logger){
+Parameters* interpretar_parametros(int argc, char* argv[]){
 
 	Parameters* parametros = malloc(sizeof(Parameters));
 	parametros->config = NULL;
@@ -89,7 +90,7 @@ Parameters* interpretar_parametros(int argc, char* argv[], t_log* logger){
 			//Si el argumento empieza con "-" y su tamaño es 2 tiene que ser una opcion
 			switch(*(argv[i]+1)){
 				case 'c':
-					parametros->config = configurar(argv[++i], logger);
+					parametros->config = configurar(argv[++i]);
 					break;
 				case 'f':
 					parametros->programa = (argv[++i]);
@@ -99,12 +100,12 @@ Parameters* interpretar_parametros(int argc, char* argv[], t_log* logger){
 					break;
 				default:
 					//Si no es ninguno de los ateriores el argumento es invalido
-					argumento_invalido(argv[i], logger);
+					argumento_invalido(argv[i]);
 			}
 		} else {
 			//En caso contrario se asume que es el path del programa o del archivo de configuracion en ese orden.
 			if(parametros->programa == NULL) parametros->programa = argv[i];
-			else if(parametros->config == NULL) parametros->config = configurar(argv[i], logger);
+			else if(parametros->config == NULL) parametros->config = configurar(argv[i]);
 		}
 	}
 
@@ -112,9 +113,9 @@ Parameters* interpretar_parametros(int argc, char* argv[], t_log* logger){
 	if(parametros->config == NULL){
 		if(arch_conf_default == NULL){
 			liberar_parametros(parametros);
-			argumento_invalido(NULL,logger);
+			argumento_invalido(NULL);
 		}
-		parametros->config = configurar(arch_conf_default, logger);
+		parametros->config = configurar(arch_conf_default);
 	}
 
 	return parametros;
@@ -126,6 +127,9 @@ void liberar_parametros(Parameters* parametros){
 		if(parametros->config != NULL){
 			if(parametros->config->ip_nucleo != NULL){
 				free(parametros->config->ip_nucleo);
+			}
+			if(parametros->config->log_file != NULL){
+				free(parametros->config->log_file);
 			}
 			free(parametros->config);
 		}

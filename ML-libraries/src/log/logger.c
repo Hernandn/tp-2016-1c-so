@@ -5,11 +5,7 @@
  *      Author: hernan
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <commons/log.h>
-#include <commons/string.h>
+#include "logger.h"
 
 pthread_mutex_t logMutex;
 t_log* logger;

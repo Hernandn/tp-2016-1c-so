@@ -5,10 +5,6 @@
  *      Author: hernan
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <commons/config.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/errno.h>
@@ -18,13 +14,12 @@
 #include <unistd.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
-#include <commons/log.h>
 #include "configuration.h"
 #include "consola.h"
 
-void comunicacionConNucleo(Configuration* config, t_log* logger){
+void comunicacionConNucleo(Configuration* config){
 
-	log_debug(logger, "Iniciando comunicacion con Nucleo.");
+	logDebug("Iniciando comunicacion con Nucleo.");
 
 	int resp;
 	int socket;
@@ -39,22 +34,22 @@ void comunicacionConNucleo(Configuration* config, t_log* logger){
 			exit(-1);
 	}
 
-	log_info(logger,"Soy la consola %d\n",buffer);
+	logInfo("Soy la consola %d\n",buffer);
 
 	Package package;
 
 	//handshake con Nucleo
-	log_debug(logger, "Iniciando Handshake con Nucleo.");
+	logDebug("Iniciando Handshake con Nucleo.");
 	handshake(&package,socket);
 
 	//iniciar programa
-	log_debug(logger, "Iniciando programa AnSISOP.");
+	logDebug("Iniciando programa AnSISOP.");
 	iniciarProgramaAnsisop(&package,socket);
 
 	//simular ejecucion de programa
 	while (1)
 	{
-		log_debug(logger, "Enviando mensaje al Nucleo.");
+		logDebug("Enviando mensaje al Nucleo.");
 		fillPackage(&package,ANSISOP_PROGRAM,"20,200,64");
 
 		char* serializedPkg = serializarMensaje(&package);

@@ -20,11 +20,13 @@
 //Necesario para interpretar el archivo de configuracion
 #define IP_NUCLEO "IP_NUCLEO"
 #define PUERTO_NUCLEO "PUERTO_NUCLEO"
+#define LOG_FILE "LOG_FILE"
 
 //Estructura de configuracion para coneccion por socket al nucleo
 typedef struct Configuration{
 	int puerto_nucleo;
 	char* ip_nucleo;
+	char* log_file;
 } Configuration;
 
 //Estructura de los parametros de entrada del proceso Consola
@@ -34,9 +36,9 @@ typedef struct Parameters{
 } Parameters;
 
 void mostrar_ayuda();
-void argumento_invalido(char*, t_log* logger);
+void argumento_invalido(char*);
 void liberar_parametros(Parameters*);
-Configuration* configurar (char*, t_log* logger);
-Parameters* interpretar_parametros(int, char*[], t_log*);
+Configuration* configurar (char*);
+Parameters* interpretar_parametros(int, char*[]);
 
 #endif /* CONFIGURATION_H_ */

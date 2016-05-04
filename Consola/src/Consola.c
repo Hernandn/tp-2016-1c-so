@@ -15,24 +15,29 @@ int main(int argc, char* argv[]){
 	Parameters* parametros;
 	FILE* fp;
 
-	//Crear el logger
-	t_log* logger = log_create("consola.log","ELESTAC",true, LOG_LEVEL_DEBUG);
+	initLogMutex("consola.log","ELESTAC",true,LOG_LEVEL_DEBUG);
 
-	//Obtener parametros
-	parametros = interpretar_parametros(argc, argv, logger);
+	//Cargo la configuracion
+	parametros = interpretar_parametros(argc, argv);
 
-	log_info(logger,"Consola iniciada");
+	//Si hay un archivo log por configuracion uso el nuevo
+	if(strlen(parametros->config->log_file) != 0){
+		logDestroy();
+		initLogMutex(parametros->config->log_file,"ELESTAC",true,LOG_LEVEL_DEBUG);
+	}
+
+	logInfo("Consola iniciada");
 
 	if(parametros->programa == NULL){
-		log_debug(logger,"No fue espesificado un programa, en este momento la consola deberia permitir usar linea de comandos para acceder al archivo");
+		logDebug("No fue espesificado un programa, en este momento la consola deberia permitir usar linea de comandos para acceder al archivo");
 		return EXIT_FAILURE;
 	}
 
-	log_info(logger,"Ejecutando: %s\n",parametros->programa);
+	logInfo("Ejecutando: %s\n",parametros->programa);
 
 	//Hay que decidir si mandamos el programa asi como esta o lo pasamos por el parcer primero
 	if((fp=fopen(parametros->programa,"r"))==NULL){
-		log_error(logger,"Error al abrir el programa %s",parametros->programa);
+		logError("Error al abrir el programa %s",parametros->programa);
 		return EXIT_FAILURE;
 	}
 
@@ -41,15 +46,15 @@ int main(int argc, char* argv[]){
 	}
 	//----------------------------------------------------------------------------------------------------------------------------/
 
-	comunicacionConNucleo(parametros->config,logger);
+	comunicacionConNucleo(parametros->config);
 
-	log_info(logger,"Fin programa\n");
+	logInfo("Fin programa\n");
 
 	//Libero la memoria
 	liberar_parametros(parametros);
 
 	//Cierro el logger
-	log_destroy(logger);
+	logDestroy();
 
 	//Cierro el archivo ansisop
 	fclose(fp);
