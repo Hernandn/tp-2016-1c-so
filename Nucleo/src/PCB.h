@@ -33,6 +33,7 @@ typedef struct PCB {
 	ParCodigo* codeIndex;		//indice de codigo
 	int* tagIndex;		//indice de etiquetas
 	int* stackIndex;		//indice del stack
+	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
 } PCB;
 
 
@@ -62,15 +63,23 @@ void sendToEXEC(PCB* pcb, Estados* estados);
 void sendToBLOCK(PCB* pcb, Estados* estados);
 void sendToEXIT(PCB* pcb, Estados* estados);
 void sendFromEXECtoREADY(Estados* estados, int pid);
+void abortFromREADY(Estados* estados,int index);
+void abortFromBLOCK(Estados* estados,int index);
+void abortFromNEW(Estados* estados,int index);
+void abortFromEXEC(Estados* estados,int pid);
 PCB* removeFromEXEC(Estados* estados, int pid);
 PCB* getFromEXEC(Estados* estados, int pid);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU);
 void switchProcess(Estados* estados, int pid, int socketCPU);
+void abortProcess(Estados* estados, int pid, int socketCPU);
 void continueExec(int socketCPU,int pid);
 void startExec(Estados* estados, int socketCPU);
 void informarCPU(int socketCPU, int accion, int pid);
 void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador);
+void finalizarPrograma(Estados* estados, int consolaFD);
+bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD);
+void findAndExitPCBexecuting(Estados* estados, int consolaFD);
 void informarPlanificador(int socketPlanificador, int accion, int pid);
 
 #endif /* PCB_H_ */

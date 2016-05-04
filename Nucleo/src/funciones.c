@@ -187,6 +187,7 @@ void handleConsolas(void* arguments){
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
 					logInfo("Consola %d ha cerrado la conexión.", i+1);
+					finalizarPrograma(estados,socketCliente[i]);
 					socketCliente[i] = -1;
 				}
 			}
@@ -430,7 +431,7 @@ void analizarMensajeCPU(int socketCPU , Package package, arg_struct *args){
 		enviarMensaje(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
 	} else if(package.msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
-		quantumFinishedCallback(args->estados,atoi(package.message),args->config->quantum_sleep,socketCPU);
+		quantumFinishedCallback(args->estados,atoi(package.message),args->config->quantum,socketCPU);
 	} else if(package.msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);

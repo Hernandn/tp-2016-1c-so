@@ -27,6 +27,7 @@ PCB* buildNewPCB(int consolaFD){
 	new->programCounter = 2;	//ejemplo
 	new->pagesQty = 10;			//ejemplo
 	new->executedQuantums = 0;
+	new->consolaActiva = true;
 	logTrace("Creado PCB [PID:%d, ConsolaFD:%d, QuantumsExec:%d]",new->processID,new->consolaFD,new->executedQuantums);
 	return new;
 }
@@ -98,6 +99,30 @@ void sendFromEXECtoREADY(Estados* estados, int pid){
 	}
 }
 
+void abortFromREADY(Estados* estados,int index){
+	PCB* pcb = list_remove(estados->ready->elements,index);
+	logTrace("Plan: PCB:%d / READY -> abort",pcb->processID);
+	sendToEXIT(pcb,estados);
+}
+
+void abortFromBLOCK(Estados* estados,int index){
+	PCB* pcb = list_remove(estados->block->elements,index);
+	logTrace("Plan: PCB:%d / BLOCK -> abort",pcb->processID);
+	sendToEXIT(pcb,estados);
+}
+
+void abortFromNEW(Estados* estados,int index){
+	PCB* pcb = list_remove(estados->new->elements,index);
+	logTrace("Plan: PCB:%d / NEW -> abort",pcb->processID);
+	sendToEXIT(pcb,estados);
+}
+
+void abortFromEXEC(Estados* estados,int pid){
+	PCB* pcb = removeFromEXEC(estados,pid);
+	logTrace("Plan: PCB:%d / EXEC -> abort",pcb->processID);
+	sendToEXIT(pcb,estados);
+}
+
 PCB* removeFromEXEC(Estados* estados, int pid){
 	int i;
 	t_list* enEjecucion = estados->execute;
@@ -139,11 +164,19 @@ int addQuantumToExecProcess(PCB* proceso, int quantum){
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
-		//si se le terminaron los quantums al proceso
-		if(addQuantumToExecProcess(proceso,quantum)<=0){
-			switchProcess(estados,pid,socketCPU);
+		if(proceso->consolaActiva){
+			//si se le terminaron los quantums al proceso
+			if(addQuantumToExecProcess(proceso,quantum)<=0){
+				proceso->executedQuantums=0;//reinicio los quantums ejecutados
+				switchProcess(estados,pid,socketCPU);
+				sendFromEXECtoREADY(estados,pid);
+			} else {
+				continueExec(socketCPU,pid);
+			}
 		} else {
-			continueExec(socketCPU,pid);
+			//entra por aca si la consola cerro la conexion con el Nucleo
+			logTrace("Consola estaba inactiva.");
+			abortProcess(estados,pid,socketCPU);
 		}
 	}
 }
@@ -151,6 +184,11 @@ void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketC
 void switchProcess(Estados* estados, int pid, int socketCPU){
 	sendFromEXECtoREADY(estados,pid);
 	logTrace("Informando CPU [Switch process]");
+	informarCPU(socketCPU,ABORT_EXECUTION,pid);
+}
+
+void abortProcess(Estados* estados, int pid, int socketCPU){
+	abortFromEXEC(estados,pid);
 	informarCPU(socketCPU,ABORT_EXECUTION,pid);
 }
 
@@ -183,6 +221,63 @@ void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador){
 	sendToREADY(nuevo,estados);
 	logTrace("Informando Planificador [Program READY]");
 	informarPlanificador(socketPlanificador,PROGRAM_READY,nuevo->processID);
+}
+
+void finalizarPrograma(Estados* estados, int consolaFD){
+	logTrace("Finalizando Programa Consola");
+	//primero lo busca en los estados distintos de EXEC(ejecutandose)
+	bool encontrado = findAndExitPCBnotExecuting(estados,consolaFD);
+	//si no lo encuentra, lo busca en la lista de EXEC
+	if(!encontrado){
+		findAndExitPCBexecuting(estados,consolaFD);
+	}
+}
+
+bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD){
+	int i;
+	PCB* pcb;
+	//busco en ready
+	for(i=0; i<estados->ready->elements->elements_count; i++){
+		pcb = list_get(estados->ready->elements,i);
+		if(pcb->consolaFD==consolaFD){
+			pcb->consolaActiva = false;
+			abortFromREADY(estados,i);
+			return true;
+		}
+	}
+	//busco en block
+	for(i=0; i<estados->block->elements->elements_count; i++){
+		pcb = list_get(estados->block->elements,i);
+		if(pcb->consolaFD==consolaFD){
+			pcb->consolaActiva = false;
+			abortFromBLOCK(estados,i);
+			return true;
+		}
+	}
+	//busco en new
+	for(i=0; i<estados->new->elements->elements_count; i++){
+		pcb = list_get(estados->new->elements,i);
+		if(pcb->consolaFD==consolaFD){
+			pcb->consolaActiva = false;
+			abortFromNEW(estados,i);
+			return true;
+		}
+	}
+	return false;
+}
+
+void findAndExitPCBexecuting(Estados* estados, int consolaFD){
+	int i;
+	PCB* pcb;
+	//busco en EXEC
+	for(i=0; i<estados->execute->elements_count; i++){
+		pcb = list_get(estados->execute,i);
+		if(pcb->consolaFD==consolaFD){
+			pcb->consolaActiva = false;
+			//otro metodo se encarga de validar este flag
+			//para abortarlo cuando termine la ejecucion actual
+		}
+	}
 }
 
 void informarPlanificador(int socketPlanificador, int accion, int pid){
