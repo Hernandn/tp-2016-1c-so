@@ -15,15 +15,16 @@ int main(int argc, char* argv[]){
 	Parameters* parametros;
 	FILE* fp;
 
-	//Crear el logger
-	t_log* logger = log_create("consola.log","ELESTAC",true, LOG_LEVEL_DEBUG);
+	initLogMutex("consola.log","ELESTAC",true,LOG_LEVEL_DEBUG);
 
-	//Obtener parametros
+	//Cargo la configuracion
 	parametros = interpretar_parametros(argc, argv);
-	//Cierro el logger
-	log_destroy(logger);
 
-	initLogMutex("consola2.log","ELESTAC",true,LOG_LEVEL_DEBUG);
+	//Si hay un archivo log por configuracion uso el nuevo
+	if(strlen(parametros->config->log_file) != 0){
+		logDestroy();
+		initLogMutex(parametros->config->log_file,"ELESTAC",true,LOG_LEVEL_DEBUG);
+	}
 
 	logInfo("Consola iniciada");
 
@@ -51,6 +52,9 @@ int main(int argc, char* argv[]){
 
 	//Libero la memoria
 	liberar_parametros(parametros);
+
+	//Cierro el logger
+	logDestroy();
 
 	//Cierro el archivo ansisop
 	fclose(fp);

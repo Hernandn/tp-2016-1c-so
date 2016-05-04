@@ -8,6 +8,8 @@
 #ifndef SOCKETS_PACKAGE_H_
 #define SOCKETS_PACKAGE_H_
 
+#include <stdint.h>
+
 #define MAX_PACKAGE_SIZE 1024	//El servidor no admitira paquetes de mas de 1024 bytes
 #define MAX_MESSAGE_SIZE 300
 

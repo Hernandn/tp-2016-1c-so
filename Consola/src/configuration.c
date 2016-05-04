@@ -17,9 +17,11 @@ Configuration* configurar(char* archConf){
 		exit (EXIT_FAILURE);
 	}
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
-	printf("Puerto de nucleo: %d\n",config->puerto_nucleo);
+	logDebug("Puerto de nucleo: %d\n",config->puerto_nucleo);
 	config->ip_nucleo = strdup(config_get_string_value(nConfig,IP_NUCLEO));
-	printf("Ip de nucleo: %s\n",config->ip_nucleo);
+	logDebug("Ip de nucleo: %s\n",config->ip_nucleo);
+	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));
+	logDebug("Arhivo log: %s",config->log_file);
 
 	config_destroy(nConfig);
 	return config;
@@ -125,6 +127,9 @@ void liberar_parametros(Parameters* parametros){
 		if(parametros->config != NULL){
 			if(parametros->config->ip_nucleo != NULL){
 				free(parametros->config->ip_nucleo);
+			}
+			if(parametros->config->log_file != NULL){
+				free(parametros->config->log_file);
 			}
 			free(parametros->config);
 		}

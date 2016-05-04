@@ -10,7 +10,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <netdb.h>	//Si no lo pongo me tira error en la libreria package ¿Esta bien eso?
 #include <mllibs/sockets/package.h>
 #include <mllibs/log/logger.h>
 #include "configuration.h"
