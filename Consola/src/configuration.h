@@ -13,6 +13,7 @@
 #include <commons/config.h>
 #include <commons/log.h>
 #include <string.h>
+#include <mllibs/log/logger.h>
 
 //CONF_CONSOLA es una variable de entorno definida con el path absoluto al archivo de configuracion default
 #define CONSOLA_CONFIG_PATH "CONF_CONSOLA"
