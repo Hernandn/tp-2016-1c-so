@@ -10,9 +10,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <commons/config.h>
-#include <commons/log.h>
 #include <string.h>
+#include <commons/config.h>
 #include <mllibs/log/logger.h>
 
 //CONF_CONSOLA es una variable de entorno definida con el path absoluto al archivo de configuracion default
@@ -21,7 +20,6 @@
 //Necesario para interpretar el archivo de configuracion
 #define IP_NUCLEO "IP_NUCLEO"
 #define PUERTO_NUCLEO "PUERTO_NUCLEO"
-#define LOG_FILE "LOG_FILE" //@TODO: Si lo saco no me toma el de logger.h, no se porque.
 
 //Estructura de configuracion para coneccion por socket al nucleo
 typedef struct Configuration{

@@ -5,17 +5,7 @@
  *      Author: hernan
  */
 
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/errno.h>
-#include <netinet/in.h>
-#include <sys/un.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <mllibs/sockets/client.h>
-#include <mllibs/sockets/package.h>
-#include "configuration.h"
-#include "consola.h"
+#include "funciones.h"
 
 void comunicacionConNucleo(Configuration* config, char* arch_programa){
 
@@ -85,14 +75,17 @@ char* obtener_programa(char* arch_programa){
 
 	logDebug("Leyendo programa ansisop %s\n",arch_programa);
 
+	//Obtengo el tamanio del archivo
 	fseek(fp, 0, SEEK_END);
 	fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
+	//Cargo el archivo en el buffer
 	programa = malloc(fsize + 1);
 	fread(programa, fsize, 1, fp);
 	fclose(fp);
 
+	//Agrego el caracter de fin al buffer
 	programa[fsize] = 0;
 
 	logDebug("Programa leido: \n%s",programa);

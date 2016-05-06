@@ -125,12 +125,8 @@ void liberar_parametros(Parameters* parametros){
 	//Libero la memoria tomada por la estructura de parametros interpretados
 	if(parametros != NULL){
 		if(parametros->config != NULL){
-			if(parametros->config->ip_nucleo != NULL){
-				free(parametros->config->ip_nucleo);
-			}
-			if(parametros->config->log_file != NULL){
-				free(parametros->config->log_file);
-			}
+			free(parametros->config->ip_nucleo);
+			free(parametros->config->log_file);
 			free(parametros->config);
 		}
 		free(parametros);
