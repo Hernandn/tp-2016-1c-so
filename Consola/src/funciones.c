@@ -17,7 +17,7 @@
 #include "configuration.h"
 #include "consola.h"
 
-void comunicacionConNucleo(Configuration* config){
+void comunicacionConNucleo(Configuration* config, char* arch_programa){
 
 	logDebug("Iniciando comunicacion con Nucleo.");
 
@@ -44,7 +44,7 @@ void comunicacionConNucleo(Configuration* config){
 
 	//iniciar programa
 	logDebug("Iniciando programa AnSISOP.");
-	iniciarProgramaAnsisop(&package,socket);
+	iniciarProgramaAnsisop(&package,socket,arch_programa);
 
 	//simular ejecucion de programa
 	while (1)
@@ -67,8 +67,35 @@ void handshake(Package* package,int serverSocket){
 	escribirSocketClient(serverSocket, (char *)serializedPkg, getLongitudPackage(package));
 }
 
-void iniciarProgramaAnsisop(Package* package,int serverSocket){
-	fillPackage(package,NEW_ANSISOP_PROGRAM,"2000");
+void iniciarProgramaAnsisop(Package* package,int serverSocket,char* arch_programa){
+	fillPackage(package,NEW_ANSISOP_PROGRAM,obtener_programa(arch_programa));
 	char* serializedPkg = serializarMensaje(package);
 	escribirSocketClient(serverSocket, (char *)serializedPkg, getLongitudPackage(package));
+}
+
+char* obtener_programa(char* arch_programa){
+	FILE *fp;
+	char* programa;
+	long fsize;
+
+	if((fp=fopen(arch_programa,"r"))==NULL){
+		logError("Error al abrir el programa %s",arch_programa);
+		exit (EXIT_FAILURE);
+	}
+
+	logDebug("Leyendo programa ansisop %s\n",arch_programa);
+
+	fseek(fp, 0, SEEK_END);
+	fsize = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	programa = malloc(fsize + 1);
+	fread(programa, fsize, 1, fp);
+	fclose(fp);
+
+	programa[fsize] = 0;
+
+	logDebug("Programa leido: \n%s",programa);
+
+	return programa;
 }

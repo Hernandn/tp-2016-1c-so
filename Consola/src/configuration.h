@@ -21,7 +21,7 @@
 //Necesario para interpretar el archivo de configuracion
 #define IP_NUCLEO "IP_NUCLEO"
 #define PUERTO_NUCLEO "PUERTO_NUCLEO"
-#define LOG_FILE "LOG_FILE"
+#define LOG_FILE "LOG_FILE" //@TODO: Si lo saco no me toma el de logger.h, no se porque.
 
 //Estructura de configuracion para coneccion por socket al nucleo
 typedef struct Configuration{

@@ -13,15 +13,14 @@
 int main(int argc, char* argv[]){
 
 	Parameters* parametros;
-	FILE* fp;
 
-	initLogMutex("consola.log","ELESTAC",true,LOG_LEVEL_DEBUG);
+	initLogMutex(DEFAULT_LOG_FILE,"ELESTAC",true,LOG_LEVEL_DEBUG);
 
 	//Cargo la configuracion
 	parametros = interpretar_parametros(argc, argv);
 
 	//Si hay un archivo log por configuracion uso el nuevo
-	if(strlen(parametros->config->log_file) != 0){
+	if(strlen(parametros->config->log_file) != 0 && !strcmp(parametros->config->log_file,DEFAULT_LOG_FILE)){
 		logDestroy();
 		initLogMutex(parametros->config->log_file,"ELESTAC",true,LOG_LEVEL_DEBUG);
 	}
@@ -35,18 +34,7 @@ int main(int argc, char* argv[]){
 
 	logInfo("Ejecutando: %s\n",parametros->programa);
 
-	//Hay que decidir si mandamos el programa asi como esta o lo pasamos por el parcer primero
-	if((fp=fopen(parametros->programa,"r"))==NULL){
-		logError("Error al abrir el programa %s",parametros->programa);
-		return EXIT_FAILURE;
-	}
-
-	while(!feof(fp)){
-		printf("%c",fgetc(fp));
-	}
-	//----------------------------------------------------------------------------------------------------------------------------/
-
-	comunicacionConNucleo(parametros->config);
+	comunicacionConNucleo(parametros->config, parametros->programa);
 
 	logInfo("Fin programa\n");
 
@@ -55,9 +43,6 @@ int main(int argc, char* argv[]){
 
 	//Cierro el logger
 	logDestroy();
-
-	//Cierro el archivo ansisop
-	fclose(fp);
 
 	return EXIT_SUCCESS;
 }

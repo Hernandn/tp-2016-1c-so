@@ -14,6 +14,7 @@
 #include <mllibs/log/logger.h>
 #include "configuration.h"
 
+#define DEFAULT_LOG_FILE "consola.log"
 //codigos de operaciones de la Consola
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas
 #define NEW_ANSISOP_PROGRAM 10
@@ -22,8 +23,9 @@
 //---------------------
 
 //prototipos de funciones
-void handshake(Package* ,int);
-void comunicacionConNucleo(Configuration*);
-void iniciarProgramaAnsisop(Package* ,int);
+void handshake(Package*, int);
+void comunicacionConNucleo(Configuration*, char*);
+void iniciarProgramaAnsisop(Package* , int, char*);
+char* obtener_programa(char*);
 
 #endif /* CONSOLA_H_ */
