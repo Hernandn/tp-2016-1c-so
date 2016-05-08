@@ -18,18 +18,19 @@ typedef struct tableRow {
 	int page;
 }tableRow;
 
+void inicializarSwap(Configuration* config);
 t_bitarray* crearBitMap(int cantidadPaginas);
-int getFirstAvailableBlock(FILE* file, t_bitarray* bitMap, int cantPaginas);
-void escribirPaginaEnFrame(FILE* file, t_bitarray* bitMap, int frame, pagina pag, int sizePagina);
-void escribirPaginasEnFrame(FILE* file, t_bitarray* bitMap, int frame, pagina* pag, int cantPaginas, int sizePagina);
-int getFileSize(FILE* file, int sizePagina);
-void cerrarArchivoSwap(FILE* file);
-pagina leerPaginaFromFrame(FILE* file, int frame, int sizePagina);
-void setPaginasOcupadas(t_bitarray* bitMap, int offset, int cantidad);
+int getFirstAvailableBlock(int cantPaginas);
+void escribirPaginaEnFrame(int frame, pagina pag, int sizePagina);
+void escribirPaginasEnFrame(int frame, pagina* pag, int cantPaginas, int sizePagina);
+int getFileSize(int sizePagina);
+void cerrarArchivoSwap();
+pagina leerPaginaFromFrame(int frame, int sizePagina);
 FILE* crearArchivoSwap(char* nombre);
 tableRow* crearTablaDePaginas(int cantidadFrames);
-void destroyTabla(tableRow* table);
+void destroyTabla();
 void ejemploPagina();
+t_bitarray* getBitMap();
 
 
 #endif /* FILEHANDLER_H_ */

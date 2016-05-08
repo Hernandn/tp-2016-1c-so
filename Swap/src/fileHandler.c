@@ -7,6 +7,16 @@
 
 #include "fileHandler.h"
 
+t_bitarray* bitMap;
+tableRow* tabla;
+FILE* file;
+
+void inicializarSwap(Configuration* config){
+	bitMap = crearBitMap(config->cantidad_paginas);
+	tabla = crearTablaDePaginas(config->cantidad_paginas);
+	file = crearArchivoSwap(config->nombre_swap);
+}
+
 t_bitarray* crearBitMap(int cantidadPaginas){
 	char* bits = malloc(sizeof(char)*cantidadPaginas);
 	int i;
@@ -17,7 +27,7 @@ t_bitarray* crearBitMap(int cantidadPaginas){
 	return bitArray;
 }
 
-int getFirstAvailableBlock(FILE* file, t_bitarray* bitMap, int cantPaginas){
+int getFirstAvailableBlock(int cantPaginas){
 	//total(espacio libre fragmentado), cont(contador de espacio contiguo)
 	int total = 0, cont = 0, i;
 
@@ -46,27 +56,20 @@ int getFirstAvailableBlock(FILE* file, t_bitarray* bitMap, int cantPaginas){
 	return retorna;
 }
 
-void escribirPaginaEnFrame(FILE* file, t_bitarray* bitMap, int frame, pagina pag, int sizePagina){
+void escribirPaginaEnFrame(int frame, pagina pag, int sizePagina){
 	fseek(file,frame*sizePagina,SEEK_SET);
 	fwrite(pag,sizePagina,1,file);
 	bitarray_set_bit(bitMap,frame);
 }
 
-void escribirPaginasEnFrame(FILE* file, t_bitarray* bitMap, int frame, pagina* pag, int cantPaginas, int sizePagina){
+void escribirPaginasEnFrame(int frame, pagina* pag, int cantPaginas, int sizePagina){
 	int i;
 	for(i=0; i<cantPaginas; i++){
-		escribirPaginaEnFrame(file,bitMap,frame+i,pag[i],sizePagina);
+		escribirPaginaEnFrame(frame+i,pag[i],sizePagina);
 	}
 }
 
-void setPaginasOcupadas(t_bitarray* bitMap, int offset, int cantidad){
-	int i;
-	for(i=offset; i<(offset+cantidad); i++){
-		bitarray_set_bit(bitMap,i);
-	}
-}
-
-int getFileSize(FILE* file, int sizePagina){
+int getFileSize(int sizePagina){
 	fseek(file, 0, SEEK_END); // seek to end of file
 	int size = ftell(file)/sizePagina; // get current file pointer
 	fseek(file, 0, SEEK_SET);
@@ -74,12 +77,12 @@ int getFileSize(FILE* file, int sizePagina){
 }
 
 
-void cerrarArchivoSwap(FILE* file){
+void cerrarArchivoSwap(){
 	fclose(file);
 }
 
 
-pagina leerPaginaFromFrame(FILE* file, int frame, int sizePagina){
+pagina leerPaginaFromFrame(int frame, int sizePagina){
 	pagina pag = malloc(sizeof(char)*sizePagina);
 	fseek(file,frame*sizePagina,SEEK_SET);
 	fread(pag,sizePagina,1,file);
@@ -96,8 +99,8 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 	return table;
 }
 
-void destroyTabla(tableRow* table){
-	free(table);
+void destroyTabla(){
+	free(tabla);
 }
 
 //esta funcion esta solo para ejemplificar como se maneja la pagina
@@ -109,4 +112,8 @@ void ejemploPagina(){
 	b+=4;
 	b = 9;
 	printf("numero %d\n",b);
+}
+
+t_bitarray* getBitMap(){
+	return bitMap;
 }

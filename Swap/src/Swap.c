@@ -19,9 +19,8 @@ int main(void) {
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
 
-	t_bitarray* bitMap = crearBitMap(config->cantidad_paginas);
-	tableRow* tabla = crearTablaDePaginas(config->cantidad_paginas);
-	FILE* file = crearArchivoSwap(config->nombre_swap);
+	inicializarSwap(config);
+	t_bitarray* bitMap = getBitMap();
 
 	int cantidadPaginas = 4;
 
@@ -32,33 +31,34 @@ int main(void) {
 	paginas[1] = escribir("b",config->size_pagina);
 	paginas[2] = escribir("c",config->size_pagina);
 	paginas[3] = escribir("d",config->size_pagina);
-	int j;
-	for(j=0; j<cantidadPaginas; j++){
-		printf("%s\n",paginas[j]);
-	}
 
 	//simulo que estan ocupadas (fragmentacion)
 	bitarray_set_bit(bitMap,3);
 	bitarray_set_bit(bitMap,6);
 	bitarray_set_bit(bitMap,9);
 
-	int espacio = getFirstAvailableBlock(file,bitMap,cantidadPaginas);
-	printf("\nespacio %d\n",espacio);
-	escribirPaginasEnFrame(file,bitMap,espacio,paginas,cantidadPaginas,config->size_pagina);
+	int espacio = getFirstAvailableBlock(cantidadPaginas);
+	printf("\nPrimer espacio libre: %d\n",espacio);
+	escribirPaginasEnFrame(espacio,paginas,cantidadPaginas,config->size_pagina);
 
 	pagina pg = escribir("z",config->size_pagina);
-	escribirPaginaEnFrame(file,bitMap,8,pg,config->size_pagina);
+	escribirPaginaEnFrame(8,pg,config->size_pagina);
 
-	pagina page2 = leerPaginaFromFrame(file,11,config->size_pagina);
+	pagina* pg1 = malloc(sizeof(pagina));
+	pg1[0] = escribir("g",config->size_pagina);
+	escribirPaginasEnFrame(2,pg1,1,config->size_pagina);
+
+	pagina page2 = leerPaginaFromFrame(2,config->size_pagina);
 	printf("\nPagina leida\n%s\n",page2);
 
 
-	printf("Posiciones bitmap\n");
+	printf("\nPosiciones bitmap\n");
+	printf("Pos:\t");
 	int i;
 	for(i=0; i<bitMap->size; i++){
 		printf("%d ",i);
 	}
-	printf("\n");
+	printf("\nOcup:\t");
 	for(i=0; i<bitMap->size; i++){
 		printf("%d ",bitarray_test_bit(bitMap,i));
 		if(i>=10)
@@ -67,12 +67,12 @@ int main(void) {
 			printf(" ");
 	}
 
-	for(j=0; j<cantidadPaginas; j++){
-		free(paginas[j]);
+	for(i=0; i<cantidadPaginas; i++){
+		free(paginas[i]);
 	}
 	free(paginas);
-	destroyTabla(tabla);
-	cerrarArchivoSwap(file);
+	destroyTabla();
+	cerrarArchivoSwap();
 
 	//handleUMCRequests(config);
 
