@@ -12,19 +12,18 @@ tableRow* tabla;
 FILE* file;
 
 void inicializarSwap(Configuration* config){
-	bitMap = crearBitMap(config->cantidad_paginas);
-	tabla = crearTablaDePaginas(config->cantidad_paginas);
-	file = crearArchivoSwap(config->nombre_swap);
+	crearBitMap(config->cantidad_paginas);
+	crearTablaDePaginas(config->cantidad_paginas);
+	crearArchivoSwap(config->nombre_swap);
 }
 
-t_bitarray* crearBitMap(int cantidadPaginas){
+void crearBitMap(int cantidadPaginas){
 	char* bits = malloc(sizeof(char)*cantidadPaginas);
 	int i;
 	for(i=0; i<cantidadPaginas; i++){
 		bits[i]=0;
 	}
-	t_bitarray* bitArray = bitarray_create(bits,cantidadPaginas);
-	return bitArray;
+	bitMap = bitarray_create(bits,cantidadPaginas);
 }
 
 int getFirstAvailableBlock(int cantPaginas){
@@ -62,10 +61,10 @@ void escribirPaginaEnFrame(int frame, pagina pag, int sizePagina){
 	bitarray_set_bit(bitMap,frame);
 }
 
-void escribirPaginasEnFrame(int frame, pagina* pag, int cantPaginas, int sizePagina){
+void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas, int sizePagina){
 	int i;
 	for(i=0; i<cantPaginas; i++){
-		escribirPaginaEnFrame(frame+i,pag[i],sizePagina);
+		escribirPaginaEnFrame(frame+i,paginas[i],sizePagina);
 	}
 }
 
@@ -89,14 +88,17 @@ pagina leerPaginaFromFrame(int frame, int sizePagina){
 	return pag;
 }
 
-FILE* crearArchivoSwap(char* nombre){
-	FILE* f = fopen(nombre,"w+b");
-	return f;
+void crearArchivoSwap(char* nombre){
+	file = fopen(nombre,"w+b");
 }
 
-tableRow* crearTablaDePaginas(int cantidadFrames){
-	tableRow* table = malloc(sizeof(tableRow)*cantidadFrames);
-	return table;
+void crearTablaDePaginas(int cantidadFrames){
+	tabla = malloc(sizeof(tableRow)*cantidadFrames);
+	int i;
+	for(i=0; i<cantidadFrames; i++){
+		tabla[i].pid = -1;
+		tabla[i].page = -1;
+	}
 }
 
 void destroyTabla(){
@@ -117,3 +119,56 @@ void ejemploPagina(){
 t_bitarray* getBitMap(){
 	return bitMap;
 }
+
+tableRow* getTablaDePaginas(){
+	return tabla;
+}
+
+void guardarPrograma(int frame, int pid, int cantPaginas, pagina* paginas, int sizePagina){
+	escribirPaginasEnFrame(frame,paginas,cantPaginas,sizePagina);
+	int i,j=0;
+	for(i=frame; i<(cantPaginas+frame); i++){
+		tabla[i].pid = pid;
+		tabla[i].page = j;
+		j++;
+	}
+}
+
+void eliminarPrograma(int pid, int cantidadPaginas){
+	int i;
+	for(i=0; i<cantidadPaginas; i++){
+		//si encuentra un registro con el mismo processID, hace la baja logica y libera el espacio en el bitmap
+		if(tabla[i].pid==pid){
+			tabla[i].pid=-1;
+			tabla[i].page=-1;
+			bitarray_clean_bit(bitMap,i);
+		}
+	}
+}
+
+int buscarFramePorPagina(int pid, int pagina, int cantPaginas){
+	int i;
+	for(i=0; i<cantPaginas; i++){
+		if(tabla[i].pid==pid && tabla[i].page==pagina){
+			return i;//retorna la posicion en swap (frame)
+		}
+	}
+	return -1;//retorna -1 si no encuentra la pagina del proceso en la tabla
+}
+
+pagina leerPaginaDeProceso(int pid, int paginaNro, int cantPaginas, int sizePagina){
+	int frame = buscarFramePorPagina(pid,paginaNro,cantPaginas);
+	if(frame>=0){
+		return leerPaginaFromFrame(frame,sizePagina);
+	} else {
+		return NULL;
+	}
+}
+
+void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag, int cantPaginas, int sizePagina){
+	int frame = buscarFramePorPagina(pid,paginaNro,cantPaginas);
+	if(frame>=0){
+		escribirPaginaEnFrame(frame,pag,sizePagina);
+	}
+}
+
