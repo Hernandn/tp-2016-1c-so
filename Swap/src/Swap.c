@@ -21,11 +21,12 @@ int main(void) {
 
 	inicializarSwap(config);
 	t_bitarray* bitMap = getBitMap();
+	tableRow* tabla = getTablaDePaginas();
 
+	//Simulo la creacion de un programa
 	int cantidadPaginas = 4;
-
+	int pid = 2;
 	pagina* paginas = malloc(sizeof(pagina)*cantidadPaginas);
-
 
 	paginas[0] = escribir("a",config->size_pagina);
 	paginas[1] = escribir("b",config->size_pagina);
@@ -38,8 +39,8 @@ int main(void) {
 	bitarray_set_bit(bitMap,9);
 
 	int espacio = getFirstAvailableBlock(cantidadPaginas);
-	printf("\nPrimer espacio libre: %d\n",espacio);
-	escribirPaginasEnFrame(espacio,paginas,cantidadPaginas,config->size_pagina);
+	printf("Primer espacio libre: %d\n",espacio);
+	guardarPrograma(espacio,pid,cantidadPaginas,paginas,config->size_pagina);
 
 	pagina pg = escribir("z",config->size_pagina);
 	escribirPaginaEnFrame(8,pg,config->size_pagina);
@@ -48,12 +49,12 @@ int main(void) {
 	pg1[0] = escribir("g",config->size_pagina);
 	escribirPaginasEnFrame(2,pg1,1,config->size_pagina);
 
-	pagina page2 = leerPaginaFromFrame(2,config->size_pagina);
+	pagina page2 = leerPaginaDeProceso(pid,2,config->cantidad_paginas,config->size_pagina);
 	printf("\nPagina leida\n%s\n",page2);
 
-
-	printf("\nPosiciones bitmap\n");
-	printf("Pos:\t");
+	//imprimo en consola el contenido del bitmap
+	printf("\nBitMap\n");
+	printf("Frame:\t");
 	int i;
 	for(i=0; i<bitMap->size; i++){
 		printf("%d ",i);
@@ -67,6 +68,33 @@ int main(void) {
 			printf(" ");
 	}
 
+	//imprimo en consola el contenido de la tabla de paginas
+	printf("\n\nTabla de paginas\n");
+	printf("Frame:\t");
+	for(i=0; i<bitMap->size; i++){
+		printf("%d   ",i);
+	}
+	printf("\nPID:\t");
+	for(i=0; i<bitMap->size; i++){
+		printf("%d  ",tabla[i].pid);
+		if(tabla[i].pid>=0)
+			printf(" ");
+		if(i>=10)
+			printf(" ");
+		if(i>=100)
+			printf(" ");
+	}
+	printf("\nPage:\t");
+	for(i=0; i<bitMap->size; i++){
+		printf("%d  ",tabla[i].page);
+		if(tabla[i].page>=0)
+			printf(" ");
+		if(i>=10)
+			printf(" ");
+		if(i>=100)
+			printf(" ");
+	}
+
 	for(i=0; i<cantidadPaginas; i++){
 		free(paginas[i]);
 	}
@@ -74,13 +102,14 @@ int main(void) {
 	destroyTabla();
 	cerrarArchivoSwap();
 
-	//handleUMCRequests(config);
+	handleUMCRequests(config);
 
 	logDestroy();
 
 	return EXIT_SUCCESS;
 }
 
+//hace un relleno de pagina con la letra pasada en "cad" (para probar)
 pagina escribir(char* cad, int size){
 	pagina page = malloc(sizeof(char)*size);
 	int j;
