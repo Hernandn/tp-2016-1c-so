@@ -8,28 +8,7 @@
  ============================================================================
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
 #include "UMC.h"
-#include "configuration.h"
-#include <mllibs/sockets/server.h>
-#include <mllibs/sockets/package.h>
-#include <commons/config.h>
-#include <unistd.h>
-#include <commons/log.h>
-#include <mllibs/log/logger.h>
-
-#define MAX_CLIENTES 10
-
-
 /*
  * Programa principal.
  * Crea un socket servidor y se mete en un select() a la espera de clientes.
@@ -42,6 +21,8 @@ int main(void) {
 
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
+
+	inicializarUMC(config);
 
 	handleClients(config);
 

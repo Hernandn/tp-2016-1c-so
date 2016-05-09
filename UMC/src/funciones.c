@@ -5,44 +5,10 @@
  *      Author: hernan
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include "UMC.h"
-#include <mllibs/sockets/server.h>
-#include <mllibs/sockets/client.h>
-#include <mllibs/sockets/package.h>
-#include <mllibs/log/logger.h>
-#include "configuration.h"
+#include "funciones.h"
 
-Configuration* configurar(){
-
-	Configuration* config = malloc(sizeof(Configuration));
-
-	t_config* nConfig = config_create(UMC_CONFIG_PATH);
-	if(nConfig==NULL){
-		printf("No se encontro el archivo de configuracion.");
-		exit (1);
-	}
-	config->puerto_swap=config_get_int_value(nConfig,PUERTO_SWAP);
-	config->ip_swap = config_get_string_value(nConfig,IP_SWAP);
-	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
-	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
-	//configuracion de log
-	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
-	config->log_file = config_get_string_value(nConfig,LOG_FILE);
-	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
-	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
-
-	return config;
-}
+memoria memoria_principal;
+tableRow* tabla;
 
 void handleClients(Configuration* config){
 
@@ -167,3 +133,17 @@ int conectarConSwap(Configuration* config){
 	return socket;
 }
 
+void inicializarUMC(Configuration* config){
+
+	logDebug("Inicializando la UMC\n");
+
+	tabla = crearTablaDePaginas(config->cantidad_paginas);
+	memoria_principal=malloc(config->cantidad_paginas*config->size_pagina);
+	logDebug("Creando memoria prinsipal de tamanio %d\n", config->cantidad_paginas*config->size_pagina);
+}
+
+tableRow* crearTablaDePaginas(int cantidadFrames){
+	tableRow* table = malloc(sizeof(tableRow)*cantidadFrames);
+	logDebug("Creando tabla de paginas con %d paginas\n",cantidadFrames);
+	return table;
+}
