@@ -19,8 +19,8 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <mllibs/log/logger.h>
-#include "configuration.h"
 #include "Swap.h"
 
 void handleUMCRequests(Configuration* config){
@@ -79,9 +79,7 @@ void handleUMCRequests(Configuration* config){
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(&package,socketUMC[0]) > 0){
 					logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
-					if(package.msgCode==ALMACENAR_BYTES_PAGINA_SWAP){
-						logDebug("La UMC me solicito el almacenamiento de una nueva pagina.");
-					}
+					analizarMensaje(&package,socketUMC[0],config);
 				}
 				else
 				{
@@ -102,3 +100,21 @@ void handleUMCRequests(Configuration* config){
 			nuevoCliente (socketServidor, socketUMC, &numeroClientes, 2);
 	}
 }
+
+void analizarMensaje(Package* package, int socketUMC, Configuration* config){
+
+	if(package->msgCode==ALMACENAR_PAGINA_SWAP){
+		logDebug("La UMC me solicito el almacenamiento de una nueva pagina.");
+		//escribirPaginaDeProceso(pid,paginaNrom,pagina);
+	} else if(package->msgCode==SOLICITAR_PAGINA_SWAP){
+		char** params = string_split(package->message,",");
+		//param 0: PID , param 1: numero de pagina
+		pagina pag = leerPaginaDeProceso(atoi(params[0]),atoi(params[1]));
+	} else if(package->msgCode==ALMACENAR_NUEVO_PROGRAMA_SWAP){
+		//int frame = getFirstAvailableBlock(cantidadPaginas);
+		//guardarPrograma(frame,pid,cantidadPaginas,paginas);
+	} else if(package->msgCode==ELIMINAR_PROGRAMA_SWAP){
+		eliminarPrograma(atoi(package->message));
+	}
+}
+

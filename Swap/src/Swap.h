@@ -12,9 +12,12 @@
 #include "fileHandler.h"
 
 //operaciones SWAP
-#define SOLICITAR_BYTES_PAGINA_SWAP 20
-#define ALMACENAR_BYTES_PAGINA_SWAP 21
+#define SOLICITAR_PAGINA_SWAP 20
+#define ALMACENAR_PAGINA_SWAP 21
+#define ALMACENAR_NUEVO_PROGRAMA_SWAP 22
+#define ELIMINAR_PROGRAMA_SWAP 23
 
 void handleUMCRequests(Configuration* config);
+void analizarMensaje(Package* package, int socketUMC, Configuration* config);
 
 #endif /* SWAP_H_ */

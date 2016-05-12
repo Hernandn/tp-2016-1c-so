@@ -10,20 +10,22 @@
 t_bitarray* bitMap;
 tableRow* tabla;
 FILE* file;
+Configuration* config;
 
-void inicializarSwap(Configuration* config){
-	crearBitMap(config->cantidad_paginas);
-	crearTablaDePaginas(config->cantidad_paginas);
-	crearArchivoSwap(config->nombre_swap);
+void inicializarSwap(Configuration* conf){
+	config = conf;
+	crearBitMap();
+	crearTablaDePaginas();
+	crearArchivoSwap();
 }
 
-void crearBitMap(int cantidadPaginas){
-	char* bits = malloc(sizeof(char)*cantidadPaginas);
+void crearBitMap(){
+	char* bits = malloc(sizeof(char)*config->cantidad_paginas);
 	int i;
-	for(i=0; i<cantidadPaginas; i++){
+	for(i=0; i<config->cantidad_paginas; i++){
 		bits[i]=0;
 	}
-	bitMap = bitarray_create(bits,cantidadPaginas);
+	bitMap = bitarray_create(bits,config->cantidad_paginas);
 }
 
 int getFirstAvailableBlock(int cantPaginas){
@@ -55,22 +57,22 @@ int getFirstAvailableBlock(int cantPaginas){
 	return retorna;
 }
 
-void escribirPaginaEnFrame(int frame, pagina pag, int sizePagina){
-	fseek(file,frame*sizePagina,SEEK_SET);
-	fwrite(pag,sizePagina,1,file);
+void escribirPaginaEnFrame(int frame, pagina pag){
+	fseek(file,frame*config->size_pagina,SEEK_SET);
+	fwrite(pag,config->size_pagina,1,file);
 	bitarray_set_bit(bitMap,frame);
 }
 
-void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas, int sizePagina){
+void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas){
 	int i;
 	for(i=0; i<cantPaginas; i++){
-		escribirPaginaEnFrame(frame+i,paginas[i],sizePagina);
+		escribirPaginaEnFrame(frame+i,paginas[i]);
 	}
 }
 
-int getFileSize(int sizePagina){
+int getFileSize(){
 	fseek(file, 0, SEEK_END); // seek to end of file
-	int size = ftell(file)/sizePagina; // get current file pointer
+	int size = ftell(file)/config->size_pagina; // get current file pointer
 	fseek(file, 0, SEEK_SET);
 	return size;
 }
@@ -81,21 +83,21 @@ void cerrarArchivoSwap(){
 }
 
 
-pagina leerPaginaFromFrame(int frame, int sizePagina){
-	pagina pag = malloc(sizeof(char)*sizePagina);
-	fseek(file,frame*sizePagina,SEEK_SET);
-	fread(pag,sizePagina,1,file);
+pagina leerPaginaFromFrame(int frame){
+	pagina pag = malloc(sizeof(char)*config->size_pagina);
+	fseek(file,frame*config->size_pagina,SEEK_SET);
+	fread(pag,config->size_pagina,1,file);
 	return pag;
 }
 
-void crearArchivoSwap(char* nombre){
-	file = fopen(nombre,"w+b");
+void crearArchivoSwap(){
+	file = fopen(config->nombre_swap,"w+b");
 }
 
-void crearTablaDePaginas(int cantidadFrames){
-	tabla = malloc(sizeof(tableRow)*cantidadFrames);
+void crearTablaDePaginas(){
+	tabla = malloc(sizeof(tableRow)*config->cantidad_paginas);
 	int i;
-	for(i=0; i<cantidadFrames; i++){
+	for(i=0; i<config->cantidad_paginas; i++){
 		tabla[i].pid = -1;
 		tabla[i].page = -1;
 	}
@@ -124,8 +126,8 @@ tableRow* getTablaDePaginas(){
 	return tabla;
 }
 
-void guardarPrograma(int frame, int pid, int cantPaginas, pagina* paginas, int sizePagina){
-	escribirPaginasEnFrame(frame,paginas,cantPaginas,sizePagina);
+void guardarPrograma(int frame, int pid, int cantPaginas, pagina* paginas){
+	escribirPaginasEnFrame(frame,paginas,cantPaginas);
 	int i,j=0;
 	for(i=frame; i<(cantPaginas+frame); i++){
 		tabla[i].pid = pid;
@@ -134,9 +136,9 @@ void guardarPrograma(int frame, int pid, int cantPaginas, pagina* paginas, int s
 	}
 }
 
-void eliminarPrograma(int pid, int cantidadPaginas){
+void eliminarPrograma(int pid){
 	int i;
-	for(i=0; i<cantidadPaginas; i++){
+	for(i=0; i<config->cantidad_paginas; i++){
 		//si encuentra un registro con el mismo processID, hace la baja logica y libera el espacio en el bitmap
 		if(tabla[i].pid==pid){
 			tabla[i].pid=-1;
@@ -146,9 +148,9 @@ void eliminarPrograma(int pid, int cantidadPaginas){
 	}
 }
 
-int buscarFramePorPagina(int pid, int pagina, int cantPaginas){
+int buscarFramePorPagina(int pid, int pagina){
 	int i;
-	for(i=0; i<cantPaginas; i++){
+	for(i=0; i<config->cantidad_paginas; i++){
 		if(tabla[i].pid==pid && tabla[i].page==pagina){
 			return i;//retorna la posicion en swap (frame)
 		}
@@ -156,19 +158,19 @@ int buscarFramePorPagina(int pid, int pagina, int cantPaginas){
 	return -1;//retorna -1 si no encuentra la pagina del proceso en la tabla
 }
 
-pagina leerPaginaDeProceso(int pid, int paginaNro, int cantPaginas, int sizePagina){
-	int frame = buscarFramePorPagina(pid,paginaNro,cantPaginas);
+pagina leerPaginaDeProceso(int pid, int paginaNro){
+	int frame = buscarFramePorPagina(pid,paginaNro);
 	if(frame>=0){
-		return leerPaginaFromFrame(frame,sizePagina);
+		return leerPaginaFromFrame(frame);
 	} else {
 		return NULL;
 	}
 }
 
-void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag, int cantPaginas, int sizePagina){
-	int frame = buscarFramePorPagina(pid,paginaNro,cantPaginas);
+void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
+	int frame = buscarFramePorPagina(pid,paginaNro);
 	if(frame>=0){
-		escribirPaginaEnFrame(frame,pag,sizePagina);
+		escribirPaginaEnFrame(frame,pag);
 	}
 }
 

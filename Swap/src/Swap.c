@@ -40,16 +40,16 @@ int main(void) {
 
 	int espacio = getFirstAvailableBlock(cantidadPaginas);
 	printf("Primer espacio libre: %d\n",espacio);
-	guardarPrograma(espacio,pid,cantidadPaginas,paginas,config->size_pagina);
+	guardarPrograma(espacio,pid,cantidadPaginas,paginas);
 
 	pagina pg = escribir("z",config->size_pagina);
-	escribirPaginaEnFrame(8,pg,config->size_pagina);
+	escribirPaginaEnFrame(8,pg);
 
 	pagina* pg1 = malloc(sizeof(pagina));
 	pg1[0] = escribir("g",config->size_pagina);
-	escribirPaginasEnFrame(2,pg1,1,config->size_pagina);
+	escribirPaginasEnFrame(2,pg1,1);
 
-	pagina page2 = leerPaginaDeProceso(pid,2,config->cantidad_paginas,config->size_pagina);
+	pagina page2 = leerPaginaDeProceso(pid,2);
 	printf("\nPagina leida\n%s\n",page2);
 
 	//imprimo en consola el contenido del bitmap

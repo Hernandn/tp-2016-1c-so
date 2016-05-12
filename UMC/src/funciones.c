@@ -82,7 +82,7 @@ void handleClients(Configuration* config){
 				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
 					logDebug("Cliente %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
 					if(package.msgCode==INIT_PROGRAM){
-						comunicarSWAP(socketSwap,ALMACENAR_BYTES_PAGINA_SWAP);
+						comunicarSWAP(socketSwap,ALMACENAR_PAGINA_SWAP);
 						logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
 					}
 				} else {
@@ -103,9 +103,9 @@ void handleClients(Configuration* config){
 }
 
 void comunicarSWAP(int socketSWAP, int accion){
-	if(accion==ALMACENAR_BYTES_PAGINA_SWAP){
+	if(accion==ALMACENAR_PAGINA_SWAP){
 		Package package;
-		fillPackage(&package,ALMACENAR_BYTES_PAGINA_SWAP,"150,200,256");
+		fillPackage(&package,ALMACENAR_PAGINA_SWAP,"150,200,256");
 		char* serializedPkg = serializarMensaje(&package);
 		escribirSocketClient(socketSWAP, (char *)serializedPkg, getLongitudPackage(&package));
 	}
