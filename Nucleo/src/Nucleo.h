@@ -70,6 +70,6 @@ void liberarCPUporSocketFD(int socketCPU, arg_struct *args);
 CPU* buscarCPUporSocketFD(int socketCPU, t_list* listaCPUs);
 void eliminarCPU(t_list* listaCPUs,int socketCPU);
 int conectarConPlanificador(char* ip, int puerto);
-void analizarMensajeCPU(int socketCPU , Package package, arg_struct *args);
+void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args);
 
 #endif /* NUCLEO_H_ */

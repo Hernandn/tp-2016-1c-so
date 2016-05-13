@@ -11,6 +11,7 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
+#include <stdlib.h>
 #include "configuration.h"
 
 #define MAX_CLIENTES 10 //cantidad maxima de conexiones por socket (CPUs)

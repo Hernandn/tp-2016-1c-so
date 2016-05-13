@@ -26,19 +26,19 @@ void comunicacionConNucleo(Configuration* config, char* arch_programa){
 
 	logInfo("Soy la consola %d\n",buffer);
 
-	Package package;
 
 	//handshake con Nucleo
 	logDebug("Iniciando Handshake con Nucleo.");
-	handshake(&package,socket);
+	handshake(socket);
 
 	//iniciar programa
 	logDebug("Iniciando programa AnSISOP.");
-	iniciarProgramaAnsisop(&package,socket,arch_programa);
+	iniciarProgramaAnsisop(socket,arch_programa);
 
 	//simular ejecucion de programa
 	while (1)
 	{
+		/*
 		logDebug("Enviando mensaje al Nucleo.");
 		fillPackage(&package,ANSISOP_PROGRAM,"20,200,64");
 
@@ -46,21 +46,18 @@ void comunicacionConNucleo(Configuration* config, char* arch_programa){
 		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
 
 		sleep(3);
+		*/
 	}
 
 	close(socket);
 }
 
-void handshake(Package* package,int serverSocket){
-	fillPackage(package,HANDSHAKE,"2000");
-	char* serializedPkg = serializarMensaje(package);
-	escribirSocketClient(serverSocket, (char *)serializedPkg, getLongitudPackage(package));
+void handshake(int serverSocket){
+	enviarMensajeSocket(serverSocket,HANDSHAKE,"2000");
 }
 
-void iniciarProgramaAnsisop(Package* package,int serverSocket,char* arch_programa){
-	fillPackage(package,NEW_ANSISOP_PROGRAM,obtener_programa(arch_programa));
-	char* serializedPkg = serializarMensaje(package);
-	escribirSocketClient(serverSocket, (char *)serializedPkg, getLongitudPackage(package));
+void iniciarProgramaAnsisop(int serverSocket,char* arch_programa){
+	enviarMensajeSocket(serverSocket,NEW_ANSISOP_PROGRAM,obtener_programa(arch_programa));
 }
 
 char* obtener_programa(char* arch_programa){

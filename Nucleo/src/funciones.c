@@ -171,15 +171,16 @@ void handleConsolas(void* arguments){
 		{
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
-				Package package;
+				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
-					if(package.msgCode==NEW_ANSISOP_PROGRAM){
+				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
+					logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
+					if(package->msgCode==NEW_ANSISOP_PROGRAM){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
 						iniciarPrograma(estados,socketCliente[i],args->socketClientPlanificador);
 					}
+					destroyPackage(package);
 				}
 				else
 				{
@@ -254,12 +255,13 @@ void handleCPUs(void* arguments){
 		{
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
-				Package package;
+				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					logDebug("CPU %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
+				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
+					logDebug("CPU %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					analizarMensajeCPU(socketCliente[i],package,args);
+					destroyPackage(package);
 				}
 				else
 				{
@@ -295,20 +297,19 @@ int elegirRandomCPU(int cpuSockets[]){
 			j++;
 		}
 	}
-	int randNum = rand() % j;
-	return aux[randNum];
+	if(j>0){//para evitar la division por 0 si no hay CPUs
+		int randNum = rand() % j;
+		return aux[randNum];
+	} else {
+		return -1;
+	}
 }
 
 void comunicarCPU(int cpuSockets[]){
 	int socketCPU = elegirRandomCPU(cpuSockets);
-	enviarMensaje(socketCPU,NEW_ANSISOP_PROGRAM,"3000");
-}
-
-void enviarMensaje(int socket, int accion, char* message){
-	Package package;
-	fillPackage(&package,accion,message);
-	char* serializedPkg = serializarMensaje(&package);
-	escribirSocketServer(socket, (char *)serializedPkg, getLongitudPackage(&package));
+	if(socketCPU!=-1){
+		enviarMensajeSocket(socketCPU,NEW_ANSISOP_PROGRAM,"3000");
+	}
 }
 
 void imprimirArraySockets(int sockets[], int len){
@@ -424,15 +425,15 @@ int conectarConPlanificador(char* ip, int puerto){
 	return socket;
 }
 
-void analizarMensajeCPU(int socketCPU , Package package, arg_struct *args){
-	if(package.msgCode==EXECUTION_FINISHED){
+void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
+	if(package->msgCode==EXECUTION_FINISHED){
 		logTrace("CPU %d me informa que finalizo de ejecutar la instruccion");
 		logTrace("Enviando al CPU la orden de Quantum Sleep");
-		enviarMensaje(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
-	} else if(package.msgCode==QUANTUM_FINISHED){
+		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
+	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
-		quantumFinishedCallback(args->estados,atoi(package.message),args->config->quantum,socketCPU);
-	} else if(package.msgCode==CPU_LIBRE){
+		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU);
+	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);
 	}

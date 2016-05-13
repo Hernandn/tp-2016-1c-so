@@ -20,9 +20,9 @@
 //---------------------
 
 //prototipos de funciones
-void handshake(Package*, int);
+void handshake(int);
 void comunicacionConNucleo(Configuration*, char*);
-void iniciarProgramaAnsisop(Package* , int, char*);
+void iniciarProgramaAnsisop(int, char*);
 char* obtener_programa(char*);
 
 

@@ -205,10 +205,7 @@ void startExec(Estados* estados, int socketCPU){
 }
 
 void informarCPU(int socketCPU, int accion, int pid){
-	Package package;
-	fillPackage(&package,accion,string_itoa(pid));
-	char* serializedPkg = serializarMensaje(&package);
-	escribirSocketServer(socketCPU, (char *)serializedPkg, getLongitudPackage(&package));
+	enviarMensajeSocket(socketCPU,accion,string_itoa(pid));
 }
 
 void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador){
@@ -281,9 +278,6 @@ void findAndExitPCBexecuting(Estados* estados, int consolaFD){
 }
 
 void informarPlanificador(int socketPlanificador, int accion, int pid){
-	Package package;
-	fillPackage(&package,accion,string_itoa(pid));
-	char* serializedPkg = serializarMensaje(&package);
-	escribirSocketServer(socketPlanificador, (char *)serializedPkg, getLongitudPackage(&package));
+	enviarMensajeSocket(socketPlanificador,accion,string_itoa(pid));
 }
 

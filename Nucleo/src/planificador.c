@@ -89,14 +89,15 @@ void planificar(void* arguments){
 			logTrace("Planificador: Solicitud %d",socketCliente[i]);
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
-				Package package;
+				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
-					if(package.msgCode==CPU_LIBRE || package.msgCode==PROGRAM_READY){
+				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
+					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
+					if(package->msgCode==CPU_LIBRE || package->msgCode==PROGRAM_READY){
 						atenderProcesos(estados,listaCPUs);
 					}
+					destroyPackage(package);
 				}
 				else
 				{

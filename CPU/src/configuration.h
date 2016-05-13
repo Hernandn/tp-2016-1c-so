@@ -9,6 +9,8 @@
 #define CONFIGURATION_H_
 
 #define CPU_CONFIG_PATH "../cpu.conf"
+#define CPU_CONFIG_PATH_ECLIPSE "cpu.conf"
+
 
 #define PUERTO_NUCLEO "PUERTO_NUCLEO"
 #define IP_NUCLEO "IP_NUCLEO"

@@ -42,7 +42,7 @@ void nuevoCliente (int servidor, int *clientes, int *nClientes, int max_clientes
 	escribirSocketServer(clientes[(*nClientes)-1], (char *)nClientes, sizeof(int));
 
 	/* Escribe en pantalla que ha aceptado al cliente y vuelve */
-	printf ("Aceptado cliente %d\n", *nClientes);
+	//printf ("Aceptado cliente %d\n", *nClientes);
 	return;
 }
 
@@ -115,7 +115,7 @@ int abrirSocketInetServer(const char* ip, int port)
 		perror("Fallo al hacer el bind (Server)\n");
 		return 1;
 	}
-	printf("Estoy escuchando\n");
+	//printf("Estoy escuchando\n");
 	/*
 	* Se avisa al sistema que comience a atender llamadas de clientes
 	*/
@@ -289,7 +289,6 @@ int recieve_and_deserialize(Package *package, int socketCliente){
 	int buffer_size;
 	char *buffer = malloc(buffer_size = sizeof(uint32_t));
 
-
 	aux = recv(socketCliente, buffer, sizeof(package->msgCode), 0);
 	memcpy(&(package->msgCode), buffer, buffer_size);
 	if (!aux) return 0;
@@ -300,6 +299,7 @@ int recieve_and_deserialize(Package *package, int socketCliente){
 	if (!aux) return 0;
 	leidos+=aux;
 
+	package->message = malloc(sizeof(char)*package->message_long);
 	aux = recv(socketCliente, package->message, package->message_long, 0);
 	if (!aux) return 0;
 	leidos+=aux;

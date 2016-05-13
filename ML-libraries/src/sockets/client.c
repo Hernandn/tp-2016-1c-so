@@ -181,13 +181,31 @@ char* serializarMensaje(Package *package){
 	return serializedPackage;
 }
 
-void fillPackage(Package *package, int msgCode, char* message){
-	strcpy(package->message,message);
-	package->message_long = strlen(package->message)+sizeof(char);
+Package* fillPackage(int msgCode, char* message){
+	Package	*package = malloc(sizeof(Package));
+	package->message = strdup(message);
+	package->message_long = strlen(message)+sizeof(char);
 	package->msgCode = (uint32_t)msgCode;
+	return package;
+}
+
+void destroyPackage(Package* package){
+	if(package->message!=NULL){
+		free(package->message);
+	}
+	if(package!=NULL){
+		free(package);
+	}
 }
 
 int getLongitudPackage(Package *package){
 	return sizeof(package->msgCode)+sizeof(package->message_long)+(sizeof(char)*package->message_long);
+}
+
+void enviarMensajeSocket(int socket, int accion, char* mensaje){
+	Package* package = fillPackage(accion,mensaje);
+	char* serializedPkg = serializarMensaje(package);
+	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+	destroyPackage(package);
 }
 

@@ -43,8 +43,8 @@ void conectarConNucleo();
 Configuration* configurar();
 void comunicarUMC(int socketUMC, int accion);
 void enviarMensaje(int socket, int accion, char* message);
-void analizarMensaje(Package package, arg_struct *args);
-void ejecutarProceso(arg_struct *args, Package package);
+void analizarMensaje(Package* package, arg_struct *args);
+void ejecutarProceso(arg_struct *args, Package* package);
 void quantumSleep(arg_struct *args, int milisegundos);
 void abortarProceso(arg_struct *args);
 

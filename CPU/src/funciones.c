@@ -29,8 +29,12 @@ Configuration* configurar(){
 
 	t_config* nConfig = config_create(CPU_CONFIG_PATH);
 	if(nConfig==NULL){
-		printf("No se encontro el archivo de configuracion.");
-		exit (1);
+		//para debuggear desde eclipse
+		nConfig = config_create(CPU_CONFIG_PATH_ECLIPSE);
+		if(nConfig==NULL){
+			printf("No se encontro el archivo de configuracion.");
+			exit (1);
+		}
 	}
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
 	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
@@ -107,59 +111,54 @@ void conectarConNucleo(void* arguments){
 	/* Se escribe el número de cliente que nos ha enviado el servidor */
 	logDebug("Soy el CPU %d", buffer);
 
-	Package package;
+
 	while (1)
 	{
-		if(recieve_and_deserialize(&package,args->socketNucleo) > 0){
-			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
+		Package* package = malloc(sizeof(Package));
+		if(recieve_and_deserialize(package,args->socketNucleo) > 0){
+			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
 			analizarMensaje(package,args);
 		}
+		destroyPackage(package);
 	}
 }
 
-void enviarMensaje(int socket, int accion, char* message){
-	Package package;
-	fillPackage(&package,accion,message);
-	char* serializedPkg = serializarMensaje(&package);
-	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
-}
-
-void analizarMensaje(Package package, arg_struct *args){
-	if(package.msgCode==NEW_ANSISOP_PROGRAM){
+void analizarMensaje(Package* package, arg_struct *args){
+	if(package->msgCode==NEW_ANSISOP_PROGRAM){
 		logDebug("El Nucleo me comunica que se creo un programa nuevo.");
-		enviarMensaje(args->socketUMC,NEW_ANSISOP_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
-	} else if(package.msgCode==EXEC_NEW_PROCESS){
-		args->processID = atoi(package.message);	//actualizo al nuevo proceso recibido por mensaje
+		enviarMensajeSocket(args->socketUMC,NEW_ANSISOP_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
+	} else if(package->msgCode==EXEC_NEW_PROCESS){
+		args->processID = atoi(package->message);	//actualizo al nuevo proceso recibido por mensaje
 		ejecutarProceso(args,package);
-	} else if(package.msgCode==QUANTUM_SLEEP_CPU){
-		quantumSleep(args,atoi(package.message));
-	} else if(package.msgCode==CONTINUE_EXECUTION){
+	} else if(package->msgCode==QUANTUM_SLEEP_CPU){
+		quantumSleep(args,atoi(package->message));
+	} else if(package->msgCode==CONTINUE_EXECUTION){
 		ejecutarProceso(args,package);
-	} else if(package.msgCode==ABORT_EXECUTION){
+	} else if(package->msgCode==ABORT_EXECUTION){
 		abortarProceso(args);
 	}
 }
 
-void ejecutarProceso(arg_struct *args, Package package){
+void ejecutarProceso(arg_struct *args, Package* package){
 	logTrace("Ejecutando instruccion del proceso PID:%d...",args->processID);
 	//TODO: Aca iria el codigo a partir del cual empieza toda la ejecucion de una instruccion
 
 	logTrace("Informando al Nucleo que finalizo la ejecucion de 1 Quantum...");
-	enviarMensaje(args->socketNucleo,EXECUTION_FINISHED,"");
+	enviarMensajeSocket(args->socketNucleo,EXECUTION_FINISHED,"");
 }
 
 void quantumSleep(arg_struct *args, int milisegundos){
 	logTrace("Sleeping %d miliseconds (-.-) ...zzzZZZ",milisegundos);
 	//TODO: hay que ver que funcion usar para que haga sleep de milisegundos
 	sleep(milisegundos);
-	enviarMensaje(args->socketNucleo,QUANTUM_FINISHED,string_itoa(args->processID));
+	enviarMensajeSocket(args->socketNucleo,QUANTUM_FINISHED,string_itoa(args->processID));
 }
 
 void abortarProceso(arg_struct *args){
 	logTrace("Abortando proceso PID:%d",args->processID);
 	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
-	enviarMensaje(args->socketNucleo,CPU_LIBRE,"");
+	enviarMensajeSocket(args->socketNucleo,CPU_LIBRE,"");
 }
 
 

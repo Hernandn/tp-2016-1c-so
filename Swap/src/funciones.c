@@ -74,12 +74,13 @@ void handleUMCRequests(Configuration* config){
 		if(socketUMC[0]!=-1){
 			if (FD_ISSET (socketUMC[0], &descriptoresLectura))
 			{
-				Package package;
+				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketUMC[0]) > 0){
-					logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package.msgCode, package.message);
-					analizarMensaje(&package,socketUMC[0],config);
+				if(recieve_and_deserialize(package,socketUMC[0]) > 0){
+					logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+					analizarMensaje(package,socketUMC[0],config);
+					destroyPackage(package);
 				}
 				else
 				{
@@ -110,6 +111,7 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		char** params = string_split(package->message,",");
 		//param 0: PID , param 1: numero de pagina
 		pagina pag = leerPaginaDeProceso(atoi(params[0]),atoi(params[1]));
+		//falta terminar, no darle bola
 	} else if(package->msgCode==ALMACENAR_NUEVO_PROGRAMA_SWAP){
 		//int frame = getFirstAvailableBlock(cantidadPaginas);
 		//guardarPrograma(frame,pid,cantidadPaginas,paginas);

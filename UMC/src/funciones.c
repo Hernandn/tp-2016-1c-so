@@ -76,15 +76,16 @@ void handleClients(Configuration* config){
 		{
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
-				Package package;
+				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(&package,socketCliente[i]) > 0){
-					logDebug("Cliente %d envía [message code]: %d, [Mensaje]: %s", i+1, package.msgCode, package.message);
-					if(package.msgCode==INIT_PROGRAM){
+				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
+					logDebug("Cliente %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
+					if(package->msgCode==INIT_PROGRAM){
 						comunicarSWAP(socketSwap,ALMACENAR_PAGINA_SWAP);
 						logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
 					}
+					destroyPackage(package);
 				} else {
 					/* Se indica que el cliente ha cerrado la conexión y se
 					 * marca con -1 el descriptor para que compactaClaves() lo
@@ -104,10 +105,7 @@ void handleClients(Configuration* config){
 
 void comunicarSWAP(int socketSWAP, int accion){
 	if(accion==ALMACENAR_PAGINA_SWAP){
-		Package package;
-		fillPackage(&package,ALMACENAR_PAGINA_SWAP,"150,200,256");
-		char* serializedPkg = serializarMensaje(&package);
-		escribirSocketClient(socketSWAP, (char *)serializedPkg, getLongitudPackage(&package));
+		enviarMensajeSocket(socketSWAP,accion,"150,200,256");
 	}
 }
 
