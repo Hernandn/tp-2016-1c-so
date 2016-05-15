@@ -54,6 +54,8 @@ void conectarConUMC(void* arguments){
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
+	Package* package;
+	char* serializedPkg;
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(args->config->ip_umc, args->config->puerto_umc);
@@ -72,6 +74,12 @@ void conectarConUMC(void* arguments){
 
 	/* Se escribe el número de cliente que nos ha enviado el servidor */
 	logDebug("Soy el CPU %d", buffer);
+
+	//Le aviso a la UMC que soy un nucleo
+	logDebug("Realizando handshake con UMC");
+	package = fillPackage(HANDSHAKE_UMC,"");
+	serializedPkg = serializarMensaje(package);
+	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
 
 	/* Bucle infinito. Envia al servidor el número de cliente y espera un
 	 * segundo */

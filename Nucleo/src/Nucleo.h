@@ -22,6 +22,9 @@
 #define ANSISOP_PROGRAM 11
 #define HANDSHAKE 12
 //---------------------
+//codigos de operacion con la UMC
+#define HANDSHAKE_UMC 100
+//---------------------
 //codigos de operaciones entre CPU/Nucleo
 #define CONTINUE_EXECUTION 70
 #define ABORT_EXECUTION 71

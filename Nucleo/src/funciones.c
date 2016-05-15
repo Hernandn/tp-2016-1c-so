@@ -333,16 +333,19 @@ void inicializarArraySockets(arg_struct* args){
 
 int conectarConUMC(Configuration* config){
 
-	int socket;		/* descriptor de conexión con el servidor */
-	int buffer;		/* buffer de lectura de datos procedentes del servidor */
-	int error;		/* error de lectura por el socket */
+	logDebug("Tratando de conectar con UMC");
+	int socket,		/* descriptor de conexión con el servidor */
+		buffer,		/* buffer de lectura de datos procedentes del servidor */
+		error;		/* error de lectura por el socket */
+	Package *package;
+	char* serializedPkg;
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(config->ip_umc, config->puerto_umc);
-
+	logDebug("Socket conectado, esperando numero de cliente");
 	/* Se lee el número de cliente, dato que nos da el servidor.*/
 	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
-
+	logDebug("Numero de cliente recibido %d",error);
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
 	{
@@ -350,6 +353,13 @@ int conectarConUMC(Configuration* config){
 	} else {
 		logDebug("Conexion con UMC satisfactoria.");
 	}
+
+	//Le aviso a la UMC que soy un nucleo
+	logDebug("Realizando handshake con UMC");
+	package = fillPackage(HANDSHAKE_UMC,"");
+	serializedPkg = serializarMensaje(package);
+	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+
 	return socket;
 }
 

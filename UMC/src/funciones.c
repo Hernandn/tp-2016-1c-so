@@ -12,15 +12,20 @@ tableRow* tabla;
 
 void handleClients(Configuration* config){
 
-	int socketSwap = -1;
-
-	int socketServidor;				/* Descriptor del socket servidor */
-	int socketCliente[MAX_CLIENTES];/* Descriptores de sockets con clientes */
-	int numeroClientes = 0;			/* Número clientes conectados */
-	fd_set descriptoresLectura;	/* Descriptores de interes para select() */
+	int socketSwap = -1,
+		socketServidor,						/* Descriptor del socket servidor */
+		socketCliente[MAX_CLIENTES],		/* Descriptores de sockets con clientes */
+		socket_cliente,						//Se usa para recivir al conexion y se envia al thread que la va a manejar
+		numeroClientes = 0,					/* Número clientes conectados */
+		numero_cpus = 0,					//Lleva la cuenta de las CPU's conectadas
+		maximo,								/* Número de descriptor más grande */
+		i;									/* Para bubles */
+	fd_set descriptoresLectura;				/* Descriptores de interes para select() */
+	pthread_t threads_cpus[MAX_CLIENTES];	//Arrar de threads de cpu's
+	t_arg_thread_cpu* arg_thread_cpu;		//Arguemntos para el thread del nuevo cpu
+	Package* package=malloc(sizeof(Package));
+	int temp=1;								//Lo necesito para escribir el numero de cliente, es provisorio;
 	//int buffer;							/* Buffer para leer de los socket */
-	int maximo;							/* Número de descriptor más grande */
-	int i;								/* Para bubles */
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -42,64 +47,40 @@ void handleClients(Configuration* config){
 			socketSwap = conectarConSwap(config);
 		}
 
-		/* Cuando un cliente cierre la conexión, se pondrá un -1 en su descriptor
-		 * de socket dentro del array socketCliente. La función compactaClaves()
-		 * eliminará dichos -1 de la tabla, haciéndola más pequeña.
-		 *
-		 * Se eliminan todos los clientes que hayan cerrado la conexión */
-		compactaClaves (socketCliente, &numeroClientes);
+		//Acepto una conexion de una cpu y la mando a un thread aparte
+		socket_cliente = aceptarConexionCliente(socketServidor);
+		escribirSocketServer(socket_cliente, (char *)&temp, sizeof(int));	//TODO Esto es un parchaso para que funcione como estaba haciendo, hay que cambiarlo
+		if(recieve_and_deserialize(package,socket_cliente) > 0){
+			logDebug("Mensaje recibido de %d",socket_cliente);
+			switch(package->msgCode){
+				case HANDSHAKE_CPU:
+					logDebug("Cliente %d es un CPU"),socket_cliente;
+					/*TODO No estoy liberando esto en ningun momento. No se si hacerlo dentro
+					 * del thread o si conviene guardarlo para poder camiar el socket swap en
+					 * caliente sin que los threads se vean afectados. En caso de elegir la segunda
+					 * opcion, cuando se actualice el socketSwap (porque se desconecto y reconecto
+					 * con un identificador distinto por ejemplo) habria que actualizar todas las configuraiones.
+					 */
 
-		/* Se inicializa descriptoresLectura */
-		FD_ZERO (&descriptoresLectura);
+					arg_thread_cpu = malloc(sizeof(t_arg_thread_cpu));
+					arg_thread_cpu->socket_cpu=socket_cliente;
+					arg_thread_cpu->socket_swap=socketSwap;
 
-		/* Se añade para select() el socket servidor */
-		FD_SET (socketServidor, &descriptoresLectura);
+					/*TODO Para este punto deberia estar conectado el nucleo, sino no deberia poder
+					 * conectar CPU's
+					 */
+					pthread_create(&threads_cpus[numero_cpus],NULL,(void*) handle_cpu,(void*) arg_thread_cpu);
+					break;
 
-		/* Se añaden para select() los sockets con los clientes ya conectados */
-		for (i=0; i<numeroClientes; i++)
-			FD_SET (socketCliente[i], &descriptoresLectura);
+				case HANDSHAKE_NUCLEO:
+					logDebug("Cliente %d es un Nucleo",socket_cliente);
+					//Por ahora entiendo que no recibe nada del nucleo asi que queda ahi.
+					break;
 
-		/* Se el valor del descriptor más grande. Si no hay ningún cliente,
-		 * devolverá 0 */
-		maximo = dameMaximo (socketCliente, numeroClientes);
-
-		if (maximo < socketServidor)
-			maximo = socketServidor;
-
-		/* Espera indefinida hasta que alguno de los descriptores tenga algo
-		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
-		 * mensaje */
-		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
-
-		/* Se comprueba si algún cliente ya conectado ha enviado algo */
-		for (i=0; i<numeroClientes; i++)
-		{
-			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
-			{
-				Package* package = malloc(sizeof(Package));
-				/* Se lee lo enviado por el cliente y se escribe en pantalla */
-				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
-				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
-					logDebug("Cliente %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
-					if(package->msgCode==INIT_PROGRAM){
-						comunicarSWAP(socketSwap,ALMACENAR_PAGINA_SWAP);
-						logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-					}
-					destroyPackage(package);
-				} else {
-					/* Se indica que el cliente ha cerrado la conexión y se
-					 * marca con -1 el descriptor para que compactaClaves() lo
-					 * elimine */
-					logInfo("Cliente %d ha cerrado la conexión", i+1);
-					socketCliente[i] = -1;
-				}
+				default:
+					logDebug("El cliente %d no se identifico",socket_cliente);
 			}
 		}
-
-		/* Se comprueba si algún cliente nuevo desea conectarse y se le
-		 * admite */
-		if (FD_ISSET (socketServidor, &descriptoresLectura))
-			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CLIENTES);
 	}
 }
 
@@ -129,6 +110,30 @@ int conectarConSwap(Configuration* config){
 		logDebug("Conexion con SWAP satisfactoria.");
 	}
 	return socket;
+}
+
+void handle_cpu(t_arg_thread_cpu* argumentos){
+	int sigue = 1,	//Ya se, no es muy original que digamos
+		*socket_cpu = &argumentos->socket_cpu,	//Lo guardo en variables para que sea mas comodo de usar
+		*socket_swap = &argumentos->socket_swap;
+	Package* package;
+
+	while(sigue){
+		 package = malloc(sizeof(Package));
+		if(recieve_and_deserialize(package,*socket_cpu) > 0){
+			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
+			if(package->msgCode==INIT_PROGRAM){
+				comunicarSWAP(*socket_swap,ALMACENAR_PAGINA_SWAP);
+				logDebug("Se ha solicitado la inicializacion de un nuevo programa.\n");
+			}
+		} else {
+			//Si el cliente cerro la conexion se termino el thread
+			sigue=0;
+			logInfo("Cliente ha cerrado la conexión, cerrando thread\n");
+		}
+		destroyPackage(package);
+	}
+	logInfo("Fin thread\n");
 }
 
 void inicializarUMC(Configuration* config){

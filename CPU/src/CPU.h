@@ -28,6 +28,9 @@
 #define QUANTUM_FINISHED 75
 #define CPU_LIBRE 90
 //----------------------
+//codigos de operaciones con UMC
+#define HANDSHAKE_UMC 80
+//----------------------
 #define NEW_ANSISOP_PROGRAM 10
 
 typedef struct arg_struct {

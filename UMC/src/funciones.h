@@ -30,11 +30,22 @@
 #define ALMACENAR_PAGINA_SWAP 21
 #define ALMACENAR_NUEVO_PROGRAMA_SWAP 22
 #define ELIMINAR_PROGRAMA_SWAP 23
+//---------------------
+//codigos de operacion con el Nucleo
+#define HANDSHAKE_NUCLEO 100
+//---------------------
+//codigos de operacion con los CPU's
+#define HANDSHAKE_CPU 80
 
 typedef struct tableRow {
 	int pid;
 	int page;
 }tableRow;
+
+typedef struct arg_thread_cpu {
+	int socket_cpu,
+		socket_swap;
+} t_arg_thread_cpu;
 
 typedef char* pagina;
 typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
@@ -44,5 +55,6 @@ void comunicarSWAP(int, int);
 int conectarConSwap(Configuration*);
 void inicializarUMC(Configuration*);
 tableRow* crearTablaDePaginas(int);
+void handle_cpu(t_arg_thread_cpu*);
 
 #endif /* FUNCIONES_H_ */
