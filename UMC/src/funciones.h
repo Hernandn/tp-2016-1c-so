@@ -43,8 +43,7 @@ typedef struct tableRow {
 }tableRow;
 
 typedef struct arg_thread_cpu {
-	int socket_cpu,
-		socket_swap;
+	int socket_cpu;
 } t_arg_thread_cpu;
 
 typedef char* pagina;
