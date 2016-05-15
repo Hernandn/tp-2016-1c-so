@@ -16,7 +16,7 @@
 #define SOLICITAR_BYTES_PAGINA 2
 #define ALMACENAR_BYTES_PAGINA 3
 #define END_PROGRAM 4
-#define HANDSHAKE 5
+#define HANDSHAKE_CPU 5
 #define SWITCH_PROCESS 6
 //---------------------
 //codigos de operaciones entre CPU/Nucleo
@@ -29,7 +29,7 @@
 #define CPU_LIBRE 90
 //----------------------
 //codigos de operaciones con UMC
-#define HANDSHAKE_UMC 80
+#define HANDSHAKE_UMC 5
 //----------------------
 #define NEW_ANSISOP_PROGRAM 10
 

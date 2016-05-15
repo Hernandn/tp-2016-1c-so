@@ -20,10 +20,10 @@
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas
 #define NEW_ANSISOP_PROGRAM 10
 #define ANSISOP_PROGRAM 11
-#define HANDSHAKE 12
+#define HANDSHAKE_NUCLEO 12
 //---------------------
 //codigos de operacion con la UMC
-#define HANDSHAKE_UMC 100
+#define HANDSHAKE_UMC 5
 //---------------------
 //codigos de operaciones entre CPU/Nucleo
 #define CONTINUE_EXECUTION 70

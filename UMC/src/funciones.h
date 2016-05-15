@@ -22,7 +22,7 @@
 #define SOLICITAR_BYTES_PAGINA 2
 #define ALMACENAR_BYTES_PAGINA 3
 #define END_PROGRAM 4
-#define HANDSHAKE 5
+#define HANDSHAKE_UMC 5
 #define SWITCH_PROCESS 6
 //---------------------
 //operaciones SWAP
@@ -32,10 +32,10 @@
 #define ELIMINAR_PROGRAMA_SWAP 23
 //---------------------
 //codigos de operacion con el Nucleo
-#define HANDSHAKE_NUCLEO 100
+#define HANDSHAKE_NUCLEO 12
 //---------------------
 //codigos de operacion con los CPU's
-#define HANDSHAKE_CPU 80
+#define HANDSHAKE_CPU 5
 
 typedef struct tableRow {
 	int pid;

@@ -52,34 +52,29 @@ Configuration* configurar(){
 void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;
 	int socket;		/* descriptor de conexión con el servidor */
-	int buffer;		/* buffer de lectura de datos procedentes del servidor */
-	int error;		/* error de lectura por el socket */
 	Package* package;
 	char* serializedPkg;
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(args->config->ip_umc, args->config->puerto_umc);
-	args->socketUMC = socket;
-
-	/* Se lee el número de cliente, dato que nos da el servidor. Se escribe
-	 * dicho número en pantalla.*/
-	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
-
-	/* Si ha habido error de lectura lo indicamos y salimos */
-	if (error < 1)
-	{
+	if (socket < 1){
 		logError("Me han cerrado la conexión.");
 		exit(-1);
 	}
 
-	/* Se escribe el número de cliente que nos ha enviado el servidor */
-	logDebug("Soy el CPU %d", buffer);
+	args->socketUMC = socket;
+
+	logDebug("Realizando handshake con UMC");
+	package=malloc(sizeof(Package));
+	if(recieve_and_deserialize(package, socket) > 0) {
+		if(package->msgCode==HANDSHAKE_UMC) logDebug("Conexion con UMC confirmada");
+	}
 
 	//Le aviso a la UMC que soy un nucleo
-	logDebug("Realizando handshake con UMC");
-	package = fillPackage(HANDSHAKE_UMC,"");
+	package = fillPackage(HANDSHAKE_CPU,"");
 	serializedPkg = serializarMensaje(package);
 	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+	logDebug("Handshake con UMC exitoso!!");
 
 	/* Bucle infinito. Envia al servidor el número de cliente y espera un
 	 * segundo */

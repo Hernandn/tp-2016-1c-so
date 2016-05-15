@@ -14,18 +14,12 @@ void handleClients(Configuration* config){
 
 	int socketSwap = -1,
 		socketServidor,						/* Descriptor del socket servidor */
-		socketCliente[MAX_CLIENTES],		/* Descriptores de sockets con clientes */
 		socket_cliente,						//Se usa para recivir al conexion y se envia al thread que la va a manejar
-		numeroClientes = 0,					/* Número clientes conectados */
-		numero_cpus = 0,					//Lleva la cuenta de las CPU's conectadas
-		maximo,								/* Número de descriptor más grande */
-		i;									/* Para bubles */
-	fd_set descriptoresLectura;				/* Descriptores de interes para select() */
+		numero_cpus = 0;					//Lleva la cuenta de las CPU's conectadas
 	pthread_t threads_cpus[MAX_CLIENTES];	//Arrar de threads de cpu's
 	t_arg_thread_cpu* arg_thread_cpu;		//Arguemntos para el thread del nuevo cpu
 	Package* package=malloc(sizeof(Package));
-	int temp=1;								//Lo necesito para escribir el numero de cliente, es provisorio;
-	//int buffer;							/* Buffer para leer de los socket */
+	char* serializedPkg;
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -47,9 +41,12 @@ void handleClients(Configuration* config){
 			socketSwap = conectarConSwap(config);
 		}
 
-		//Acepto una conexion de una cpu y la mando a un thread aparte
+		//Acepto las conexiones y las mando a diferentes threads
 		socket_cliente = aceptarConexionCliente(socketServidor);
-		escribirSocketServer(socket_cliente, (char *)&temp, sizeof(int));	//TODO Esto es un parchaso para que funcione como estaba haciendo, hay que cambiarlo
+		package = fillPackage(HANDSHAKE_UMC,"");
+		serializedPkg = serializarMensaje(package);
+		escribirSocketClient(socket_cliente, (char *)serializedPkg, getLongitudPackage(package));
+		escribirSocketServer(socket_cliente, (char *)&numero_cpus, sizeof(int));
 		if(recieve_and_deserialize(package,socket_cliente) > 0){
 			logDebug("Mensaje recibido de %d",socket_cliente);
 			switch(package->msgCode){
@@ -70,6 +67,7 @@ void handleClients(Configuration* config){
 					 * conectar CPU's
 					 */
 					pthread_create(&threads_cpus[numero_cpus],NULL,(void*) handle_cpu,(void*) arg_thread_cpu);
+					numero_cpus++;
 					break;
 
 				case HANDSHAKE_NUCLEO:
@@ -79,6 +77,7 @@ void handleClients(Configuration* config){
 
 				default:
 					logDebug("El cliente %d no se identifico",socket_cliente);
+					close(socket_cliente);
 			}
 		}
 	}

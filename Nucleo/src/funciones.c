@@ -333,32 +333,30 @@ void inicializarArraySockets(arg_struct* args){
 
 int conectarConUMC(Configuration* config){
 
-	logDebug("Tratando de conectar con UMC");
-	int socket,		/* descriptor de conexión con el servidor */
-		buffer,		/* buffer de lectura de datos procedentes del servidor */
-		error;		/* error de lectura por el socket */
+	int socket;		/* descriptor de conexión con el servidor */
 	Package *package;
 	char* serializedPkg;
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(config->ip_umc, config->puerto_umc);
-	logDebug("Socket conectado, esperando numero de cliente");
-	/* Se lee el número de cliente, dato que nos da el servidor.*/
-	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
-	logDebug("Numero de cliente recibido %d",error);
-	/* Si ha habido error de lectura lo indicamos y salimos */
-	if (error < 1)
-	{
+	if (socket < 1) {
 		logDebug("UMC se encuentra desconectada.");
 	} else {
 		logDebug("Conexion con UMC satisfactoria.");
 	}
 
-	//Le aviso a la UMC que soy un nucleo
 	logDebug("Realizando handshake con UMC");
-	package = fillPackage(HANDSHAKE_UMC,"");
+	//Se espera el handshake de la UMC para confirmar conexion
+	package=malloc(sizeof(Package));
+	if(recieve_and_deserialize(package, socket) > 0) {
+		if(package->msgCode==HANDSHAKE_UMC) logDebug("Conexion con UMC confirmada");
+	}
+
+	//Le aviso a la UMC que soy un nucleo
+	package = fillPackage(HANDSHAKE_NUCLEO,"");
 	serializedPkg = serializarMensaje(package);
 	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+	logDebug("Handshake con UMC exitoso!!");
 
 	return socket;
 }
