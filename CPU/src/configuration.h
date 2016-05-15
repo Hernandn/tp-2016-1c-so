@@ -8,6 +8,8 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+#include <commons/config.h>
+
 #define CPU_CONFIG_PATH "../cpu.conf"
 #define CPU_CONFIG_PATH_ECLIPSE "cpu.conf"
 

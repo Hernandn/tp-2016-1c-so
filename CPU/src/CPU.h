@@ -5,10 +5,16 @@
  *      Author: utnso
  */
 
-#include "configuration.h"
-
 #ifndef CPU_H_
 #define CPU_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <mllibs/sockets/client.h>
+#include <mllibs/sockets/package.h>
+#include <mllibs/sockets/server.h>
+#include <mllibs/log/logger.h>
+#include "configuration.h"
 
 //codigos de operaciones de la UMC
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas

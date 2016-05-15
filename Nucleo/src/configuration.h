@@ -8,6 +8,8 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+#include <commons/config.h>
+
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"
 #define NUCLEO_CONFIG_PATH_ECLIPSE "nucleo.conf"
 #define PUERTO_PROG "PUERTO_PROG"

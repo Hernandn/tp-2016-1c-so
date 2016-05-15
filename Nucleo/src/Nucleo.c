@@ -7,18 +7,8 @@
  Description : Hello World in C, Ansi-style
  ============================================================================
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <commons/log.h>
-#include <commons/config.h>
-#include<sys/socket.h>
-#include<sys/types.h>
-#include<netinet/in.h>
-#include<netdb.h>
-#include<sys/errno.h>
-#include "configuration.h"
+
 #include "Nucleo.h"
-#include <mllibs/log/logger.h>
 
 int main(void)
 {

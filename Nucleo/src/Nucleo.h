@@ -5,10 +5,19 @@
  *      Author: hernan
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
+#include <time.h>
 #include <mllibs/sockets/package.h>
-#include <commons/log.h>
+#include <mllibs/sockets/server.h>
+#include <mllibs/sockets/client.h>
+#include <mllibs/log/logger.h>
 #include "configuration.h"
 #include "PCB.h"
+#include "planificador.h"
+
 
 #ifndef NUCLEO_H_
 #define NUCLEO_H_

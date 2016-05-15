@@ -4,22 +4,7 @@
  *  Created on: 21/04/2016
  *      Author: hernan
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <commons/config.h>
-#include <commons/string.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
-#include <mllibs/sockets/client.h>
-#include <mllibs/sockets/server.h>
-#include <mllibs/sockets/package.h>
-#include <commons/log.h>
-#include <mllibs/log/logger.h>
+
 #include "CPU.h"
 #include "configuration.h"
 
@@ -53,7 +38,6 @@ void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;
 	int socket;		/* descriptor de conexión con el servidor */
 	Package* package;
-	char* serializedPkg;
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(args->config->ip_umc, args->config->puerto_umc);
@@ -71,9 +55,7 @@ void conectarConUMC(void* arguments){
 	}
 
 	//Le aviso a la UMC que soy un nucleo
-	package = fillPackage(HANDSHAKE_CPU,"");
-	serializedPkg = serializarMensaje(package);
-	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+	enviarMensajeSocket(socket,HANDSHAKE_CPU,"");
 	logDebug("Handshake con UMC exitoso!!");
 
 	/* Bucle infinito. Envia al servidor el número de cliente y espera un

@@ -5,30 +5,7 @@
  *      Author: hernan
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <commons/log.h>
-#include <commons/config.h>
-#include <commons/collections/list.h>
-#include <commons/string.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include <pthread.h>
-#include <time.h>
-#include <mllibs/sockets/server.h>
-#include <mllibs/sockets/client.h>
-#include <mllibs/sockets/package.h>
-#include <mllibs/log/logger.h>
 #include "Nucleo.h"
-#include "configuration.h"
-#include "PCB.h"
-#include "planificador.h"
 
 Configuration* configurar(){
 
@@ -335,7 +312,6 @@ int conectarConUMC(Configuration* config){
 
 	int socket;		/* descriptor de conexión con el servidor */
 	Package *package;
-	char* serializedPkg;
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(config->ip_umc, config->puerto_umc);
@@ -353,9 +329,7 @@ int conectarConUMC(Configuration* config){
 	}
 
 	//Le aviso a la UMC que soy un nucleo
-	package = fillPackage(HANDSHAKE_NUCLEO,"");
-	serializedPkg = serializarMensaje(package);
-	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+	enviarMensajeSocket(socket,HANDSHAKE_NUCLEO,"");
 	logDebug("Handshake con UMC exitoso!!");
 
 	return socket;

@@ -22,7 +22,6 @@ void handleClients(Configuration* config){
 	pthread_t threads_cpus[MAX_CLIENTES];	//Arrar de threads de cpu's
 	t_arg_thread_cpu* arg_thread_cpu;		//Arguemntos para el thread del nuevo cpu
 	Package* package=malloc(sizeof(Package));
-	char* serializedPkg;
 
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
@@ -45,19 +44,17 @@ void handleClients(Configuration* config){
 		/*Compruebo si se conecto el proceso Swap, no hace nada si ya estaba linkeado.
 		 * Uso mutex porque socket_swap ahora es global.
 		 */
-		pthread_mutex_lock(&comunicacion_swap_mutex);
+		pthread_mutex_lock(&socket_swap_mutex);
 		if(socket_swap==-1){
 			socket_swap = conectarConSwap(config);
 		}
-		pthread_mutex_unlock(&comunicacion_swap_mutex);
+		pthread_mutex_unlock(&socket_swap_mutex);
 
 		//Acepto las conexiones y las mando a diferentes threads
 		socket_cliente = aceptarConexionCliente(socketServidor);
 
 		//Comienzo el handshake
-		package = fillPackage(HANDSHAKE_UMC,"");
-		serializedPkg = serializarMensaje(package);
-		escribirSocketClient(socket_cliente, (char *)serializedPkg, getLongitudPackage(package));
+		enviarMensajeSocket(socket_cliente,HANDSHAKE_UMC,"");
 
 		//Espero respuesta y creo thread correspondiente
 		if(recieve_and_deserialize(package,socket_cliente) > 0){
@@ -98,12 +95,14 @@ void comunicarSWAP(int socket_swap, int accion){
 
 	//Bloqueo la comunicacion con swap
 	pthread_mutex_lock(&comunicacion_swap_mutex);
+	pthread_mutex_lock(&socket_swap_mutex);
 
 	if(accion==ALMACENAR_PAGINA_SWAP){
 		enviarMensajeSocket(socket_swap,accion,"150,200,256");
 	}
 
 	//Libero la comunicacion con swap
+	pthread_mutex_unlock(&socket_swap_mutex);
 	pthread_mutex_unlock(&comunicacion_swap_mutex);
 }
 

@@ -8,6 +8,8 @@
 #ifndef PLANIFICADOR_H_
 #define PLANIFICADOR_H_
 
+#include "Nucleo.h"
+
 #define MAX_CONEXIONES 5	//en realidad son 2 por ahora (1 para el thread de consolas y 1 para el de CPUs)
 #define PLANIFICADOR_IP "127.0.0.1"
 #define PLANIFICADOR_PORT 6999
