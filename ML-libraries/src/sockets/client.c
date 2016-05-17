@@ -203,10 +203,7 @@ int getLongitudPackage(Package *package){
 }
 
 void enviarMensajeSocket(int socket, uint32_t accion, char* mensaje){
-	Package* package = fillPackage(accion,mensaje,strlen(mensaje)+sizeof(char));
-	char* serializedPkg = serializarMensaje(package);
-	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
-	destroyPackage(package);
+	enviarMensajeSocketConLongitud(socket,accion,mensaje,strlen(mensaje)+sizeof(char));
 }
 
 void enviarMensajeSocketConLongitud(int socket, uint32_t accion, char* mensaje, uint32_t longitud){

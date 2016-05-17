@@ -44,13 +44,14 @@ typedef struct tableRow {
 
 typedef struct arg_thread_cpu {
 	int socket_cpu;
+	Configuration* config;
 } t_arg_thread_cpu;
 
 typedef char* pagina;
 typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
 
 void handleClients(Configuration*);
-void comunicarSWAP(int, int);
+void comunicarSWAP(int, int, Configuration*);
 int conectarConSwap(Configuration*);
 void inicializarUMC(Configuration*);
 tableRow* crearTablaDePaginas(int);

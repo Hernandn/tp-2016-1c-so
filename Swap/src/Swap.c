@@ -91,15 +91,15 @@ int main(void) {
 			printf(" ");
 	}
 	printf("\n\n");
-
 	for(i=0; i<cantidadPaginas; i++){
 		free(paginas[i]);
 	}
 	free(paginas);
-	destroyTabla();
-	cerrarArchivoSwap();
 
 	handleUMCRequests(config);
+
+	destroyTabla();
+	cerrarArchivoSwap();
 
 	logDestroy();
 

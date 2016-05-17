@@ -6,6 +6,7 @@
  */
 
 #include "funciones.h"
+#include "interfazSwap.h"
 
 memoria memoria_principal;
 tableRow* tabla;
@@ -70,6 +71,7 @@ void handleClients(Configuration* config){
 					//Argumentos para el thread de la CPU. Mando una estructura porque es mas facil de modificar en un futuro.
 					arg_thread_cpu = malloc(sizeof(t_arg_thread_cpu));
 					arg_thread_cpu->socket_cpu=socket_cliente;
+					arg_thread_cpu->config=config;
 
 					/*TODO Entiendo para este punto deberia estar conectado el nucleo, sino no deberia poder
 					 * conectar CPU's. ¿O no es necesario?
@@ -91,14 +93,22 @@ void handleClients(Configuration* config){
 	}
 }
 
-void comunicarSWAP(int socket_swap, int accion){
+void comunicarSWAP(int socket_swap, int accion, Configuration* config){
 
 	//Bloqueo la comunicacion con swap
 	pthread_mutex_lock(&comunicacion_swap_mutex);
 	pthread_mutex_lock(&socket_swap_mutex);
 
-	if(accion==ALMACENAR_PAGINA_SWAP){
-		enviarMensajeSocket(socket_swap,accion,"150,200,256");
+	if(accion==ALMACENAR_NUEVO_PROGRAMA_SWAP){
+		//esto es con datos de prueba
+		int pid = 2;
+		int cantidadPaginas = 2;
+		pagina* paginas = malloc(sizeof(pagina)*cantidadPaginas);
+		paginas[0] = llenarPagina("a",config->size_pagina);
+		paginas[1] = llenarPagina("b",config->size_pagina);
+		char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas,paginas,config->size_pagina);
+		int longitud = getLong_NuevoPrograma(cantidadPaginas,config->size_pagina);
+		enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
 	}
 
 	//Libero la comunicacion con swap
@@ -131,6 +141,7 @@ int conectarConSwap(Configuration* config){
 void handle_cpu(t_arg_thread_cpu* argumentos){
 	int sigue = 1,	//Ya se, no es muy original que digamos
 		*socket_cpu = &argumentos->socket_cpu;	//Lo guardo en variables para que sea mas comodo de usar
+	Configuration* config = argumentos->config;
 	Package* package;
 
 	while(sigue){
@@ -138,7 +149,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 		if(recieve_and_deserialize(package,*socket_cpu) > 0){
 			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
-				comunicarSWAP(socket_swap,ALMACENAR_PAGINA_SWAP);
+				comunicarSWAP(socket_swap,ALMACENAR_NUEVO_PROGRAMA_SWAP,config);
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.\n");
 			}
 		} else {

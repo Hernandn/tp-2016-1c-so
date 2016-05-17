@@ -111,7 +111,7 @@ void conectarConNucleo(void* arguments){
 void analizarMensaje(Package* package, arg_struct *args){
 	if(package->msgCode==NEW_ANSISOP_PROGRAM){
 		logDebug("El Nucleo me comunica que se creo un programa nuevo.");
-		enviarMensajeSocket(args->socketUMC,NEW_ANSISOP_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
+		enviarMensajeSocket(args->socketUMC,INIT_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
 	} else if(package->msgCode==EXEC_NEW_PROCESS){
 		args->processID = atoi(package->message);	//actualizo al nuevo proceso recibido por mensaje
 		ejecutarProceso(args,package);

@@ -122,8 +122,11 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 
 	} else if(package->msgCode==ALMACENAR_NUEVO_PROGRAMA_SWAP){
 
+		logDebug("Message long: %d",package->message_long);
 		int pid = getProcessID_NuevoPrograma(package->message);
 		int cantidadPaginas = getCantidadPaginas_NuevoPrograma(package->message);
+
+		logDebug("Programa PID:%d , cant paginas: %d",pid,cantidadPaginas);
 		int frame = getFirstAvailableBlock(cantidadPaginas);
 
 		if(frame>=0){//hay espacio disponible
@@ -166,31 +169,6 @@ pagina* getPaginas_NuevoPrograma(char* str, int cantPags, int size){
 	return pags;
 }
 
-char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags, pagina* paginas, int size_pagina){
-	//mensaje: pid + cantPags + paginas
-	char *serializedPackage = malloc(sizeof(uint32_t)*2+cantPags*size_pagina);
-
-	int offset = 0;
-	int size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &pid, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &cantPags, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = size_pagina;
-	int i;
-	for(i=0; i<cantPags; i++){
-		memcpy(serializedPackage + offset, paginas[i], size_to_send);
-		offset += size_to_send;
-	}
-
-	return serializedPackage;
-}
-
 int getProcessID_EscribirPagina(char* str){
 	return *str;
 }
@@ -206,28 +184,6 @@ pagina getPagina_EscribirPagina(char* str, int size){
 	return pag;
 }
 
-char* serializar_EscribirPagina(uint32_t pid, uint32_t numero_de_pagina, pagina pagina, int size_pagina){
-	//mensaje: pid + numero_de_pagina + pagina
-	char *serializedPackage = malloc(sizeof(uint32_t)*2+size_pagina);
-
-	int offset = 0;
-	int size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &pid, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &numero_de_pagina, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = size_pagina;
-	memcpy(serializedPackage + offset, pagina, size_to_send);
-	offset += size_to_send;
-
-	return serializedPackage;
-}
-
 int getProcessID_SolicitarPagina(char* str){
 	return *str;
 }
@@ -235,21 +191,3 @@ int getProcessID_SolicitarPagina(char* str){
 int getNumeroPagina_SolicitarPagina(char* str){
 	return *(str+sizeof(uint32_t));
 }
-
-char* serializar_SolicitarPagina(uint32_t pid, uint32_t numero_de_pagina){
-	//mensaje: pid + numero_de_pagina
-	char *serializedPackage = malloc(sizeof(uint32_t)*2);
-
-	int offset = 0;
-	int size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &pid, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &numero_de_pagina, size_to_send);
-
-	return serializedPackage;
-}
-
