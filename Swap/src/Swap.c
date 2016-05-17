@@ -42,12 +42,8 @@ int main(void) {
 	printf("Primer espacio libre: %d\n",espacio);
 	guardarPrograma(espacio,pid,cantidadPaginas,paginas);
 
-	pagina pg = escribir("z",config->size_pagina);
-	escribirPaginaEnFrame(8,pg);
-
-	pagina* pg1 = malloc(sizeof(pagina));
-	pg1[0] = escribir("g",config->size_pagina);
-	escribirPaginasEnFrame(2,pg1,1);
+	pagina page3 = escribir("z",config->size_pagina);
+	escribirPaginaDeProceso(pid,2,page3);
 
 	pagina page2 = leerPaginaDeProceso(pid,2);
 	printf("\nPagina leida\n%s\n",page2);
@@ -94,6 +90,7 @@ int main(void) {
 		if(i>=100)
 			printf(" ");
 	}
+	printf("\n\n");
 
 	for(i=0; i<cantidadPaginas; i++){
 		free(paginas[i]);

@@ -12,10 +12,10 @@
 int abrirConexionInetConServer(const char* ip, int port);
 int leerSocketClient(int fd, char *datos, int longitud);
 int escribirSocketClient(int fd, char *datos, int longitud);
-char* serializarMensaje(Package *package);
-int getLongitudPackage(Package *package);
-Package* fillPackage(int msgCode, char* message);
+Package* fillPackage(uint32_t msgCode, char* message, uint32_t message_long);
 void destroyPackage(Package* package);
-void enviarMensajeSocket(int socket, int accion, char* mensaje);
+int getLongitudPackage(Package *package);
+void enviarMensajeSocket(int socket, uint32_t accion, char* mensaje);
+void enviarMensajeSocketConLongitud(int socket, uint32_t accion, char* mensaje, uint32_t longitud);
 
 #endif /* CLIENT_CLIENT_H_ */
