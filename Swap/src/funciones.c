@@ -122,11 +122,8 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 
 	} else if(package->msgCode==ALMACENAR_NUEVO_PROGRAMA_SWAP){
 
-		logDebug("Message long: %d",package->message_long);
 		int pid = getProcessID_NuevoPrograma(package->message);
 		int cantidadPaginas = getCantidadPaginas_NuevoPrograma(package->message);
-
-		logDebug("Programa PID:%d , cant paginas: %d",pid,cantidadPaginas);
 		int frame = getFirstAvailableBlock(cantidadPaginas);
 
 		if(frame>=0){//hay espacio disponible
