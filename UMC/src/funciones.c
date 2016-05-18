@@ -101,7 +101,7 @@ void comunicarSWAP(int socket_swap, int accion, Configuration* config){
 
 	if(accion==ALMACENAR_NUEVO_PROGRAMA_SWAP){
 		//esto es con datos de prueba
-		int pid = 2;
+		int pid = 300;
 		int cantidadPaginas = 2;
 		pagina* paginas = malloc(sizeof(pagina)*cantidadPaginas);
 		paginas[0] = llenarPagina("a",config->size_pagina);

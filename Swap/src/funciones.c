@@ -146,12 +146,16 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 }
 
 
-int getProcessID_NuevoPrograma(char* str){
-	return *str;
+uint32_t getProcessID_NuevoPrograma(char* str){
+	uint32_t pid;
+	memcpy(&pid,str,sizeof(uint32_t));
+	return pid;
 }
 
-int getCantidadPaginas_NuevoPrograma(char* str){
-	return *(str+sizeof(uint32_t));
+uint32_t getCantidadPaginas_NuevoPrograma(char* str){
+	uint32_t cantPags;
+	memcpy(&cantPags,str+sizeof(uint32_t),sizeof(uint32_t));
+	return cantPags;
 }
 
 pagina* getPaginas_NuevoPrograma(char* str, int cantPags, int size){
@@ -166,12 +170,16 @@ pagina* getPaginas_NuevoPrograma(char* str, int cantPags, int size){
 	return pags;
 }
 
-int getProcessID_EscribirPagina(char* str){
-	return *str;
+uint32_t getProcessID_EscribirPagina(char* str){
+	uint32_t pid;
+	memcpy(&pid,str,sizeof(uint32_t));
+	return pid;
 }
 
-int getNumeroPagina_EscribirPagina(char* str){
-	return *(str+sizeof(uint32_t));
+uint32_t getNumeroPagina_EscribirPagina(char* str){
+	uint32_t numPag;
+	memcpy(&numPag,str+sizeof(uint32_t),sizeof(uint32_t));
+	return numPag;
 }
 
 pagina getPagina_EscribirPagina(char* str, int size){
@@ -181,10 +189,20 @@ pagina getPagina_EscribirPagina(char* str, int size){
 	return pag;
 }
 
-int getProcessID_SolicitarPagina(char* str){
-	return *str;
+uint32_t getProcessID_SolicitarPagina(char* str){
+	uint32_t pid;
+	memcpy(&pid,str,sizeof(uint32_t));
+	return pid;
 }
 
-int getNumeroPagina_SolicitarPagina(char* str){
-	return *(str+sizeof(uint32_t));
+uint32_t getNumeroPagina_SolicitarPagina(char* str){
+	uint32_t numPag;
+	memcpy(&numPag,str+sizeof(uint32_t),sizeof(uint32_t));
+	return numPag;
+}
+
+uint32_t getProcessID_EliminarPrograma(char* str){
+	uint32_t pid;
+	memcpy(&pid,str,sizeof(uint32_t));
+	return pid;
 }
