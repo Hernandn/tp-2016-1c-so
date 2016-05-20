@@ -11,6 +11,7 @@ all: build/libmllibs.so
 create-dirs:
 	mkdir -p build/sockets
 	mkdir -p build/log
+	mkdir -p build/umc
 
 build/libmllibs.so: create-dirs $(OBJS)
 	$(CC) -shared -o "build/libmllibs.so" $(OBJS)
@@ -19,6 +20,9 @@ build/sockets/%.o: sockets/%.c
 	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	
 build/log/%.o: log/%.c
+	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+
+build/umc/%.o: umc/%.c
 	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 
 # Add debug parameters and compile
