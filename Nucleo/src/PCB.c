@@ -16,15 +16,16 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/log/logger.h>
 #include "planificador.h"
+#include "interfazCPU.h"
 
-int pidActual = 0;
+int pidActual = 1;
 
 //probando
 PCB* buildNewPCB(int consolaFD){
 	PCB *new = malloc(sizeof(PCB));
 	new->processID = getNextPID();
 	new->consolaFD = consolaFD;
-	new->programCounter = 2;	//ejemplo
+	new->programCounter = 0;
 	new->pagesQty = 10;			//ejemplo
 	new->executedQuantums = 0;
 	new->consolaActiva = true;
@@ -161,17 +162,27 @@ int addQuantumToExecProcess(PCB* proceso, int quantum){
 	return quantum - proceso->executedQuantums;
 }
 
+int incrementarContadorPrograma(PCB* proceso){//TODO: esto lo tiene que hacer la CPU despues
+	proceso->programCounter++;
+	logTrace("Plan: PCB:%d / Program Counter: %d/%d",proceso->processID,proceso->programCounter,proceso->codeIndexLength);
+	return proceso->codeIndexLength-proceso->programCounter;
+}
+
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
 		if(proceso->consolaActiva){
-			//si se le terminaron los quantums al proceso
-			if(addQuantumToExecProcess(proceso,quantum)<=0){
-				proceso->executedQuantums=0;//reinicio los quantums ejecutados
-				switchProcess(estados,pid,socketCPU);
-				sendFromEXECtoREADY(estados,pid);
+			if(incrementarContadorPrograma(proceso)<=0){
+				finalizarPrograma(estados,proceso->processID,socketCPU);
 			} else {
-				continueExec(socketCPU,pid);
+				//si se le terminaron los quantums al proceso
+				if(addQuantumToExecProcess(proceso,quantum)<=0){
+					proceso->executedQuantums=0;//reinicio los quantums ejecutados
+					switchProcess(estados,pid,socketCPU);
+					sendFromEXECtoREADY(estados,pid);
+				} else {
+					continueExec(socketCPU,proceso);
+				}
 			}
 		} else {
 			//entra por aca si la consola cerro la conexion con el Nucleo
@@ -181,8 +192,13 @@ void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketC
 	}
 }
 
+void finalizarPrograma(Estados* estados, int pid, int socketCPU){
+	switchProcess(estados,pid,socketCPU);
+	PCB* proceso = removeFromEXEC(estados,pid);
+	sendToEXIT(proceso,estados);
+}
+
 void switchProcess(Estados* estados, int pid, int socketCPU){
-	sendFromEXECtoREADY(estados,pid);
 	logTrace("Informando CPU [Switch process]");
 	informarCPU(socketCPU,ABORT_EXECUTION,pid);
 }
@@ -192,25 +208,36 @@ void abortProcess(Estados* estados, int pid, int socketCPU){
 	informarCPU(socketCPU,ABORT_EXECUTION,pid);
 }
 
-void continueExec(int socketCPU,int pid){
+void continueExec(int socketCPU, PCB* pcb){
 	logTrace("Informando CPU [Continue process execution]");
-	informarCPU(socketCPU,CONTINUE_EXECUTION,pid);
+	informarEjecucionCPU(socketCPU,CONTINUE_EXECUTION,pcb);
 }
 
 void startExec(Estados* estados, int socketCPU){
 	PCB* proceso = getNextFromREADY(estados);
 	sendToEXEC(proceso,estados);
 	logTrace("Informando CPU [Execute new process]");
-	informarCPU(socketCPU,EXEC_NEW_PROCESS,proceso->processID);
+	informarEjecucionCPU(socketCPU,EXEC_NEW_PROCESS,proceso);
+}
+
+void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb){
+	char* instruccion = getSiguienteInstruccion(pcb);
+	logTrace("Instruccion a ejecutar: %s",instruccion);
+	char* serialized = serializar_EjecutarInstruccion(pcb->processID,instruccion);
+	int longitud = getLong_EjecutarInstruccion(instruccion);
+	enviarMensajeSocketConLongitud(socketCPU,EXEC_NEW_PROCESS,serialized,longitud);
+	free(serialized);
 }
 
 void informarCPU(int socketCPU, int accion, int pid){
 	enviarMensajeSocket(socketCPU,accion,string_itoa(pid));
 }
 
-void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador){
+void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, char* programa){
 	logTrace("Iniciando nuevo Programa Consola");
 	PCB* nuevo = buildNewPCB(consolaFD);
+	getCodeIndex(nuevo,programa);
+	nuevo->programa = strdup(programa);
 	sendToNEW(nuevo,estados);
 	//TODO: hacer las validaciones para ver si puede pasar a READY
 	//hay que ver si hacer que apenas entran se pongan en READY o si poner en NEW y que otra funcion vaya pasando los NEW a READY
@@ -220,7 +247,7 @@ void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador){
 	informarPlanificador(socketPlanificador,PROGRAM_READY,nuevo->processID);
 }
 
-void finalizarPrograma(Estados* estados, int consolaFD){
+void abortarPrograma(Estados* estados, int consolaFD){
 	logTrace("Finalizando Programa Consola");
 	//primero lo busca en los estados distintos de EXEC(ejecutandose)
 	bool encontrado = findAndExitPCBnotExecuting(estados,consolaFD);
@@ -279,5 +306,67 @@ void findAndExitPCBexecuting(Estados* estados, int consolaFD){
 
 void informarPlanificador(int socketPlanificador, int accion, int pid){
 	enviarMensajeSocket(socketPlanificador,accion,string_itoa(pid));
+}
+
+void getCodeIndex(PCB* pcb, char* programa){
+	char* aux = programa;
+	ParCodigo* tabla = NULL;
+	int i = 0;
+	int tablaLen = 0;
+	int ultimo = 0;
+
+	while(*aux){
+		if(*aux=='\n'){
+			if(esInstruccionValida(programa,ultimo,i-ultimo)){
+				tabla = (ParCodigo*) realloc(tabla, sizeof(ParCodigo)*(tablaLen+1));
+				tabla[tablaLen].offset = ultimo;
+				tabla[tablaLen].length = i-ultimo;
+				tablaLen++;
+			}
+			ultimo = i+1;
+		}
+		aux++;
+		i++;
+	}
+	pcb->codeIndex = tabla;
+	pcb->codeIndexLength = tablaLen;
+}
+
+int esInstruccionValida(char* str, int offset, int length){
+	int esValida;
+	char* instruccion = malloc(sizeof(char)*length+1);
+	if(instruccion!=NULL){
+		memcpy(instruccion,str+offset,length);
+		instruccion[length]='\0';
+
+		if(string_starts_with(instruccion,"#")){
+			esValida = 0;
+		} else if(string_equals_ignore_case(instruccion,"begin")){
+			esValida = 0;
+		} else if(string_equals_ignore_case(instruccion,"end")){
+			esValida = 0;
+		} else {
+			esValida = 1;
+		}
+		free(instruccion);
+		return esValida;
+	} else {
+		return 0;
+	}
+}
+
+char* getInstruccion(char* codigo, int offset, int length){
+	char* instruccion = malloc(sizeof(char)*length+1);
+	if(instruccion!=NULL){
+		memcpy(instruccion,codigo+offset,length);
+		instruccion[length]='\0';
+	}
+	return instruccion;
+}
+
+char* getSiguienteInstruccion(PCB* pcb){
+	int offset = pcb->codeIndex[pcb->programCounter].offset;
+	int length = pcb->codeIndex[pcb->programCounter].length;
+	return getInstruccion(pcb->programa,offset,length);
 }
 

@@ -7,32 +7,30 @@
 
 #include "CPU.h"
 #include "configuration.h"
+#include "primitivas.h"
+#include "interfazNucleo.h"
 
-Configuration* configurar(){
+AnSISOP_funciones functions = {
+		.AnSISOP_definirVariable		= ml_definirVariable,
+		.AnSISOP_obtenerPosicionVariable= ml_obtenerPosicionVariable,
+		.AnSISOP_dereferenciar			= ml_dereferenciar,
+		.AnSISOP_asignar				= ml_asignar,
+		.AnSISOP_obtenerValorCompartida = ml_obtenerValorCompartida,
+		.AnSISOP_asignarValorCompartida = ml_asignarValorCompartida,
+		.AnSISOP_irAlLabel				= ml_irAlLabel,
+		.AnSISOP_llamarSinRetorno		= ml_llamarSinRetorno,
+		.AnSISOP_llamarConRetorno		= ml_llamarConRetorno,
+		.AnSISOP_finalizar				= ml_finalizar,
+		.AnSISOP_retornar				= ml_retornar,
+		.AnSISOP_imprimir				= ml_imprimir,
+		.AnSISOP_imprimirTexto			= ml_imprimirTexto,
+		.AnSISOP_entradaSalida			= ml_entradaSalida,
+};
 
-	Configuration* config = malloc(sizeof(Configuration));
-
-	t_config* nConfig = config_create(CPU_CONFIG_PATH);
-	if(nConfig==NULL){
-		//para debuggear desde eclipse
-		nConfig = config_create(CPU_CONFIG_PATH_ECLIPSE);
-		if(nConfig==NULL){
-			printf("No se encontro el archivo de configuracion.");
-			exit (1);
-		}
-	}
-	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
-	config->ip_nucleo = config_get_string_value(nConfig,IP_NUCLEO);
-	config->puerto_umc=config_get_int_value(nConfig,PUERTO_UMC);
-	config->ip_umc = config_get_string_value(nConfig,IP_UMC);
-	//configuracion de log
-	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
-	config->log_file = config_get_string_value(nConfig,LOG_FILE);
-	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
-	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
-
-	return config;
-}
+AnSISOP_kernel kernel_functions = {
+		.AnSISOP_wait	= ml_wait,
+		.AnSISOP_signal = ml_signal,
+};
 
 void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;
@@ -113,7 +111,7 @@ void analizarMensaje(Package* package, arg_struct *args){
 		logDebug("El Nucleo me comunica que se creo un programa nuevo.");
 		enviarMensajeSocket(args->socketUMC,INIT_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
 	} else if(package->msgCode==EXEC_NEW_PROCESS){
-		args->processID = atoi(package->message);	//actualizo al nuevo proceso recibido por mensaje
+		args->processID = getProcessID_ejecutarInstruccion(package->message);
 		ejecutarProceso(args,package);
 	} else if(package->msgCode==QUANTUM_SLEEP_CPU){
 		quantumSleep(args,atoi(package->message));
@@ -126,7 +124,8 @@ void analizarMensaje(Package* package, arg_struct *args){
 
 void ejecutarProceso(arg_struct *args, Package* package){
 	logTrace("Ejecutando instruccion del proceso PID:%d...",args->processID);
-	//TODO: Aca iria el codigo a partir del cual empieza toda la ejecucion de una instruccion
+
+	ejecutarInstruccion(package);
 
 	logTrace("Informando al Nucleo que finalizo la ejecucion de 1 Quantum...");
 	enviarMensajeSocket(args->socketNucleo,EXECUTION_FINISHED,"");
@@ -146,5 +145,15 @@ void abortarProceso(arg_struct *args){
 	enviarMensajeSocket(args->socketNucleo,CPU_LIBRE,"");
 }
 
+void ejecutarInstruccion(Package* package){
+	char* instruccion = getInstruccion_ejecutarInstruccion(package->message);
+	printf("=================================\n");
+	printf("Ejecutando '%s'\n", instruccion);
+	analizadorLinea(instruccion, &functions, &kernel_functions);
+	printf("=================================\n");
+	if(instruccion!=NULL){
+		free(instruccion);
+	}
+}
 
 

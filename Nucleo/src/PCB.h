@@ -31,9 +31,11 @@ typedef struct PCB {
 	int pagesQty;		//cantidad de paginas de codigo ANSISOP
 	int executedQuantums;	//cantidad de quantums ya ejecutados
 	ParCodigo* codeIndex;		//indice de codigo
+	int codeIndexLength;
 	int* tagIndex;		//indice de etiquetas
 	int* stackIndex;		//indice del stack
 	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
+	char* programa;	//codigo del programa
 } PCB;
 
 
@@ -70,16 +72,23 @@ void abortFromEXEC(Estados* estados,int pid);
 PCB* removeFromEXEC(Estados* estados, int pid);
 PCB* getFromEXEC(Estados* estados, int pid);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
+int incrementarContadorPrograma(PCB* proceso);
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU);
+void finalizarPrograma(Estados* estados, int pid, int socketCPU);
 void switchProcess(Estados* estados, int pid, int socketCPU);
 void abortProcess(Estados* estados, int pid, int socketCPU);
-void continueExec(int socketCPU,int pid);
+void continueExec(int socketCPU, PCB* pcb);
 void startExec(Estados* estados, int socketCPU);
+void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb);
 void informarCPU(int socketCPU, int accion, int pid);
-void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador);
-void finalizarPrograma(Estados* estados, int consolaFD);
+void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, char* programa);
+void abortarPrograma(Estados* estados, int consolaFD);
 bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD);
 void findAndExitPCBexecuting(Estados* estados, int consolaFD);
 void informarPlanificador(int socketPlanificador, int accion, int pid);
+void getCodeIndex(PCB* pcb, char* programa);
+int esInstruccionValida(char* str, int offset, int length);
+char* getInstruccion(char* codigo, int offset, int length);
+char* getSiguienteInstruccion(PCB* pcb);
 
 #endif /* PCB_H_ */

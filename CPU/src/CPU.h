@@ -8,12 +8,6 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <mllibs/sockets/client.h>
-#include <mllibs/sockets/package.h>
-#include <mllibs/sockets/server.h>
-#include <mllibs/log/logger.h>
 #include "configuration.h"
 
 //codigos de operaciones de la UMC
@@ -43,7 +37,7 @@ typedef struct arg_struct {
 	Configuration* config;
 	int socketUMC;
 	int socketNucleo;
-	int processID;//processID del proceso que actualmente se esta ejecutando (despues va a ser el PCB directamente)
+	int processID;	//PID actualmente en ejecucion
 } arg_struct;
 
 //prototipos de funciones
@@ -56,6 +50,7 @@ void analizarMensaje(Package* package, arg_struct *args);
 void ejecutarProceso(arg_struct *args, Package* package);
 void quantumSleep(arg_struct *args, int milisegundos);
 void abortarProceso(arg_struct *args);
+void ejecutarInstruccion(Package* package);
 
 
 #endif /* CPU_H_ */
