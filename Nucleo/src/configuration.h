@@ -8,6 +8,15 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
+#include <time.h>
+#include <mllibs/sockets/package.h>
+#include <mllibs/sockets/server.h>
+#include <mllibs/sockets/client.h>
+#include <mllibs/log/logger.h>
 #include <commons/config.h>
 
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"

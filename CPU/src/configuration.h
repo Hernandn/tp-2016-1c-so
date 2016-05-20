@@ -8,7 +8,15 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <mllibs/sockets/client.h>
+#include <mllibs/sockets/package.h>
+#include <mllibs/sockets/server.h>
+#include <mllibs/log/logger.h>
 #include <commons/config.h>
+#include <stdint.h>
 
 #define CPU_CONFIG_PATH "../cpu.conf"
 #define CPU_CONFIG_PATH_ECLIPSE "cpu.conf"
