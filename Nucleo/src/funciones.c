@@ -382,7 +382,7 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
 	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
-		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU);
+		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU,args->socketClientPlanificador);
 	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);

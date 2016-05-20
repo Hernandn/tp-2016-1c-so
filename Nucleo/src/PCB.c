@@ -21,7 +21,7 @@
 int pidActual = 1;
 
 //probando
-PCB* buildNewPCB(int consolaFD){
+PCB* buildNewPCB(int consolaFD, char* programa){
 	PCB *new = malloc(sizeof(PCB));
 	new->processID = getNextPID();
 	new->consolaFD = consolaFD;
@@ -29,6 +29,8 @@ PCB* buildNewPCB(int consolaFD){
 	new->pagesQty = 10;			//ejemplo
 	new->executedQuantums = 0;
 	new->consolaActiva = true;
+	new->codeIndex = metadata_desde_literal(programa);
+	new->programa = strdup(programa);
 	logTrace("Creado PCB [PID:%d, ConsolaFD:%d, QuantumsExec:%d]",new->processID,new->consolaFD,new->executedQuantums);
 	return new;
 }
@@ -169,18 +171,18 @@ int addQuantumToExecProcess(PCB* proceso, int quantum){
 	return quantum - proceso->executedQuantums;
 }
 
-int incrementarContadorPrograma(PCB* proceso){//TODO: esto lo tiene que hacer la CPU despues
-	proceso->programCounter++;
-	logTrace("Plan: PCB:%d / Program Counter: %d/%d",proceso->processID,proceso->programCounter,proceso->codeIndexLength);
-	return proceso->codeIndexLength-proceso->programCounter;
+int incrementarContadorPrograma(PCB* pcb){//TODO: esto lo tiene que hacer la CPU despues
+	pcb->programCounter++;
+	logTrace("Plan: PCB:%d / Program Counter: %d/%d",pcb->processID,pcb->programCounter,pcb->codeIndex->instrucciones_size);
+	return pcb->codeIndex->instrucciones_size-pcb->programCounter;
 }
 
-void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU){
+void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
 		if(proceso->consolaActiva){
 			if(incrementarContadorPrograma(proceso)<=0){
-				finalizarPrograma(estados,proceso->processID,socketCPU);
+				finalizarPrograma(estados,proceso->processID,socketCPU,socketPlanificador);
 			} else {
 				//si se le terminaron los quantums al proceso
 				if(addQuantumToExecProcess(proceso,quantum)<=0){
@@ -199,11 +201,11 @@ void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketC
 	}
 }
 
-void finalizarPrograma(Estados* estados, int pid, int socketCPU){
+void finalizarPrograma(Estados* estados, int pid, int socketCPU, int socketPlanificador){
 	switchProcess(estados,pid,socketCPU);
 	PCB* proceso = removeFromEXEC(estados,pid);
 	sendToEXIT(proceso,estados);
-	//TODO: faltaria informarle a la consola que finalizo el programa
+	enviarMensajeSocket(socketPlanificador,FINALIZAR_PROGRAMA,"");
 }
 
 void switchProcess(Estados* estados, int pid, int socketCPU){
@@ -242,9 +244,7 @@ void informarCPU(int socketCPU, int accion, int pid){
 
 void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, char* programa){
 	logTrace("Iniciando nuevo Programa Consola");
-	PCB* nuevo = buildNewPCB(consolaFD);
-	getCodeIndex(nuevo,programa);
-	nuevo->programa = strdup(programa);
+	PCB* nuevo = buildNewPCB(consolaFD,programa);
 	sendToNEW(nuevo,estados);
 	//TODO: hacer las validaciones para ver si puede pasar a READY
 	//hay que ver si hacer que apenas entran se pongan en READY o si poner en NEW y que otra funcion vaya pasando los NEW a READY
@@ -315,6 +315,7 @@ void informarPlanificador(int socketPlanificador, int accion, int pid){
 	enviarMensajeSocket(socketPlanificador,accion,string_itoa(pid));
 }
 
+/*
 void getCodeIndex(PCB* pcb, char* programa){
 	char* aux = programa;
 	ParCodigo* tabla = NULL;
@@ -361,6 +362,7 @@ int esInstruccionValida(char* str, int offset, int length){
 		return 0;
 	}
 }
+*/
 
 char* getInstruccion(char* codigo, int offset, int length){
 	char* instruccion = malloc(sizeof(char)*length+1);
@@ -372,8 +374,8 @@ char* getInstruccion(char* codigo, int offset, int length){
 }
 
 char* getSiguienteInstruccion(PCB* pcb){
-	int offset = pcb->codeIndex[pcb->programCounter].offset;
-	int length = pcb->codeIndex[pcb->programCounter].length;
+	int offset = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].start;
+	int length = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].offset;
 	return getInstruccion(pcb->programa,offset,length);
 }
 

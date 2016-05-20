@@ -10,15 +10,7 @@
 
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
-
-/**
- * Estructura que representa la posicion de una linea
- * de codigo en un programa fuente ANSISOP
- */
-typedef struct ParCodigo {
-	int offset;	//byte a partir del cual empieza la linea de codigo
-	int length;	//longitud de la linea de codigo
-} ParCodigo;
+#include <parser/metadata_program.h>
 
 
 /*
@@ -30,10 +22,8 @@ typedef struct PCB {
 	int programCounter;	//contador de programa
 	int pagesQty;		//cantidad de paginas de codigo ANSISOP
 	int executedQuantums;	//cantidad de quantums ya ejecutados
-	ParCodigo* codeIndex;		//indice de codigo
-	int codeIndexLength;
-	int* tagIndex;		//indice de etiquetas
-	int* stackIndex;		//indice del stack
+	t_metadata_program* codeIndex;		//indice de codigo
+	int* stackIndex;		//indice del stack (todavia no implementado)
 	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
 	char* programa;	//codigo del programa
 } PCB;
@@ -53,7 +43,7 @@ typedef struct Estados {
 
 
 //funciones
-PCB* buildNewPCB(int consolaFD);
+PCB* buildNewPCB(int consolaFD, char* programa);
 void destroyPCB(PCB* self);
 int getNextPID();
 Estados* inicializarEstados();
@@ -74,8 +64,8 @@ PCB* removeNextFromEXIT(Estados* estados);
 PCB* getFromEXEC(Estados* estados, int pid);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
 int incrementarContadorPrograma(PCB* proceso);
-void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU);
-void finalizarPrograma(Estados* estados, int pid, int socketCPU);
+void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador);
+void finalizarPrograma(Estados* estados, int pid, int socketCPU, int socketPlanificador);
 void switchProcess(Estados* estados, int pid, int socketCPU);
 void abortProcess(Estados* estados, int pid, int socketCPU);
 void continueExec(int socketCPU, PCB* pcb);
