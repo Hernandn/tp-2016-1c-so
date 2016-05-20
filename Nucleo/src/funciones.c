@@ -293,7 +293,10 @@ int conectarConUMC(Configuration* config){
 	//Se espera el handshake de la UMC para confirmar conexion
 	package=malloc(sizeof(Package));
 	if(recieve_and_deserialize(package, socket) > 0) {
-		if(package->msgCode==HANDSHAKE_UMC) logDebug("Conexion con UMC confirmada");
+		if(package->msgCode==HANDSHAKE_UMC){
+			config->size_pagina = atoi(package->message);//recibo el tamanio de pagina
+			logDebug("Conexion con UMC confirmada, tamanio de pagina: %d",config->size_pagina);
+		}
 	}
 
 	//Le aviso a la UMC que soy un nucleo

@@ -22,7 +22,9 @@ void handleClients(Configuration* config){
 		numero_cpus = 0;					//Lleva la cuenta de las CPU's conectadas
 	pthread_t threads_cpus[MAX_CLIENTES];	//Arrar de threads de cpu's
 	t_arg_thread_cpu* arg_thread_cpu;		//Arguemntos para el thread del nuevo cpu
+	t_arg_thread_nucleo* arg_thread_nucleo;		//Argumentos para el thread del nuevo Nucleo
 	Package* package=malloc(sizeof(Package));
+	pthread_t thread_nucleo;
 
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
@@ -54,8 +56,8 @@ void handleClients(Configuration* config){
 		//Acepto las conexiones y las mando a diferentes threads
 		socket_cliente = aceptarConexionCliente(socketServidor);
 
-		//Comienzo el handshake
-		enviarMensajeSocket(socket_cliente,HANDSHAKE_UMC,"");
+		//Comienzo el handshake, enviando el tamanio de pagina
+		enviarMensajeSocket(socket_cliente,HANDSHAKE_UMC,string_itoa(config->size_pagina));
 
 		//Espero respuesta y creo thread correspondiente
 		if(recieve_and_deserialize(package,socket_cliente) > 0){
@@ -82,7 +84,11 @@ void handleClients(Configuration* config){
 
 				case HANDSHAKE_NUCLEO:
 					logDebug("Cliente %d es un Nucleo",socket_cliente);
-					//Por ahora entiendo que no recibe nada del nucleo asi que queda ahi.
+					//TODO No estoy liberando esto en ningun momento.
+					arg_thread_nucleo = malloc(sizeof(t_arg_thread_nucleo));
+					arg_thread_nucleo->socket_nucleo=socket_cliente;
+					arg_thread_nucleo->config=config;
+					pthread_create(&thread_nucleo,NULL,(void*) handleNucleo,(void*) arg_thread_nucleo);
 					break;
 
 				default:
@@ -171,20 +177,52 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 		} else {
 			//Si el cliente cerro la conexion se termino el thread
 			sigue=0;
-			logInfo("Cliente ha cerrado la conexión, cerrando thread\n");
+			logInfo("Cliente ha cerrado la conexión, cerrando thread");
 		}
 		destroyPackage(package);
 	}
-	logInfo("Fin thread\n");
+	logInfo("Fin thread CPU");
+}
+
+void handleNucleo(t_arg_thread_nucleo* args){
+	int sigue = 1,
+			*socket_nucleo = &args->socket_nucleo;	//Lo guardo en variables para que sea mas comodo de usar
+	Configuration* config = args->config;
+	Package* package;
+
+	while(sigue){
+		package = malloc(sizeof(Package));
+		if(recieve_and_deserialize(package,*socket_nucleo) > 0){
+			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
+			if(package->msgCode==INIT_PROGRAM){
+				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
+				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP,config);
+			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
+				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
+				enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");
+			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
+				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
+				enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");
+			} else if(package->msgCode==END_PROGRAM){
+				logDebug("Se ha solicitado la finalizacion de un programa.");
+			}
+		} else {
+			//Si el cliente cerro la conexion se termino el thread
+			sigue=0;
+			logInfo("Nucleo ha cerrado la conexión, cerrando thread");
+		}
+		destroyPackage(package);
+	}
+	logInfo("Fin thread Nucleo");
 }
 
 void inicializarUMC(Configuration* config){
 
-	logDebug("Inicializando la UMC\n");
+	logDebug("Inicializando la UMC");
 
 	tabla = crearTablaDePaginas(config->cantidad_paginas);
 	memoria_principal=malloc(config->cantidad_paginas*config->size_pagina);
-	logDebug("Creando memoria prinsipal de tamanio %d\n", config->cantidad_paginas*config->size_pagina);
+	logDebug("Creando memoria principal de tamanio %d\n", config->cantidad_paginas*config->size_pagina);
 }
 
 tableRow* crearTablaDePaginas(int cantidadFrames){

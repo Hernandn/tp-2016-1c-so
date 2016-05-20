@@ -47,6 +47,11 @@ typedef struct arg_thread_cpu {
 	Configuration* config;
 } t_arg_thread_cpu;
 
+typedef struct arg_thread_nucleo {
+	int socket_nucleo;
+	Configuration* config;
+} t_arg_thread_nucleo;
+
 typedef char* pagina;
 typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
 
@@ -56,5 +61,6 @@ int conectarConSwap(Configuration*);
 void inicializarUMC(Configuration*);
 tableRow* crearTablaDePaginas(int);
 void handle_cpu(t_arg_thread_cpu*);
+void handleNucleo(t_arg_thread_nucleo* args);
 
 #endif /* FUNCIONES_H_ */
