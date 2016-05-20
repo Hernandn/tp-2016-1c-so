@@ -28,7 +28,7 @@
 //operaciones SWAP
 #define SOLICITAR_PAGINA_SWAP 20
 #define ALMACENAR_PAGINA_SWAP 21
-#define ALMACENAR_NUEVO_PROGRAMA_SWAP 22
+#define NUEVO_PROGRAMA_SWAP 22
 #define ELIMINAR_PROGRAMA_SWAP 23
 //---------------------
 //codigos de operacion con el Nucleo

@@ -120,20 +120,21 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		enviarMensajeSocketConLongitud(socketUMC,SOLICITAR_PAGINA_SWAP,page,config->size_pagina);
 		logDebug("Lectura: [PID: %d, Pagina: %d]",pid,numeroPagina);
 
-	} else if(package->msgCode==ALMACENAR_NUEVO_PROGRAMA_SWAP){
+	} else if(package->msgCode==NUEVO_PROGRAMA_SWAP){
 
 		int pid = getProcessID_NuevoPrograma(package->message);
 		int cantidadPaginas = getCantidadPaginas_NuevoPrograma(package->message);
 		int frame = getFirstAvailableBlock(cantidadPaginas);
 
 		if(frame>=0){//hay espacio disponible
-			pagina* paginas = getPaginas_NuevoPrograma(package->message,cantidadPaginas,config->size_pagina);
-			guardarPrograma(frame,pid,cantidadPaginas,paginas);
-			logDebug("Programa PID:%d se ha almacenado en Swap (%d pags)",pid,cantidadPaginas);
+			nuevoPrograma(frame,pid,cantidadPaginas);
+			logDebug("Se han reservado %d paginas para el Programa PID:%d",cantidadPaginas,pid);
+			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(1));//retorna 1 si PUDO reservar el espacio
 		} else if(frame==-1){
-			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d",pid);
+			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d (%d pags)",pid,cantidadPaginas);
+			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(0));//retorna 0 si NO PUDO reservar el espacio
 		} else if(frame==-2){
-			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d, pero se puede realizar una Compactacion",pid);
+			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d (%d pags), pero se puede realizar una Compactacion",pid,cantidadPaginas);
 		}
 
 	} else if(package->msgCode==ELIMINAR_PROGRAMA_SWAP){
@@ -156,18 +157,6 @@ uint32_t getCantidadPaginas_NuevoPrograma(char* str){
 	uint32_t cantPags;
 	memcpy(&cantPags,str+sizeof(uint32_t),sizeof(uint32_t));
 	return cantPags;
-}
-
-pagina* getPaginas_NuevoPrograma(char* str, int cantPags, int size){
-	int offset = sizeof(uint32_t)*2;
-	pagina* pags = malloc(sizeof(pagina)*cantPags);
-	int i;
-	for(i=0; i<cantPags; i++){
-		pags[i] = malloc(sizeof(char)*size);
-		memcpy(pags[i],str+offset,size);
-		offset+=size;
-	}
-	return pags;
 }
 
 uint32_t getProcessID_EscribirPagina(char* str){

@@ -12,8 +12,8 @@
 #include "funciones.h"
 #include <commons/string.h>
 
-char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags, pagina* paginas, int size_pagina);
-int getLong_NuevoPrograma(int cantPags, int size_pagina);
+char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags);
+int getLong_NuevoPrograma();
 char* serializar_EscribirPagina(uint32_t pid, uint32_t numero_de_pagina, pagina pagina, int size_pagina);
 int getLong_EscribirPagina(int size_pagina);
 char* serializar_SolicitarPagina(uint32_t pid, uint32_t numero_de_pagina);

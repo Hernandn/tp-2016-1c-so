@@ -99,16 +99,26 @@ void comunicarSWAP(int socket_swap, int accion, Configuration* config){
 	pthread_mutex_lock(&comunicacion_swap_mutex);
 	pthread_mutex_lock(&socket_swap_mutex);
 
-	if(accion==ALMACENAR_NUEVO_PROGRAMA_SWAP){
+	if(accion==NUEVO_PROGRAMA_SWAP){
 		//esto es con datos de prueba
 		int pid = 300;
 		int cantidadPaginas = 2;
-		pagina* paginas = malloc(sizeof(pagina)*cantidadPaginas);
-		paginas[0] = llenarPagina("a",config->size_pagina);
-		paginas[1] = llenarPagina("b",config->size_pagina);
-		char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas,paginas,config->size_pagina);
-		int longitud = getLong_NuevoPrograma(cantidadPaginas,config->size_pagina);
+		char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas);
+		int longitud = getLong_NuevoPrograma();
 		enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
+		free(serialized);
+		//esperar respuesta del Swap si pudo reservar espacio para el nuevo programa
+		Package* package = malloc(sizeof(Package));
+		if(recieve_and_deserialize(package,socket_swap) > 0){
+			logDebug("Swap envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+			int pudoReservar = atoi(package->message);
+			if(pudoReservar){//por ahora solo logeo la respuesta
+				logDebug("Swap me avisa que pudo reservar correctamente %d paginas para el Programa PID:%d",cantidadPaginas,pid);
+			} else {
+				logDebug("Swap me avisa que no pudo reservar %d paginas para el Programa PID:%d",cantidadPaginas,pid);
+			}
+		}
+		destroyPackage(package);
 	}
 
 	//Libero la comunicacion con swap
@@ -149,8 +159,8 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 		if(recieve_and_deserialize(package,*socket_cpu) > 0){
 			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
-				comunicarSWAP(socket_swap,ALMACENAR_NUEVO_PROGRAMA_SWAP,config);
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
+				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP,config);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");

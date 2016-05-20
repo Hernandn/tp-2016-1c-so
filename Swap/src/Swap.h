@@ -14,14 +14,13 @@
 //operaciones SWAP
 #define SOLICITAR_PAGINA_SWAP 20
 #define ALMACENAR_PAGINA_SWAP 21
-#define ALMACENAR_NUEVO_PROGRAMA_SWAP 22
+#define NUEVO_PROGRAMA_SWAP 22
 #define ELIMINAR_PROGRAMA_SWAP 23
 
 void handleUMCRequests(Configuration* config);
 void analizarMensaje(Package* package, int socketUMC, Configuration* config);
 uint32_t getProcessID_NuevoPrograma(char* str);
 uint32_t getCantidadPaginas_NuevoPrograma(char* str);
-pagina* getPaginas_NuevoPrograma(char* str, int cantPags, int size);
 uint32_t getProcessID_EscribirPagina(char* str);
 uint32_t getNumeroPagina_EscribirPagina(char* str);
 pagina getPagina_EscribirPagina(char* str, int size);

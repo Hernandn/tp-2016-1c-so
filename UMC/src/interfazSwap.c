@@ -7,9 +7,9 @@
 
 #include "interfazSwap.h"
 
-char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags, pagina* paginas, int size_pagina){
-	//mensaje: pid + cantPags + paginas
-	char *serializedPackage = malloc(sizeof(uint32_t)*2+cantPags*size_pagina);
+char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags){
+	//mensaje: pid + cantPags
+	char *serializedPackage = malloc(sizeof(uint32_t)*2);
 
 	int offset = 0;
 	int size_to_send;
@@ -20,20 +20,12 @@ char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags, pagina* paginas,
 
 	size_to_send = sizeof(uint32_t);
 	memcpy(serializedPackage + offset, &cantPags, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = size_pagina;
-	int i;
-	for(i=0; i<cantPags; i++){
-		memcpy(serializedPackage + offset, paginas[i], size_to_send);
-		offset += size_to_send;
-	}
 
 	return serializedPackage;
 }
 
-int getLong_NuevoPrograma(int cantPags, int size_pagina){
-	return sizeof(uint32_t)*2+cantPags*size_pagina;
+int getLong_NuevoPrograma(){
+	return sizeof(uint32_t)*2;
 }
 
 

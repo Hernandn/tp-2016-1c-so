@@ -60,7 +60,6 @@ int getFirstAvailableBlock(int cantPaginas){
 void escribirPaginaEnFrame(int frame, pagina pag){
 	fseek(file,frame*config->size_pagina,SEEK_SET);
 	fwrite(pag,config->size_pagina,1,file);
-	bitarray_set_bit(bitMap,frame);
 }
 
 void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas){
@@ -107,17 +106,6 @@ void destroyTabla(){
 	free(tabla);
 }
 
-//esta funcion esta solo para ejemplificar como se maneja la pagina
-//en este caso se crea una pagina de tamanio 8 bytes y se le asigna 2 enteros (uno del byte 0 al 3 y otro del 4 al 7)
-void ejemploPagina(){
-	pagina b = malloc(8);
-	b = 7;
-	printf("numero %d\n",b);
-	b+=4;
-	b = 9;
-	printf("numero %d\n",b);
-}
-
 t_bitarray* getBitMap(){
 	return bitMap;
 }
@@ -126,10 +114,10 @@ tableRow* getTablaDePaginas(){
 	return tabla;
 }
 
-void guardarPrograma(int frame, int pid, int cantPaginas, pagina* paginas){
-	escribirPaginasEnFrame(frame,paginas,cantPaginas);
+void nuevoPrograma(int frame, int pid, int cantPaginas){
 	int i,j=0;
 	for(i=frame; i<(cantPaginas+frame); i++){
+		bitarray_set_bit(bitMap,i);
 		tabla[i].pid = pid;
 		tabla[i].page = j;
 		j++;

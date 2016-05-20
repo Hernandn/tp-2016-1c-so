@@ -40,18 +40,27 @@ int main(void) {
 
 	int espacio = getFirstAvailableBlock(cantidadPaginas);
 	printf("Primer espacio libre: %d\n",espacio);
-	guardarPrograma(espacio,pid,cantidadPaginas,paginas);
+	nuevoPrograma(espacio,pid,cantidadPaginas);
+	//ya fueron reservadas las paginas, ahora escribo las paginas que forman el nuevo programa
+	int i;
+	for(i=0; i<cantidadPaginas; i++){
+		escribirPaginaDeProceso(pid,i,paginas[i]);
+	}
 
 	pagina page3 = escribir("z",config->size_pagina);
 	escribirPaginaDeProceso(pid,2,page3);
 
+	//sobreescribo una pagina
 	pagina page2 = leerPaginaDeProceso(pid,2);
-	printf("\nPagina leida\n%s\n",page2);
+	printf("\nPagina %d leida\n%s\n",2,page2);
+
+	pagina page4 = leerPaginaDeProceso(pid,0);
+	printf("\nPagina %d leida\n%s\n",0,page4);
 
 	//imprimo en consola el contenido del bitmap
 	printf("\nBitMap\n");
 	printf("Frame:\t");
-	int i;
+
 	for(i=0; i<bitMap->size; i++){
 		printf("%d ",i);
 	}
