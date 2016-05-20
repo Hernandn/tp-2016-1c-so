@@ -42,7 +42,6 @@ typedef struct arg_struct {
     int consolaSockets[MAX_CONSOLAS];
     int socketServerCPU;
     int socketServerConsola;
-    int socketServerUMC;
     int socketServerPlanificador;
     int socketClientPlanificador;
     t_list* listaCPUs;
@@ -63,7 +62,6 @@ void handleCPUs();
 int elegirRandomCPU(int cpuSockets[]);
 void comunicarCPU(int cpuSockets[]);
 void enviarMensaje(int socket, int accion, char* message);
-Configuration* configurar();
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
 int conectarConUMC(Configuration* config);
@@ -75,5 +73,6 @@ CPU* buscarCPUporSocketFD(int socketCPU, t_list* listaCPUs);
 void eliminarCPU(t_list* listaCPUs,int socketCPU);
 int conectarConPlanificador(char* ip, int puerto);
 void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args);
+int getSocketUMC();
 
 #endif /* NUCLEO_H_ */

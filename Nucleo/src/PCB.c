@@ -246,6 +246,16 @@ void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, ch
 	logTrace("Iniciando nuevo Programa Consola");
 	PCB* nuevo = buildNewPCB(consolaFD,programa);
 	sendToNEW(nuevo,estados);
+
+	//esto es para pedirle a la UMC que reserve espacio para el programa
+	int socketUMC = getSocketUMC();
+	int size_pagina = getConfiguration()->size_pagina;
+	int stack_size = getConfiguration()->stack_size;
+	int pagsNecesarias = getCantidadPaginasNecesarias(programa,size_pagina,stack_size);
+	logDebug("Se necesitan %d paginas para almacenar el programa",pagsNecesarias);
+
+	//pagina* paginas = getPaginasFromPrograma(programa,size_pagina);
+	//destroyPaginas(paginas,pagsNecesarias-stack_size);
 	//TODO: hacer las validaciones para ver si puede pasar a READY
 	//hay que ver si hacer que apenas entran se pongan en READY o si poner en NEW y que otra funcion vaya pasando los NEW a READY
 	nuevo = getNextFromNEW(estados);
@@ -377,5 +387,41 @@ char* getSiguienteInstruccion(PCB* pcb){
 	int offset = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].start;
 	int length = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].offset;
 	return getInstruccion(pcb->programa,offset,length);
+}
+
+int getCantidadPaginasPrograma(char* programa, int size_pagina){
+	int length = strlen(programa);
+	int cantidad = length/size_pagina;
+	if(length%size_pagina!=0){
+		cantidad++;//agrego una pagina mas para lo que resta
+	}
+	return cantidad;
+}
+
+int getCantidadPaginasNecesarias(char* programa, int size_pagina, int stack_size){
+	int cantidad = getCantidadPaginasPrograma(programa,size_pagina);
+	cantidad += stack_size;
+	return cantidad;
+}
+
+pagina* getPaginasFromPrograma(char* programa, int size_pagina){
+	int cantPags = getCantidadPaginasPrograma(programa,size_pagina);
+	int offset = 0;
+	pagina* pags = malloc(sizeof(pagina)*cantPags);
+	int i;
+	for(i=0; i<cantPags; i++){
+		pags[i] = malloc(sizeof(char)*size_pagina);
+		memcpy(pags[i],programa+offset,size_pagina);
+		offset+=size_pagina;
+	}
+	return pags;
+}
+
+void destroyPaginas(pagina* paginas, int cantidad){
+	int i;
+	for(i=0; i<cantidad; i++){
+		free(paginas[i]);
+	}
+	free(paginas);
 }
 

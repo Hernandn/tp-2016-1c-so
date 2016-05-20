@@ -7,9 +7,11 @@
 
 #include "configuration.h"
 
-Configuration* configurar(){
+Configuration* config;
 
-	Configuration* config = malloc(sizeof(Configuration));
+void configurar(){
+
+	config = malloc(sizeof(Configuration));
 
 	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
 	if(nConfig==NULL){
@@ -30,11 +32,15 @@ Configuration* configurar(){
 	config->quantum = config_get_int_value(nConfig,QUANTUM);
 	config->quantum_sleep = config_get_int_value(nConfig,QUANTUM_SLEEP);
 
+	config->stack_size = config_get_int_value(nConfig,STACK_SIZE);
+
 	//configuracion de log
 	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);
 	config->log_file = config_get_string_value(nConfig,LOG_FILE);
 	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
 	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
+}
 
+Configuration* getConfiguration(){
 	return config;
 }

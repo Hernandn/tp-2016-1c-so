@@ -28,6 +28,7 @@ typedef struct PCB {
 	char* programa;	//codigo del programa
 } PCB;
 
+typedef char* pagina;
 
 /*
  * Estructura con las colas de Estados
@@ -81,5 +82,9 @@ void getCodeIndex(PCB* pcb, char* programa);
 int esInstruccionValida(char* str, int offset, int length);
 char* getInstruccion(char* codigo, int offset, int length);
 char* getSiguienteInstruccion(PCB* pcb);
+int getCantidadPaginasPrograma(char* programa, int size_pagina);
+int getCantidadPaginasNecesarias(char* programa, int size_pagina, int stack_size);
+pagina* getPaginasFromPrograma(char* programa, int size_pagina);
+void destroyPaginas(pagina* paginas, int cantidad);
 
 #endif /* PCB_H_ */

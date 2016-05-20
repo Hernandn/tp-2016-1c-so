@@ -12,8 +12,8 @@
 
 int main(void)
 {
-	Configuration* config = configurar();
-
+	configurar();
+	Configuration* config = getConfiguration();
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
 

@@ -139,10 +139,10 @@ void ejecutarProceso(arg_struct *args, Package* package){
 	enviarMensajeSocket(args->socketNucleo,EXECUTION_FINISHED,"");
 }
 
-void quantumSleep(arg_struct *args, int milisegundos){
-	logTrace("Sleeping %d miliseconds (-.-) ...zzzZZZ",milisegundos);
+void quantumSleep(arg_struct *args, int segundos){
+	logTrace("Sleeping %d seconds (-.-) ...zzzZZZ",segundos);
 	//TODO: hay que ver que funcion usar para que haga sleep de milisegundos
-	sleep(milisegundos);
+	sleep(segundos);
 	enviarMensajeSocket(args->socketNucleo,QUANTUM_FINISHED,string_itoa(args->processID));
 }
 

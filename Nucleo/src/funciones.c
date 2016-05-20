@@ -7,12 +7,14 @@
 
 #include "Nucleo.h"
 
+int socketUMC = -1;
+
 void handleClients(Configuration* config){
 
 	arg_struct args;
 	args.config = config;
-	args.socketServerUMC = -1;
 	args.listaCPUs = list_create();
+	args.socketClientPlanificador = -1;
 
 	inicializarArraySockets(&args);
 
@@ -75,11 +77,11 @@ void handleConsolas(void* arguments){
 	 * por los clientes ya conectados */
 	while (1)
 	{
-		if(args->socketServerUMC==-1){
+		if(args->socketClientPlanificador==-1){
 			args->socketClientPlanificador = conectarConPlanificador(PLANIFICADOR_IP,PLANIFICADOR_PORT);
 		}
-		if(args->socketServerUMC==-1){
-			args->socketServerUMC = conectarConUMC(args->config);
+		if(socketUMC==-1){
+			socketUMC = conectarConUMC(args->config);
 		}
 		/* Cuando un cliente cierre la conexión, se pondrá un -1 en su descriptor
 		 * de socket dentro del array socketCliente. La función compactaClaves()
@@ -380,7 +382,7 @@ int conectarConPlanificador(char* ip, int puerto){
 
 void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	if(package->msgCode==EXECUTION_FINISHED){
-		logTrace("CPU %d me informa que finalizo de ejecutar la instruccion");
+		logTrace("CPU %d me informa que finalizo de ejecutar la instruccion",socketCPU);
 		logTrace("Enviando al CPU la orden de Quantum Sleep");
 		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
 	} else if(package->msgCode==QUANTUM_FINISHED){
@@ -392,3 +394,6 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	}
 }
 
+int getSocketUMC(){
+	return socketUMC;
+}

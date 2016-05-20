@@ -169,10 +169,10 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP,config);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");
+				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-				enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");
+				enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
 			}
 		} else {
 			//Si el cliente cerro la conexion se termino el thread
@@ -199,10 +199,10 @@ void handleNucleo(t_arg_thread_nucleo* args){
 				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP,config);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-				enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");
+				enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-				enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");
+				enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
 			} else if(package->msgCode==END_PROGRAM){
 				logDebug("Se ha solicitado la finalizacion de un programa.");
 			}
