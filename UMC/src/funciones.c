@@ -150,7 +150,13 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
 				comunicarSWAP(socket_swap,ALMACENAR_NUEVO_PROGRAMA_SWAP,config);
-				logDebug("Se ha solicitado la inicializacion de un nuevo programa.\n");
+				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
+			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
+				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
+				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");
+			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
+				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
+				enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");
 			}
 		} else {
 			//Si el cliente cerro la conexion se termino el thread

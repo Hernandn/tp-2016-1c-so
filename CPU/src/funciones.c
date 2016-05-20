@@ -32,6 +32,9 @@ AnSISOP_kernel kernel_functions = {
 		.AnSISOP_signal = ml_signal,
 };
 
+//TODO: por ahora queda aca global para que lo usen las primitivas, hay que ver donde meterlo
+int socketUMC;
+
 void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;
 	int socket;		/* descriptor de conexión con el servidor */
@@ -44,7 +47,7 @@ void conectarConUMC(void* arguments){
 		exit(-1);
 	}
 
-	args->socketUMC = socket;
+	socketUMC = socket;
 
 	logDebug("Realizando handshake con UMC");
 	package=malloc(sizeof(Package));
@@ -109,7 +112,7 @@ void conectarConNucleo(void* arguments){
 void analizarMensaje(Package* package, arg_struct *args){
 	if(package->msgCode==NEW_ANSISOP_PROGRAM){
 		logDebug("El Nucleo me comunica que se creo un programa nuevo.");
-		enviarMensajeSocket(args->socketUMC,INIT_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
+		enviarMensajeSocket(socketUMC,INIT_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
 	} else if(package->msgCode==EXEC_NEW_PROCESS){
 		args->processID = getProcessID_ejecutarInstruccion(package->message);
 		ejecutarProceso(args,package);
@@ -155,5 +158,19 @@ void ejecutarInstruccion(Package* package){
 		free(instruccion);
 	}
 }
+
+
+void analizarRespuestaUMC(){
+	Package* package = malloc(sizeof(Package));
+	if(recieve_and_deserialize(package,socketUMC) > 0){
+		logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+	}
+	destroyPackage(package);
+}
+
+int getSocketUMC(){
+	return socketUMC;
+}
+
 
 

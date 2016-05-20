@@ -6,27 +6,40 @@
  */
 
 #include "primitivas.h"
+#include "CPU.h"
 
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
 
 t_puntero ml_definirVariable(t_nombre_variable variable) {
 	printf("Definir la variable %c\n", variable);
+	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
+	printf("Enviando escritura de Bytes a UMC\n");
+	analizarRespuestaUMC();
 	return POSICION_MEMORIA;
 }
 
 t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable) {
 	printf("Obtener posicion de %c\n", variable);
+	printf("Enviando lectura de Bytes a UMC\n");
+	enviarMensajeSocket(getSocketUMC(),SOLICITAR_BYTES_PAGINA,"");
+	analizarRespuestaUMC();
 	return POSICION_MEMORIA;
 }
 
 t_valor_variable ml_dereferenciar(t_puntero puntero) {
 	printf("Dereferenciar %d y su valor es: %d\n", puntero, CONTENIDO_VARIABLE);
+	printf("Enviando lectura de Bytes a UMC\n");
+	enviarMensajeSocket(getSocketUMC(),SOLICITAR_BYTES_PAGINA,"");
+	analizarRespuestaUMC();
 	return CONTENIDO_VARIABLE;
 }
 
 void ml_asignar(t_puntero puntero, t_valor_variable variable) {
 	printf("Asignando en %d el valor %d\n", puntero, variable);
+	printf("Enviando escritura de Bytes a UMC\n");
+	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
+	analizarRespuestaUMC();
 }
 
 void ml_imprimir(t_valor_variable valor) {

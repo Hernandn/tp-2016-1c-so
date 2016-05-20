@@ -36,6 +36,7 @@ PCB* buildNewPCB(int consolaFD){
 void destroyPCB(PCB* self){
 	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",self->processID,self->consolaFD);
 	free(self->codeIndex);
+	free(self->programa);
 	//free(self->stackIndex);
 	//free(self->tagIndex);
 	free(self);
@@ -140,6 +141,12 @@ PCB* removeFromEXEC(Estados* estados, int pid){
 	return NULL;
 }
 
+PCB* removeNextFromEXIT(Estados* estados){
+	PCB* pcb = queue_pop(estados->exit);
+	logTrace("Plan: PCB:%d / EXIT -> fin",pcb->processID);
+	return pcb;
+}
+
 PCB* getFromEXEC(Estados* estados, int pid){
 	int i;
 	t_list* enEjecucion = estados->execute;
@@ -196,6 +203,7 @@ void finalizarPrograma(Estados* estados, int pid, int socketCPU){
 	switchProcess(estados,pid,socketCPU);
 	PCB* proceso = removeFromEXEC(estados,pid);
 	sendToEXIT(proceso,estados);
+	//TODO: faltaria informarle a la consola que finalizo el programa
 }
 
 void switchProcess(Estados* estados, int pid, int socketCPU){
@@ -222,7 +230,6 @@ void startExec(Estados* estados, int socketCPU){
 
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb){
 	char* instruccion = getSiguienteInstruccion(pcb);
-	logTrace("Instruccion a ejecutar: %s",instruccion);
 	char* serialized = serializar_EjecutarInstruccion(pcb->processID,instruccion);
 	int longitud = getLong_EjecutarInstruccion(instruccion);
 	enviarMensajeSocketConLongitud(socketCPU,EXEC_NEW_PROCESS,serialized,longitud);

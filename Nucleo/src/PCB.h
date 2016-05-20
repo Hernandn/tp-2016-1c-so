@@ -70,6 +70,7 @@ void abortFromBLOCK(Estados* estados,int index);
 void abortFromNEW(Estados* estados,int index);
 void abortFromEXEC(Estados* estados,int pid);
 PCB* removeFromEXEC(Estados* estados, int pid);
+PCB* removeNextFromEXIT(Estados* estados);
 PCB* getFromEXEC(Estados* estados, int pid);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
 int incrementarContadorPrograma(PCB* proceso);

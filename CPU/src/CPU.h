@@ -35,7 +35,6 @@
 
 typedef struct arg_struct {
 	Configuration* config;
-	int socketUMC;
 	int socketNucleo;
 	int processID;	//PID actualmente en ejecucion
 } arg_struct;
@@ -51,6 +50,8 @@ void ejecutarProceso(arg_struct *args, Package* package);
 void quantumSleep(arg_struct *args, int milisegundos);
 void abortarProceso(arg_struct *args);
 void ejecutarInstruccion(Package* package);
+void analizarRespuestaUMC();
+int getSocketUMC();
 
 
 #endif /* CPU_H_ */

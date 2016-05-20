@@ -91,11 +91,12 @@ void planificar(void* arguments){
 			{
 				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
-				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
 					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					if(package->msgCode==CPU_LIBRE || package->msgCode==PROGRAM_READY){
 						atenderProcesos(estados,listaCPUs);
+					} else if(package->msgCode==FINALIZAR_PROGRAMA){
+						finalizarProg(estados,package);
 					}
 					destroyPackage(package);
 				}
@@ -150,4 +151,12 @@ void inicializarSockets(int* sockets){
 	for(i=0;i<MAX_CONEXIONES;i++){
 		sockets[i]=-1;
 	}
+}
+
+void finalizarProg(Estados* estados, Package* package){
+	PCB* pcb = removeNextFromEXIT(estados);
+	int consolaFD = pcb->consolaFD;
+	destroyPCB(pcb);
+	logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
+	enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");
 }

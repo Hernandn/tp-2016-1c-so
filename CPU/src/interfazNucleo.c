@@ -15,6 +15,5 @@ uint32_t getProcessID_ejecutarInstruccion(char* str){
 
 char* getInstruccion_ejecutarInstruccion(char* str){
 	int offset = sizeof(uint32_t);
-	logTrace("Instr: %s",str+offset);
 	return strdup(str+offset);
 }

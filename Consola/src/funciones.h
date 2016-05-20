@@ -9,6 +9,7 @@
 #define FUNCIONES_H_
 
 #include <mllibs/sockets/client.h>
+#include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include "configuration.h"
 
@@ -17,6 +18,7 @@
 #define NEW_ANSISOP_PROGRAM 10
 #define ANSISOP_PROGRAM 11
 #define HANDSHAKE 12
+#define PROGRAMA_FINALIZADO 13
 //---------------------
 
 //prototipos de funciones

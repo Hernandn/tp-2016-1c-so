@@ -35,18 +35,18 @@ void comunicacionConNucleo(Configuration* config, char* arch_programa){
 	logDebug("Iniciando programa AnSISOP.");
 	iniciarProgramaAnsisop(socket,arch_programa);
 
-	//simular ejecucion de programa
-	while (1)
+	int continua = 1;
+	while (continua)
 	{
-		/*
-		logDebug("Enviando mensaje al Nucleo.");
-		fillPackage(&package,ANSISOP_PROGRAM,"20,200,64");
-
-		char* serializedPkg = serializarMensaje(&package);
-		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
-
-		sleep(3);
-		*/
+		Package* package = malloc(sizeof(Package));
+		if(recieve_and_deserialize(package,socket) > 0){
+			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+			if(package->msgCode==PROGRAMA_FINALIZADO){
+				continua = 0;
+				logDebug("Nucleo me informa que finalizo mi programa");
+			}
+		}
+		destroyPackage(package);
 	}
 
 	close(socket);

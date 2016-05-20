@@ -10,7 +10,7 @@
 
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
-
+#include "configuration.h"
 #include <stdio.h>
 
 t_puntero ml_definirVariable(t_nombre_variable variable);
