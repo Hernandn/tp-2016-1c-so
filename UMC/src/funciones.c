@@ -231,15 +231,126 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 	return table;
 }
 
-void retardo (int segundos)
+void handleComandos(Configuration *config)
 {
-	sleep(segundos);
+	char comando[10];
+	printf("pone el comando \n");
+	fgets(comando, sizeof(char)*10,stdin);
+	intepretarComando(comando);
+	printf("termine handle comando\n");
 }
 
-/*void dump (FILE *arch_disco)
+void intepretarComando(char* comando)
+{
+	char** comando_parseado = malloc (sizeof(char*)*2);
+	int cantidad;
+
+	cantidad=parsear_comando(comando, comando_parseado);
+	printf("%d\n",cantidad);
+
+	if (!(strcmp(*comando_parseado,"dump")))
+	{
+		printf("entro if dump\n");
+		dump();
+	}
+	else if (!(strcmp(*comando_parseado,"flush")) && (cantidad ==2))
+	{
+		if (!(strcmp(*(comando_parseado+1),"tlb")))
+				{
+					printf("entro if  tlb\n");
+					flush_tlb();
+
+				}
+		else if (!(strcmp(*(comando_parseado+1),"memory")))
+		{
+			printf("entro if memory\n");
+			flush_memory();
+
+		}
+		else
+		{
+			error_comando(comando);
+		}
+
+	}
+	else if (!(strcmp(*comando_parseado,"retardo")) && (cantidad ==2))
+	{
+		printf("entro if retardo\n");
+		retardo(atoi(*(comando_parseado + 1)));
+
+	}
+	else
+	{
+		printf("entro else de comando\n");
+		error_comando(comando);
+	}
+}
+
+int parsear_comando(char * comando, char ** comando_parseado)
+{
+	int i=0;
+	int contador = 0;
+	char * tmp = comando;
+	int algo = 1;
+
+	while(*(comando + i) != '\0')
+	{
+		if (*(comando + i)  == 32)
+		{
+			printf("entre al if\n");
+
+			printf("%d\n",i);
+			printf("%d\n",algo);
+
+			*(comando_parseado + contador) = malloc(sizeof(char)*algo);
+			printf("ya aloque memoria\n");
+			fflush(stdin);
+			strncpy(*(comando_parseado + contador),tmp,algo);
+			printf("ya copie\n");
+			fflush(stdin);
+			*(*(comando_parseado + contador)+algo-1) = '\0';
+			printf("%s\n",*(comando_parseado + contador));
+			contador ++;
+			tmp=tmp+i+1;
+			algo = 1;
+		}
+		i++;
+		algo++;
+
+	}
+	*(comando_parseado + contador)= malloc(sizeof(char)*algo);
+	strncpy(*(comando_parseado + contador),tmp,algo);
+	*(*(comando_parseado + contador)+algo-1) = '\0';
+
+	printf("comando recibido %s \n", comando);
+	printf("comando parseado %s \n", *comando_parseado);
+
+	return contador+1;
+}
+void dump ()
 {
 	printf("Este es un reporte de prueba del estado");
 
-}*/
+}
 
+void retardo (int segundos)
+{
 
+	printf("Hola soy el retardado");
+}
+
+void flush_tlb()
+{
+	printf("hola soy el flush tlb\n");
+}
+
+void flush_memory()
+{
+	printf("hola soy el flush memory\n");
+}
+
+void error_comando(char * comando)
+{
+	printf("comando inexistente");
+	fflush(stdin);
+}

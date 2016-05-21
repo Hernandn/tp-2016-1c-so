@@ -35,4 +35,6 @@ typedef struct Configuration {
 
 Configuration* configurar();
 
+
+
 #endif /* CONFIGURATION_H_ */

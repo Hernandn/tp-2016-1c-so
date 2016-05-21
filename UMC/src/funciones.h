@@ -62,5 +62,15 @@ void inicializarUMC(Configuration*);
 tableRow* crearTablaDePaginas(int);
 void handle_cpu(t_arg_thread_cpu*);
 void handleNucleo(t_arg_thread_nucleo* args);
+void retardo (int segundos);
+void handleComandos(Configuration*);
+void intepretarComando(char* comando);
+void error_comando(char * comando);
+void flush_memory();
+void flush_tlb();
+void retardo (int segundos);
+void dump ();
+int parsear_comando(char * comando, char ** comando_parseado);
+
 
 #endif /* FUNCIONES_H_ */

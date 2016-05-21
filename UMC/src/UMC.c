@@ -18,13 +18,19 @@
 int main(void) {
 
 	Configuration* config = configurar();
+	pthread_t hilo1;
 
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
 
+
+
 	inicializarUMC(config);
 
+	pthread_create(&hilo1,NULL,(void*)handleComandos,config);
 	handleClients(config);
+    pthread_cancel(hilo1);
+
 
 	logDestroy();
 
