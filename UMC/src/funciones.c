@@ -230,3 +230,16 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 	logDebug("Creando tabla de paginas con %d paginas\n",cantidadFrames);
 	return table;
 }
+
+void retardo (int segundos)
+{
+	sleep(segundos);
+}
+
+/*void dump (FILE *arch_disco)
+{
+	printf("Este es un reporte de prueba del estado");
+
+}*/
+
+
