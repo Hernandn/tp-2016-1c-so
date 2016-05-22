@@ -20,14 +20,21 @@ void handleClients(){
 
 	int socketServidor,							//Descriptor del socket servidor
 		socket_cliente;							//Se usa para recivir al conexion y se envia al thread que la va a manejar
+
 	pthread_t thread_tmp;						//Variable Temporal para crear threads;
 	t_arg_thread_cpu* arg_thread_cpu;			//Arguemntos para el thread del nuevo cpu
 	t_arg_thread_nucleo* arg_thread_nucleo;		//Argumentos para el thread del nuevo Nucleo
+	pthread_attr_t thread_detached_attr;		//Atributos para crear socket detached
+
 	Package* package=malloc(sizeof(Package));
 
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
 	pthread_mutex_init(&socket_swap_mutex,NULL);
+
+	//Completo los atributos de thread para que sea detached. Se va a usar para los thread de CPU
+	pthread_attr_init(&thread_detached_attr);
+	pthread_attr_setdetachstate(&thread_detached_attr,PTHREAD_CREATE_DETACHED);
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -71,7 +78,7 @@ void handleClients(){
 					/*TODO Entiendo para este punto deberia estar conectado el nucleo, sino no deberia poder
 					 * conectar CPU's. ¿O no es necesario?
 					 */
-					pthread_create(&thread_tmp,NULL,(void*) handle_cpu,(void*) arg_thread_cpu);
+					pthread_create(&thread_tmp,&thread_detached_attr,(void*) handle_cpu,(void*) arg_thread_cpu);
 					break;
 
 				case HANDSHAKE_NUCLEO:
@@ -88,6 +95,8 @@ void handleClients(){
 			}
 		}
 	}
+
+	pthread_attr_destroy(&thread_detached_attr);
 }
 
 void comunicarSWAP(int socket_swap, int accion){
