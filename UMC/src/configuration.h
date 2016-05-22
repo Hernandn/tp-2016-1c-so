@@ -19,6 +19,7 @@
 #define IP_UMC "IP_UMC"
 #define CANTIDAD_PAGINAS "CANTIDAD_PAGINAS"
 #define TAMANIO_PAGINA "TAMANIO_PAGINA"
+#define RETRASO "RETRASO"
 
 typedef struct Configuration {
 	int puerto_swap;
@@ -31,6 +32,7 @@ typedef struct Configuration {
 	char* log_file;
 	char* log_program_name;
 	int log_print_console;
+	int retraso;
 } Configuration;
 
 Configuration* configurar();

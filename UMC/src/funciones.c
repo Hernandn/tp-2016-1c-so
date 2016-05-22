@@ -13,7 +13,7 @@ tableRow* tabla;
 static int socket_swap = -1;
 static pthread_mutex_t
 	comunicacion_swap_mutex,
-	socket_swap_mutex, retardo_mutex;
+	socket_swap_mutex;
 
 void handleClients(Configuration* config){
 
@@ -29,8 +29,6 @@ void handleClients(Configuration* config){
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
 	pthread_mutex_init(&socket_swap_mutex,NULL);
-
-	pthread_mutex_init(&retardo_mutex,NULL);
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -235,9 +233,9 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 
 void handleComandos(Configuration *config)
 {
-	char comando[10];
+	char comando[20];
 	printf("pone el comando \n");
-	fgets(comando, sizeof(char)*10,stdin);
+	fgets(comando, sizeof(char)*20,stdin);
 	intepretarComando(comando);
 	printf("termine handle comando\n");
 }
@@ -258,13 +256,12 @@ void intepretarComando(char* comando)
 	{
 		if (!(strcmp(*(comando_parseado+1),"tlb")))
 				{
-					printf("entro if  tlb\n");
+
 					flush_tlb();
 
 				}
 		else if (!(strcmp(*(comando_parseado+1),"memory")))
 		{
-			printf("entro if memory\n");
 			flush_memory();
 
 		}
@@ -276,16 +273,16 @@ void intepretarComando(char* comando)
 	}
 	else if (!(strcmp(*comando_parseado,"retardo")) && (cantidad ==2))
 	{
-		printf("entro if retardo\n");
+
 		retardo(atoi(*(comando_parseado + 1)));
 
 	}
 	else
 	{
-		printf("entro else de comando\n");
+
 		error_comando(comando);
 	}
-	free(comando_parseado);
+	//free(comando_parseado);
 }
 
 int parsear_comando(char * comando, char ** comando_parseado)
@@ -300,9 +297,7 @@ int parsear_comando(char * comando, char ** comando_parseado)
 		if (*(comando + i)  == 32)
 		{
 			*(comando_parseado + contador) = malloc(sizeof(char)*palabra);
-			fflush(stdin);
 			strncpy(*(comando_parseado + contador),tmp,palabra);
-			fflush(stdin);
 			*(*(comando_parseado + contador)+palabra-1) = '\0';
 			contador ++;
 			tmp=tmp+i+1;
@@ -318,24 +313,22 @@ int parsear_comando(char * comando, char ** comando_parseado)
 
 	printf("comando recibido %s \n", comando);
 	printf("comando parseado %s \n", *comando_parseado);
-	free(tmp);
+	//free(tmp);
 
 	return contador+1;
 }
+
 void dump ()
 {
-	printf("Este es un reporte de prueba del estado\n");
+	printf("Este es un reporte de prueba del estado dump\n");
 
 }
 
 void retardo (int segundos)
 {
-
-	pthread_mutex_lock(&retardo_mutex);
-	// aca tengo que modificar el retardo que da en el config
 	printf("hola soy el retardo y mis segundos son %d \n",segundos);
-	sleep (segundos);
-	pthread_mutex_unlock(&retardo_mutex);
+	sleep(segundos);
+	printf("me desperte");
 }
 
 void flush_tlb()
@@ -352,5 +345,4 @@ void flush_memory()
 void error_comando(char * comando)
 {
 	printf("comando inexistente\n");
-	fflush(stdin);
 }
