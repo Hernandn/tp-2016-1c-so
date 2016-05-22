@@ -13,7 +13,7 @@ tableRow* tabla;
 static int socket_swap = -1;
 static pthread_mutex_t
 	comunicacion_swap_mutex,
-	socket_swap_mutex;
+	socket_swap_mutex, retardo_mutex;
 
 void handleClients(Configuration* config){
 
@@ -29,6 +29,8 @@ void handleClients(Configuration* config){
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
 	pthread_mutex_init(&socket_swap_mutex,NULL);
+
+	pthread_mutex_init(&retardo_mutex,NULL);
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -246,7 +248,6 @@ void intepretarComando(char* comando)
 	int cantidad;
 
 	cantidad=parsear_comando(comando, comando_parseado);
-	printf("%d\n",cantidad);
 
 	if (!(strcmp(*comando_parseado,"dump")))
 	{
@@ -284,6 +285,7 @@ void intepretarComando(char* comando)
 		printf("entro else de comando\n");
 		error_comando(comando);
 	}
+	free(comando_parseado);
 }
 
 int parsear_comando(char * comando, char ** comando_parseado)
@@ -291,56 +293,54 @@ int parsear_comando(char * comando, char ** comando_parseado)
 	int i=0;
 	int contador = 0;
 	char * tmp = comando;
-	int algo = 1;
+	int palabra = 1;
 
 	while(*(comando + i) != '\0')
 	{
 		if (*(comando + i)  == 32)
 		{
-			printf("entre al if\n");
-
-			printf("%d\n",i);
-			printf("%d\n",algo);
-
-			*(comando_parseado + contador) = malloc(sizeof(char)*algo);
-			printf("ya aloque memoria\n");
+			*(comando_parseado + contador) = malloc(sizeof(char)*palabra);
 			fflush(stdin);
-			strncpy(*(comando_parseado + contador),tmp,algo);
-			printf("ya copie\n");
+			strncpy(*(comando_parseado + contador),tmp,palabra);
 			fflush(stdin);
-			*(*(comando_parseado + contador)+algo-1) = '\0';
-			printf("%s\n",*(comando_parseado + contador));
+			*(*(comando_parseado + contador)+palabra-1) = '\0';
 			contador ++;
 			tmp=tmp+i+1;
-			algo = 1;
+			palabra = 1;
 		}
 		i++;
-		algo++;
+		palabra++;
 
 	}
-	*(comando_parseado + contador)= malloc(sizeof(char)*algo);
-	strncpy(*(comando_parseado + contador),tmp,algo);
-	*(*(comando_parseado + contador)+algo-1) = '\0';
+	*(comando_parseado + contador)= malloc(sizeof(char)*palabra);
+	strncpy(*(comando_parseado + contador),tmp,palabra);
+	*(*(comando_parseado + contador)+palabra-1) = '\0';
 
 	printf("comando recibido %s \n", comando);
 	printf("comando parseado %s \n", *comando_parseado);
+	free(tmp);
 
 	return contador+1;
 }
 void dump ()
 {
-	printf("Este es un reporte de prueba del estado");
+	printf("Este es un reporte de prueba del estado\n");
 
 }
 
 void retardo (int segundos)
 {
 
-	printf("Hola soy el retardado");
+	pthread_mutex_lock(&retardo_mutex);
+	// aca tengo que modificar el retardo que da en el config
+	printf("hola soy el retardo y mis segundos son %d \n",segundos);
+	sleep (segundos);
+	pthread_mutex_unlock(&retardo_mutex);
 }
 
 void flush_tlb()
 {
+
 	printf("hola soy el flush tlb\n");
 }
 
@@ -351,6 +351,6 @@ void flush_memory()
 
 void error_comando(char * comando)
 {
-	printf("comando inexistente");
+	printf("comando inexistente\n");
 	fflush(stdin);
 }
