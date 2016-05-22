@@ -7,9 +7,9 @@
 
 #include "configuration.h"
 
-Configuration* configurar(){
+void configurar(){
 
-	Configuration* config = malloc(sizeof(Configuration));
+	config = malloc(sizeof(Configuration));
 
 	t_config* nConfig = config_create(UMC_CONFIG_PATH);
 	if(nConfig==NULL){
@@ -28,5 +28,4 @@ Configuration* configurar(){
 	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
 	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
 
-	return config;
 }

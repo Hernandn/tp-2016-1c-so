@@ -207,10 +207,13 @@ void enviarMensajeSocket(int socket, uint32_t accion, char* mensaje){
 	enviarMensajeSocketConLongitud(socket,accion,mensaje,strlen(mensaje)+sizeof(char));
 }
 
-void enviarMensajeSocketConLongitud(int socket, uint32_t accion, char* mensaje, uint32_t longitud){
+int enviarMensajeSocketConLongitud(int socket, uint32_t accion, char* mensaje, uint32_t longitud){
 	Package* package = fillPackage(accion,mensaje,longitud);
 	char* serializedPkg = serializarMensaje(package);
-	escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+	int resultado;
+
+	resultado = escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
 	destroyPackage(package);
+	return resultado;
 }
 

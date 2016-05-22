@@ -22,6 +22,7 @@
 #define RETRASO "RETRASO"
 
 typedef struct Configuration {
+
 	int puerto_swap;
 	char* ip_swap;
 	int puerto_umc;
@@ -35,8 +36,11 @@ typedef struct Configuration {
 	int retraso;
 } Configuration;
 
-Configuration* configurar();
 
 
+
+Configuration* config;
+
+void configurar();
 
 #endif /* CONFIGURATION_H_ */
