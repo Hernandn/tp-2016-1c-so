@@ -44,7 +44,6 @@ typedef struct tableRow {
 
 typedef struct arg_thread_cpu {
 	int socket_cpu;
-	Configuration* config;
 } t_arg_thread_cpu;
 
 typedef struct arg_thread_nucleo {
@@ -55,15 +54,17 @@ typedef struct arg_thread_nucleo {
 typedef char* pagina;
 typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
 
-void handleClients(Configuration*);
-void comunicarSWAP(int, int, Configuration*);
-int conectarConSwap(Configuration*);
-void inicializarUMC(Configuration*);
+pthread_mutex_t retardo_mutex;
+
+void handleClients();
+void comunicarSWAP(int, int);
+int conectarConSwap();
+void inicializarUMC();
 tableRow* crearTablaDePaginas(int);
 void handle_cpu(t_arg_thread_cpu*);
 void handleNucleo(t_arg_thread_nucleo* args);
 void retardo (int segundos);
-void handleComandos(Configuration*);
+void handleComandos();
 void intepretarComando(char* comando);
 void error_comando(char * comando);
 void flush_memory();

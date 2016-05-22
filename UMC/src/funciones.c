@@ -11,26 +11,23 @@
 memoria memoria_principal;
 tableRow* tabla;
 static int socket_swap = -1;
+
 static pthread_mutex_t
 	comunicacion_swap_mutex,
-	socket_swap_mutex, retardo_mutex;
+	socket_swap_mutex;
 
-void handleClients(Configuration* config){
+void handleClients(){
 
-	int socketServidor,						/* Descriptor del socket servidor */
-		socket_cliente,						//Se usa para recivir al conexion y se envia al thread que la va a manejar
-		numero_cpus = 0;					//Lleva la cuenta de las CPU's conectadas
-	pthread_t threads_cpus[MAX_CLIENTES];	//Arrar de threads de cpu's
-	t_arg_thread_cpu* arg_thread_cpu;		//Arguemntos para el thread del nuevo cpu
+	int socketServidor,							//Descriptor del socket servidor
+		socket_cliente;							//Se usa para recivir al conexion y se envia al thread que la va a manejar
+	pthread_t thread_tmp;						//Variable Temporal para crear threads;
+	t_arg_thread_cpu* arg_thread_cpu;			//Arguemntos para el thread del nuevo cpu
 	t_arg_thread_nucleo* arg_thread_nucleo;		//Argumentos para el thread del nuevo Nucleo
 	Package* package=malloc(sizeof(Package));
-	pthread_t thread_nucleo;
 
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
 	pthread_mutex_init(&socket_swap_mutex,NULL);
-
-	pthread_mutex_init(&retardo_mutex,NULL);
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -41,19 +38,14 @@ void handleClients(Configuration* config){
 		exit (-1);
 	}
 
+	//Conecto el socket swap
+	conectarConSwap();
+
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
 	 * por los clientes ya conectados */
 	while (1)
 	{
-		/*Compruebo si se conecto el proceso Swap, no hace nada si ya estaba linkeado.
-		 * Uso mutex porque socket_swap ahora es global.
-		 */
-		pthread_mutex_lock(&socket_swap_mutex);
-		if(socket_swap==-1){
-			socket_swap = conectarConSwap(config);
-		}
-		pthread_mutex_unlock(&socket_swap_mutex);
 
 		//Acepto las conexiones y las mando a diferentes threads
 		socket_cliente = aceptarConexionCliente(socketServidor);
@@ -75,13 +67,11 @@ void handleClients(Configuration* config){
 					//Argumentos para el thread de la CPU. Mando una estructura porque es mas facil de modificar en un futuro.
 					arg_thread_cpu = malloc(sizeof(t_arg_thread_cpu));
 					arg_thread_cpu->socket_cpu=socket_cliente;
-					arg_thread_cpu->config=config;
 
 					/*TODO Entiendo para este punto deberia estar conectado el nucleo, sino no deberia poder
 					 * conectar CPU's. ¿O no es necesario?
 					 */
-					pthread_create(&threads_cpus[numero_cpus],NULL,(void*) handle_cpu,(void*) arg_thread_cpu);
-					numero_cpus++;	//TODO nunca estoy decrementando esta variable, eventualmente va a romper
+					pthread_create(&thread_tmp,NULL,(void*) handle_cpu,(void*) arg_thread_cpu);
 					break;
 
 				case HANDSHAKE_NUCLEO:
@@ -89,8 +79,7 @@ void handleClients(Configuration* config){
 					//TODO No estoy liberando esto en ningun momento.
 					arg_thread_nucleo = malloc(sizeof(t_arg_thread_nucleo));
 					arg_thread_nucleo->socket_nucleo=socket_cliente;
-					arg_thread_nucleo->config=config;
-					pthread_create(&thread_nucleo,NULL,(void*) handleNucleo,(void*) arg_thread_nucleo);
+					pthread_create(&thread_tmp,NULL,(void*) handleNucleo,(void*) arg_thread_nucleo);
 					break;
 
 				default:
@@ -101,32 +90,55 @@ void handleClients(Configuration* config){
 	}
 }
 
-void comunicarSWAP(int socket_swap, int accion, Configuration* config){
+void comunicarSWAP(int socket_swap, int accion){
 
 	//Bloqueo la comunicacion con swap
 	pthread_mutex_lock(&comunicacion_swap_mutex);
 	pthread_mutex_lock(&socket_swap_mutex);
 
-	if(accion==NUEVO_PROGRAMA_SWAP){
-		//esto es con datos de prueba
-		int pid = 300;
-		int cantidadPaginas = 2;
-		char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas);
-		int longitud = getLong_NuevoPrograma();
-		enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
-		free(serialized);
-		//esperar respuesta del Swap si pudo reservar espacio para el nuevo programa
-		Package* package = malloc(sizeof(Package));
-		if(recieve_and_deserialize(package,socket_swap) > 0){
-			logDebug("Swap envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
-			int pudoReservar = atoi(package->message);
-			if(pudoReservar){//por ahora solo logeo la respuesta
-				logDebug("Swap me avisa que pudo reservar correctamente %d paginas para el Programa PID:%d",cantidadPaginas,pid);
-			} else {
-				logDebug("Swap me avisa que no pudo reservar %d paginas para el Programa PID:%d",cantidadPaginas,pid);
-			}
+	int comunicacion_no_exitosa = 1;				//Si la comunicacion no es exitosa intenta de nuevo
+	Package* package = malloc(sizeof(Package));	//Paquete para guardar la respuesta
+
+	//Me quedo en un loop hasta lograr comincar el mensaje
+	while(comunicacion_no_exitosa){
+		if(accion==NUEVO_PROGRAMA_SWAP){
+
+			//esto es con datos de prueba
+			int pid = 300;
+			int cantidadPaginas = 2;
+			char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas);
+			int longitud = getLong_NuevoPrograma();
+
+			enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
+			free(serialized);
+
+			//esperar respuesta del Swap si pudo reservar espacio para el nuevo programa
+			if(recieve_and_deserialize(package,socket_swap) > 0){
+
+				logDebug("Swap envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+
+				if(atoi(package->message)){//por ahora solo logeo la respuesta
+					logDebug("Swap me avisa que pudo reservar correctamente %d paginas para el Programa PID:%d",cantidadPaginas,pid);
+				} else {
+					logDebug("Swap me avisa que no pudo reservar %d paginas para el Programa PID:%d",cantidadPaginas,pid);
+				}
+
+				/* En un programa posta esto traeria muchos problemas porque si se
+				 * corta la comunicacion entre el send y el receive voy a mandar
+				 * otro send y reservar el doble de memoria para el mismo programa.
+				 *
+				 * La forma de solucionarlo seria que el Swap devuelva un codigo
+				 * que represente el pedido y el resultado se guarde en el Swap.
+				 * Despues la UMC tiene que, con el codigo, pedir el resultado de
+				 * la operacion, de esta manera si se corta la comunicacion y luego
+				 * se reestablece solo pedis el codigo en vez de volver a pedir memoria.
+				 */
+				comunicacion_no_exitosa = 0;
+			}else
+				conectarConSwap();
+
+			destroyPackage(package);
 		}
-		destroyPackage(package);
 	}
 
 	//Libero la comunicacion con swap
@@ -134,11 +146,13 @@ void comunicarSWAP(int socket_swap, int accion, Configuration* config){
 	pthread_mutex_unlock(&comunicacion_swap_mutex);
 }
 
-int conectarConSwap(Configuration* config){
+int conectarConSwap(){
 
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
+
+	pthread_mutex_lock(&socket_swap_mutex);
 
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(config->ip_swap, config->puerto_swap);
@@ -148,18 +162,19 @@ int conectarConSwap(Configuration* config){
 
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
-	{
 		logDebug("SWAP se encuentra desconectada.");
-	} else {
+	else {
 		logDebug("Conexion con SWAP satisfactoria.");
+		socket_swap=socket;
 	}
+
+	pthread_mutex_unlock(&socket_swap_mutex);
 	return socket;
 }
 
 void handle_cpu(t_arg_thread_cpu* argumentos){
 	int sigue = 1,	//Ya se, no es muy original que digamos
 		*socket_cpu = &argumentos->socket_cpu;	//Lo guardo en variables para que sea mas comodo de usar
-	Configuration* config = argumentos->config;
 	Package* package;
 
 	while(sigue){
@@ -168,7 +183,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP,config);
+				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
@@ -188,8 +203,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 
 void handleNucleo(t_arg_thread_nucleo* args){
 	int sigue = 1,
-			*socket_nucleo = &args->socket_nucleo;	//Lo guardo en variables para que sea mas comodo de usar
-	Configuration* config = args->config;
+		*socket_nucleo = &args->socket_nucleo;	//Lo guardo en variables para que sea mas comodo de usar
 	Package* package;
 
 	while(sigue){
@@ -198,7 +212,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP,config);
+				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 				enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
@@ -218,7 +232,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 	logInfo("Fin thread Nucleo");
 }
 
-void inicializarUMC(Configuration* config){
+void inicializarUMC(){
 
 	logDebug("Inicializando la UMC");
 
@@ -233,7 +247,7 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 	return table;
 }
 
-void handleComandos(Configuration *config)
+void handleComandos()
 {
 	char comando[10];
 	printf("pone el comando \n");

@@ -21,6 +21,7 @@
 #define TAMANIO_PAGINA "TAMANIO_PAGINA"
 
 typedef struct Configuration {
+
 	int puerto_swap;
 	char* ip_swap;
 	int puerto_umc;
@@ -31,10 +32,11 @@ typedef struct Configuration {
 	char* log_file;
 	char* log_program_name;
 	int log_print_console;
+
 } Configuration;
 
-Configuration* configurar();
+Configuration* config;
 
-
+void configurar();
 
 #endif /* CONFIGURATION_H_ */
