@@ -261,11 +261,16 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 
 void handleComandos()
 {
-	char comando[20];
-	printf("pone el comando \n");
-	fgets(comando, sizeof(char)*20,stdin);
-	intepretarComando(comando);
-	printf("termine handle comando\n");
+	while(1)
+	{
+		char * comando;
+		int size_buff;
+		printf("pone el comando \n");
+		comando = NULL;
+		getline(&comando,&size_buff,stdin);
+		intepretarComando(comando);
+		printf("termine handle comando\n");
+		free(comando);
 }
 
 void intepretarComando(char* comando)
@@ -356,7 +361,7 @@ void retardo (int segundos)
 {
 	printf("hola soy el retardo y mis segundos son %d \n",segundos);
 	sleep(segundos);
-	printf("me desperte");
+	printf("me desperte\n");
 }
 
 void flush_tlb()
