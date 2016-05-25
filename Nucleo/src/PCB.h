@@ -17,10 +17,10 @@
  * Estructura PCB de un Proceso en el sistema
  */
 typedef struct PCB {
-	int processID;		//identificador unico del proceso
+	uint32_t processID;		//identificador unico del proceso
 	int consolaFD;		//file descriptor del socket de la consola que inicio el programa
-	int programCounter;	//contador de programa
-	int pagesQty;		//cantidad de paginas de codigo ANSISOP
+	uint32_t programCounter;	//contador de programa
+	uint32_t pagesQty;		//cantidad de paginas de codigo ANSISOP
 	int executedQuantums;	//cantidad de quantums ya ejecutados
 	t_metadata_program* codeIndex;		//indice de codigo
 	int* stackIndex;		//indice del stack (todavia no implementado)
@@ -64,9 +64,10 @@ PCB* removeFromEXEC(Estados* estados, int pid);
 PCB* removeNextFromEXIT(Estados* estados);
 PCB* getFromEXEC(Estados* estados, int pid);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
-int incrementarContadorPrograma(PCB* proceso);
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador);
-void finalizarPrograma(Estados* estados, int pid, int socketCPU, int socketPlanificador);
+void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado, int socketPlanificador);
+void finalizarPrograma(Estados* estados, PCB* pcb, int socketCPU, int socketPlanificador);
+void actualizarPCB(PCB* local, PCB* actualizado);
 void switchProcess(Estados* estados, int pid, int socketCPU);
 void abortProcess(Estados* estados, int pid, int socketCPU);
 void continueExec(int socketCPU, PCB* pcb);
@@ -80,8 +81,6 @@ void findAndExitPCBexecuting(Estados* estados, int consolaFD);
 void informarPlanificador(int socketPlanificador, int accion, int pid);
 void getCodeIndex(PCB* pcb, char* programa);
 int esInstruccionValida(char* str, int offset, int length);
-char* getInstruccion(char* codigo, int offset, int length);
-char* getSiguienteInstruccion(PCB* pcb);
 int getCantidadPaginasPrograma(char* programa, int size_pagina);
 int getCantidadPaginasNecesarias(char* programa, int size_pagina, int stack_size);
 pagina* getPaginasFromPrograma(char* programa, int size_pagina);
