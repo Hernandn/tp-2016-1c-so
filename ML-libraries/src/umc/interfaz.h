@@ -19,8 +19,6 @@
 #define FINALIZAR_PROGRAMA_UMC 4
 #define RESULTADO_OPERACION 5
 
-static int* socket_umc=-1;
-
 //Interfaz---------------------------------------------
 int inicializar_programa(uint32_t,uint32_t);
 char* leer_pagina(uint32_t,uint32_t);
