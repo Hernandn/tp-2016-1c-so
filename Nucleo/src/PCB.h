@@ -32,6 +32,7 @@ typedef struct Estados {
 PCB* buildNewPCB(int consolaFD, char* programa);
 int getNextPID();
 Estados* inicializarEstados();
+void destroyEstados(Estados* estados);
 void sendToNEW(PCB* pcb, Estados* estados);
 PCB* getNextFromNEW(Estados* estados);
 PCB* getNextFromREADY(Estados* estados);
@@ -47,6 +48,7 @@ void abortFromEXEC(Estados* estados,int pid);
 PCB* removeFromEXEC(Estados* estados, int pid);
 PCB* removeNextFromEXIT(Estados* estados);
 PCB* getFromEXEC(Estados* estados, int pid);
+bool hayProcesosEnREADY(Estados* estados);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador);
 void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado, int socketPlanificador);

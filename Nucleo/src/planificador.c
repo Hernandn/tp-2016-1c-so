@@ -113,10 +113,6 @@ void atenderProcesos(Estados* estados, t_list* listaCPUs){
 	}
 }
 
-bool hayProcesosEnREADY(Estados* estados){
-	return (estados->ready->elements->elements_count)>0;
-}
-
 CPU* getCPUlibre(t_list* listaCPUs){
 	int i;
 	for(i=0;i<listaCPUs->elements_count;i++){
