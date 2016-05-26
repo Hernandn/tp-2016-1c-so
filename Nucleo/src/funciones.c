@@ -54,9 +54,9 @@ void handleClients(Configuration* config){
 	pthread_t hilo3;
 	pthread_create(&hilo3,NULL,(void*)planificar,(void *)&args);
 
-	while(1){
-		//TODO: no se si hace falta esto
-	}
+	pthread_join(hilo1,NULL);
+	pthread_join(hilo2,NULL);
+	pthread_join(hilo3,NULL);
 }
 
 void handleConsolas(void* arguments){

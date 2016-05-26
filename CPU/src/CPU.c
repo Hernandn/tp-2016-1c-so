@@ -25,8 +25,9 @@ int main(void){
 	pthread_t hilo2;
 	pthread_create(&hilo2,NULL,(void*)conectarConNucleo,(void *)&args);
 
-	while(1){
+	pthread_join(hilo1,NULL);
+	pthread_join(hilo2,NULL);
 
-	}
+	return 0;
 }
 
