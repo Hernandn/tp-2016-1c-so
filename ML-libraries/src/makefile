@@ -12,6 +12,7 @@ create-dirs:
 	mkdir -p build/sockets
 	mkdir -p build/log
 	mkdir -p build/umc
+	mkdir -p build/nucleoCpu
 
 build/libmllibs.so: create-dirs $(OBJS)
 	$(CC) -shared -o "build/libmllibs.so" $(OBJS)
@@ -23,6 +24,9 @@ build/log/%.o: log/%.c
 	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 
 build/umc/%.o: umc/%.c
+	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	
+build/nucleoCpu/%.o: nucleoCpu/%.c
 	$(CC) -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 
 # Add debug parameters and compile

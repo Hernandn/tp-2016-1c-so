@@ -16,7 +16,6 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/log/logger.h>
 #include "planificador.h"
-#include "interfazCPU.h"
 
 int pidActual = 1;
 
@@ -33,16 +32,6 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	new->programa = strdup(programa);
 	logTrace("Creado PCB [PID:%d, ConsolaFD:%d, QuantumsExec:%d]",new->processID,new->consolaFD,new->executedQuantums);
 	return new;
-}
-
-void destroyPCB(PCB* self){
-	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",self->processID,self->consolaFD);
-	free(self->codeIndex);
-	free(self->programa);
-	metadata_destruir(self->codeIndex);
-	//free(self->stackIndex);
-	//free(self->tagIndex);
-	free(self);
 }
 
 int getNextPID(){

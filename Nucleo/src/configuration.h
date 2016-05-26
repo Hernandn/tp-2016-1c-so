@@ -18,6 +18,16 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/log/logger.h>
 #include <commons/config.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <commons/log.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <errno.h>
+#include <pthread.h>
 
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"
 #define NUCLEO_CONFIG_PATH_ECLIPSE "nucleo.conf"

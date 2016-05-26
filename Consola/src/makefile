@@ -2,7 +2,7 @@ CC=gcc
 TARGET=Consola
 HEADERS=$(wildcard *.h)
 OBJECTS=$(patsubst %.c, %.o, $(wildcard *.c))
-LIBS=-lmllibs -lcommons
+LIBS=-lmllibs -lcommons -lparser-ansisop
 TARGET_PATH=$(shell pwd)
 
 all: $(TARGET)

@@ -5,24 +5,6 @@
  *      Author: utnso
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <commons/log.h>
-#include <commons/config.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include <pthread.h>
-#include <time.h>
-#include <mllibs/sockets/server.h>
-#include <mllibs/sockets/client.h>
-#include <mllibs/sockets/package.h>
-#include <mllibs/log/logger.h>
 #include "Nucleo.h"
 #include "configuration.h"
 #include "PCB.h"
@@ -156,6 +138,7 @@ void inicializarSockets(int* sockets){
 void finalizarProg(Estados* estados, Package* package){
 	PCB* pcb = removeNextFromEXIT(estados);
 	int consolaFD = pcb->consolaFD;
+	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
 	destroyPCB(pcb);
 	logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
 	enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");

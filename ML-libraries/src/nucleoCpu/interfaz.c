@@ -1,25 +1,13 @@
 /*
- * interfazNucleo.c
+ * interfaz.c
  *
- *  Created on: 19/5/2016
+ *  Created on: 26/5/2016
  *      Author: utnso
  */
 
-#include "interfazNucleo.h"
+#include "interfaz.h"
 
-uint32_t getProcessID_ejecutarInstruccion(char* str){
-	uint32_t pid;
-	memcpy(&pid,str,sizeof(uint32_t));
-	return pid;
-}
-
-char* getInstruccion_ejecutarInstruccion(char* str){
-	int offset = sizeof(uint32_t);
-	return strdup(str+offset);
-}
-
-
-//PCB
+//funciones serializacion del PCB
 
 char* serializarPCB(PCB* pcb){
 	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
@@ -205,6 +193,18 @@ t_metadata_program* deserializar_metadata_program(char* serialized){
 	return metadata;
 }
 
+
+void destroyPCB(PCB* self){
+	free(self->programa);
+	metadata_destruir(self->codeIndex);
+	//free(self->stackIndex);
+	//free(self->tagIndex);
+	free(self);
+}
+
+
+//funciones interfaz CPU a Nucleo
+
 void informarNucleoFinPrograma(int socketNucleo, PCB* pcb){
 	char* serialized = serializarPCB(pcb);
 	uint32_t longitud = getLong_PCB(pcb);
@@ -229,3 +229,16 @@ void informarNucleoCPUlibre(int socketNucleo){
 	enviarMensajeSocket(socketNucleo,CPU_LIBRE,"");
 }
 
+
+//funciones interfaz Nucleo a CPU
+
+void ejecutarNuevoProcesoCPU(int socketCPU, PCB* pcb){
+	char* serialized = serializarPCB(pcb);
+	int longitud = getLong_PCB(pcb);
+	enviarMensajeSocketConLongitud(socketCPU,EXEC_NEW_PROCESS,serialized,longitud);
+	free(serialized);
+}
+
+void continuarEjecucionProcesoCPU(int socketCPU){
+	enviarMensajeSocket(socketCPU,CONTINUE_EXECUTION,"");
+}

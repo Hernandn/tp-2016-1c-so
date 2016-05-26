@@ -14,6 +14,8 @@ int main(int argc, char* argv[]){
 
 	Parameters* parametros;
 
+	struct timeval tvBegin, tvEnd, tvDiff;//para tomar el tiempo
+
 	initLogMutex(DEFAULT_LOG_FILE,"ELESTAC",true,LOG_LEVEL_DEBUG);
 
 	//Cargo la configuracion
@@ -32,11 +34,18 @@ int main(int argc, char* argv[]){
 		return EXIT_FAILURE;
 	}
 
+	// begin
+	gettimeofday(&tvBegin, NULL);
+
 	logInfo("Ejecutando: %s\n",parametros->programa);
 
 	comunicacionConNucleo(parametros->config, parametros->programa);
 
-	logInfo("Fin programa\n");
+	//end
+	gettimeofday(&tvEnd, NULL);
+	// diff
+	timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
+	logInfo("Fin programa - Tiempo: %ld.%3ld segundos\n", tvDiff.tv_sec, tvDiff.tv_usec);
 
 	//Libero la memoria
 	liberar_parametros(parametros);

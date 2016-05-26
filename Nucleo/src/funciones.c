@@ -6,7 +6,6 @@
  */
 
 #include "Nucleo.h"
-#include "interfazCPU.h"
 
 int socketUMC = -1;
 
@@ -390,6 +389,7 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
 		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU,args->socketClientPlanificador);
 	} else if(package->msgCode==PROGRAM_FINISHED){
+		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
 		int socketConsola = getFromEXEC(args->estados,pcbActualizado->processID)->consolaFD;
 		finalizarPrograma(args->estados,pcbActualizado,socketCPU,args->socketClientPlanificador);

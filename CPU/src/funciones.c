@@ -8,7 +8,7 @@
 #include "CPU.h"
 #include "configuration.h"
 #include "primitivas.h"
-#include "interfazNucleo.h"
+#include <mllibs/nucleoCpu/interfaz.h>
 
 AnSISOP_funciones functions = {
 		.AnSISOP_definirVariable		= ml_definirVariable,
@@ -163,6 +163,7 @@ void quantumSleep(arg_struct *args, int segundos){
 	if(programaFinalizado()){
 		//envia el PCB de nuevo al Nucleo
 		informarNucleoFinPrograma(args->socketNucleo,pcbActual);
+		logTrace("CPU se encuentra libre");
 	} else {
 		informarNucleoQuantumFinished(args->socketNucleo,pcbActual);
 	}

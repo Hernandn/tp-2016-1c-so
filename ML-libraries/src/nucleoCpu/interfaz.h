@@ -1,16 +1,34 @@
 /*
- * interfazNucleo.h
+ * interfaz.h
  *
- *  Created on: 19/5/2016
+ *  Created on: 26/5/2016
  *      Author: utnso
  */
 
-#ifndef INTERFAZNUCLEO_H_
-#define INTERFAZNUCLEO_H_
+#ifndef NUCLEOCPU_INTERFAZ_H_
+#define NUCLEOCPU_INTERFAZ_H_
 
-#include "configuration.h"
-#include "CPU.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "../sockets/server.h"
+#include "../sockets/client.h"
+#include "../sockets/package.h"
+#include "../log/logger.h"
+#include <stdint.h>
 #include <parser/metadata_program.h>
+
+//codigos de operaciones entre CPU/Nucleo
+#define CONTINUE_EXECUTION 70
+#define ABORT_EXECUTION 71
+#define EXEC_NEW_PROCESS 72
+#define EXECUTION_FINISHED 73
+#define QUANTUM_SLEEP_CPU 74
+#define QUANTUM_FINISHED 75
+#define PROGRAM_FINISHED 76
+#define CONTEXT_SWITCH 77
+#define CONTEXT_SWITCH_FINISHED 78
+#define CPU_LIBRE 90
+//-------------------------------
 
 typedef struct PCB {
 	uint32_t processID;		//identificador unico del proceso
@@ -24,11 +42,9 @@ typedef struct PCB {
 	char* programa;	//codigo del programa
 } PCB;
 
-uint32_t getProcessID_ejecutarInstruccion(char* str);
-char* getInstruccion_ejecutarInstruccion(char* str);
+//serializacion PCB
 
-//PCB
-
+void destroyPCB(PCB* self);
 char* serializarPCB(PCB* pcb);
 uint32_t getLong_PCB(PCB* pcb);
 char* serializar_metadata_program(t_metadata_program* metadata);
@@ -36,9 +52,18 @@ uint32_t getLong_metadata_program(t_metadata_program* metadata);
 PCB* deserializar_PCB(char* serialized);
 t_metadata_program* deserializar_metadata_program(char* serialized);
 
+
+
+//funciones interfaz CPU a Nucleo
+
 void informarNucleoFinPrograma(int socketNucleo, PCB* pcb);
 void informarNucleoQuantumFinished(int socketNucleo, PCB* pcb);
 void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb);
 void informarNucleoCPUlibre(int socketNucleo);
 
-#endif /* INTERFAZNUCLEO_H_ */
+//funciones interfaz Nucleo a CPU
+
+void ejecutarNuevoProcesoCPU(int socketCPU, PCB* pcb);
+void continuarEjecucionProcesoCPU(int socketCPU);
+
+#endif /* NUCLEOCPU_INTERFAZ_H_ */

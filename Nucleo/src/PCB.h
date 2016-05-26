@@ -11,24 +11,9 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/list.h>
 #include <parser/metadata_program.h>
+#include <mllibs/nucleoCpu/interfaz.h>
+#include <mllibs/umc/interfaz.h>
 
-
-/*
- * Estructura PCB de un Proceso en el sistema
- */
-typedef struct PCB {
-	uint32_t processID;		//identificador unico del proceso
-	int consolaFD;		//file descriptor del socket de la consola que inicio el programa
-	uint32_t programCounter;	//contador de programa
-	uint32_t pagesQty;		//cantidad de paginas de codigo ANSISOP
-	int executedQuantums;	//cantidad de quantums ya ejecutados
-	t_metadata_program* codeIndex;		//indice de codigo
-	int* stackIndex;		//indice del stack (todavia no implementado)
-	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
-	char* programa;	//codigo del programa
-} PCB;
-
-typedef char* pagina;
 
 /*
  * Estructura con las colas de Estados
@@ -45,7 +30,6 @@ typedef struct Estados {
 
 //funciones
 PCB* buildNewPCB(int consolaFD, char* programa);
-void destroyPCB(PCB* self);
 int getNextPID();
 Estados* inicializarEstados();
 void sendToNEW(PCB* pcb, Estados* estados);
