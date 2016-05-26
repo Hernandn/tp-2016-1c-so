@@ -6,6 +6,7 @@
  */
 
 #include "Nucleo.h"
+#include "interfazCPU.h"
 
 int socketUMC = -1;
 
@@ -388,6 +389,15 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
 		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU,args->socketClientPlanificador);
+	} else if(package->msgCode==PROGRAM_FINISHED){
+		PCB* pcbActualizado = deserializar_PCB(package->message);
+		int socketConsola = getFromEXEC(args->estados,pcbActualizado->processID)->consolaFD;
+		finalizarPrograma(args->estados,pcbActualizado,socketCPU,args->socketClientPlanificador);
+		borrarSocketConsola(args,socketConsola);
+	} else if(package->msgCode==CONTEXT_SWITCH_FINISHED){
+		liberarCPUporSocketFD(socketCPU,args);
+		PCB* pcbActualizado = deserializar_PCB(package->message);
+		contextSwitchFinishedCallback(args->estados,pcbActualizado,args->socketClientPlanificador);
 	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);
@@ -396,4 +406,13 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 
 int getSocketUMC(){
 	return socketUMC;
+}
+
+void borrarSocketConsola(arg_struct *args, int socketConsola){
+	int i;
+	for(i=0; i<MAX_CONSOLAS; i++){
+		if(args->consolaSockets[i]==socketConsola){
+			args->consolaSockets[i]=-1;
+		}
+	}
 }

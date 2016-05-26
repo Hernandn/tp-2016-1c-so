@@ -11,6 +11,7 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/package.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include "configuration.h"
 

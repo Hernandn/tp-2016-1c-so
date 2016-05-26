@@ -39,6 +39,7 @@ void destroyPCB(PCB* self){
 	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",self->processID,self->consolaFD);
 	free(self->codeIndex);
 	free(self->programa);
+	metadata_destruir(self->codeIndex);
 	//free(self->stackIndex);
 	//free(self->tagIndex);
 	free(self);
@@ -171,27 +172,16 @@ int addQuantumToExecProcess(PCB* proceso, int quantum){
 	return quantum - proceso->executedQuantums;
 }
 
-int incrementarContadorPrograma(PCB* pcb){//TODO: esto lo tiene que hacer la CPU despues
-	pcb->programCounter++;
-	logTrace("Plan: PCB:%d / Program Counter: %d/%d",pcb->processID,pcb->programCounter,pcb->codeIndex->instrucciones_size);
-	return pcb->codeIndex->instrucciones_size-pcb->programCounter;
-}
-
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
 		if(proceso->consolaActiva){
-			if(incrementarContadorPrograma(proceso)<=0){
-				finalizarPrograma(estados,proceso->processID,socketCPU,socketPlanificador);
+			//si se le terminaron los quantums al proceso
+			if(addQuantumToExecProcess(proceso,quantum)<=0){
+				proceso->executedQuantums=0;//reinicio los quantums ejecutados
+				switchProcess(estados,pid,socketCPU);
 			} else {
-				//si se le terminaron los quantums al proceso
-				if(addQuantumToExecProcess(proceso,quantum)<=0){
-					proceso->executedQuantums=0;//reinicio los quantums ejecutados
-					switchProcess(estados,pid,socketCPU);
-					sendFromEXECtoREADY(estados,pid);
-				} else {
-					continueExec(socketCPU,proceso);
-				}
+				continueExec(socketCPU,proceso);
 			}
 		} else {
 			//entra por aca si la consola cerro la conexion con el Nucleo
@@ -201,16 +191,32 @@ void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketC
 	}
 }
 
-void finalizarPrograma(Estados* estados, int pid, int socketCPU, int socketPlanificador){
-	switchProcess(estados,pid,socketCPU);
-	PCB* proceso = removeFromEXEC(estados,pid);
+void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado, int socketPlanificador){
+	PCB* proceso = removeFromEXEC(estados,pcbActualizado->processID);
+	if(proceso!=NULL){
+		actualizarPCB(proceso,pcbActualizado);
+		logTrace("Context Switch finished callback: PCB:%d / PC: %d/%d",proceso->processID,proceso->programCounter,proceso->codeIndex->instrucciones_size);
+		sendToREADY(proceso,estados);
+		logTrace("Informando Planificador [Program READY]");
+		informarPlanificador(socketPlanificador,PROGRAM_READY,proceso->processID);
+	}
+}
+
+void finalizarPrograma(Estados* estados, PCB* pcbActualizado, int socketCPU, int socketPlanificador){
+	PCB* proceso = removeFromEXEC(estados,pcbActualizado->processID);
+	actualizarPCB(proceso,pcbActualizado);
+	destroyPCB(pcbActualizado);
 	sendToEXIT(proceso,estados);
 	enviarMensajeSocket(socketPlanificador,FINALIZAR_PROGRAMA,"");
 }
 
+void actualizarPCB(PCB* local, PCB* actualizado){
+	local->programCounter = actualizado->programCounter;
+}
+
 void switchProcess(Estados* estados, int pid, int socketCPU){
 	logTrace("Informando CPU [Switch process]");
-	informarCPU(socketCPU,ABORT_EXECUTION,pid);
+	informarCPU(socketCPU,CONTEXT_SWITCH,pid);
 }
 
 void abortProcess(Estados* estados, int pid, int socketCPU){
@@ -220,23 +226,23 @@ void abortProcess(Estados* estados, int pid, int socketCPU){
 
 void continueExec(int socketCPU, PCB* pcb){
 	logTrace("Informando CPU [Continue process execution]");
-	informarEjecucionCPU(socketCPU,CONTINUE_EXECUTION,pcb);
+	continuarEjecucionProcesoCPU(socketCPU);
 }
 
 void startExec(Estados* estados, int socketCPU){
 	PCB* proceso = getNextFromREADY(estados);
 	sendToEXEC(proceso,estados);
 	logTrace("Informando CPU [Execute new process]");
-	informarEjecucionCPU(socketCPU,EXEC_NEW_PROCESS,proceso);
+	ejecutarNuevoProcesoCPU(socketCPU,proceso);
 }
-
+/*
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb){
 	char* instruccion = getSiguienteInstruccion(pcb);
 	char* serialized = serializar_EjecutarInstruccion(pcb->processID,instruccion);
 	int longitud = getLong_EjecutarInstruccion(instruccion);
 	enviarMensajeSocketConLongitud(socketCPU,EXEC_NEW_PROCESS,serialized,longitud);
 	free(serialized);
-}
+}*/
 
 void informarCPU(int socketCPU, int accion, int pid){
 	enviarMensajeSocket(socketCPU,accion,string_itoa(pid));
@@ -374,21 +380,6 @@ int esInstruccionValida(char* str, int offset, int length){
 }
 */
 
-char* getInstruccion(char* codigo, int offset, int length){
-	char* instruccion = malloc(sizeof(char)*length+1);
-	if(instruccion!=NULL){
-		memcpy(instruccion,codigo+offset,length);
-		instruccion[length]='\0';
-	}
-	return instruccion;
-}
-
-char* getSiguienteInstruccion(PCB* pcb){
-	int offset = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].start;
-	int length = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].offset;
-	return getInstruccion(pcb->programa,offset,length);
-}
-
 int getCantidadPaginasPrograma(char* programa, int size_pagina){
 	int length = strlen(programa);
 	int cantidad = length/size_pagina;
@@ -424,4 +415,5 @@ void destroyPaginas(pagina* paginas, int cantidad){
 	}
 	free(paginas);
 }
+
 

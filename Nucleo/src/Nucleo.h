@@ -33,6 +33,9 @@
 #define EXECUTION_FINISHED 73
 #define QUANTUM_SLEEP_CPU 74
 #define QUANTUM_FINISHED 75
+#define PROGRAM_FINISHED 76
+#define CONTEXT_SWITCH 77
+#define CONTEXT_SWITCH_FINISHED 78
 #define CPU_LIBRE 90
 //---------------------
 
@@ -74,5 +77,6 @@ void eliminarCPU(t_list* listaCPUs,int socketCPU);
 int conectarConPlanificador(char* ip, int puerto);
 void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args);
 int getSocketUMC();
+void borrarSocketConsola(arg_struct *args, int socketConsola);
 
 #endif /* NUCLEO_H_ */
