@@ -33,7 +33,7 @@ static char* serializar_parametros(int cant_parametros, ...){
 		buffer=(char*)realloc((char*)buffer,tamanio);
 
 		tmp=va_arg(valist, void*);
-		memcpy(buffer+offset,&tmp,tamanio);
+		memcpy(buffer+offset,tmp,tamanio);
 
 		offset +=tamanio;
 	}
