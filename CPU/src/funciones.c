@@ -8,7 +8,7 @@
 #include "CPU.h"
 #include "configuration.h"
 #include "primitivas.h"
-#include "interfazNucleo.h"
+#include <mllibs/nucleoCpu/interfaz.h>
 
 AnSISOP_funciones functions = {
 		.AnSISOP_definirVariable		= ml_definirVariable,
@@ -34,6 +34,8 @@ AnSISOP_kernel kernel_functions = {
 
 //TODO: por ahora queda aca global para que lo usen las primitivas, hay que ver donde meterlo
 int socketUMC;
+
+PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
 void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;
@@ -63,21 +65,6 @@ void conectarConUMC(void* arguments){
 	//Le aviso a la UMC que soy un nucleo
 	enviarMensajeSocket(socket,HANDSHAKE_CPU,"");
 	logDebug("Handshake con UMC exitoso!!");
-
-	/* Bucle infinito. Envia al servidor el número de cliente y espera un
-	 * segundo */
-	//Package package;
-	while (1)
-	{
-		/*
-		fillPackage(&package,SOLICITAR_BYTES_PAGINA,"20,200,64");
-		//escribirSocket(socket, (char *)&buffer, sizeof(int));
-		char* serializedPkg = serializarMensaje(&package);
-		escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(&package));
-
-		sleep(10);
-		*/
-	}
 }
 
 void conectarConNucleo(void* arguments){
@@ -119,42 +106,68 @@ void analizarMensaje(Package* package, arg_struct *args){
 		logDebug("El Nucleo me comunica que se creo un programa nuevo.");
 		enviarMensajeSocket(socketUMC,INIT_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
 	} else if(package->msgCode==EXEC_NEW_PROCESS){
-		args->processID = getProcessID_ejecutarInstruccion(package->message);
-		ejecutarProceso(args,package);
+		cargarContextoPCB(package);
+		ejecutarProceso(args);
 	} else if(package->msgCode==QUANTUM_SLEEP_CPU){
 		quantumSleep(args,atoi(package->message));
 	} else if(package->msgCode==CONTINUE_EXECUTION){
-		ejecutarProceso(args,package);
+		ejecutarProceso(args);
 	} else if(package->msgCode==ABORT_EXECUTION){
 		abortarProceso(args);
+	} else if(package->msgCode==CONTEXT_SWITCH){
+		contextSwitch(args);
 	}
 }
 
-void ejecutarProceso(arg_struct *args, Package* package){
-	logTrace("Ejecutando instruccion del proceso PID:%d...",args->processID);
+void contextSwitch(arg_struct *args){
+	logTrace("Cambiando contexto proceso PID:%d",pcbActual->processID);
+	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
+	logTrace("Informando al Nucleo que el CPU se encuentra libre");
+	informarNucleoContextSwitchFinished(args->socketNucleo,pcbActual);
+}
 
-	ejecutarInstruccion(package);
+void cargarContextoPCB(Package* package){
+	pcbActual = deserializar_PCB(package->message);
+	logTrace("Contexto de proceso cargado PID:%d...",pcbActual->processID);
+}
 
-	logTrace("Informando al Nucleo que finalizo la ejecucion de 1 Quantum...");
+void ejecutarProceso(arg_struct *args){
+	logTrace("Ejecutando instruccion del proceso PID:%d...",pcbActual->processID);
+
+	ejecutarInstruccion();
+
+	logTrace("Informando al Nucleo que finalizo la ejecucion de 1 Quantum. (PC:%d/%d)",pcbActual->programCounter,pcbActual->codeIndex->instrucciones_size);
 	enviarMensajeSocket(args->socketNucleo,EXECUTION_FINISHED,"");
 }
 
-void quantumSleep(arg_struct *args, int segundos){
-	logTrace("Sleeping %d seconds (-.-) ...zzzZZZ",segundos);
-	//TODO: hay que ver que funcion usar para que haga sleep de milisegundos
-	sleep(segundos);
-	enviarMensajeSocket(args->socketNucleo,QUANTUM_FINISHED,string_itoa(args->processID));
+void quantumSleep(arg_struct *args, int milisegundos){
+	logTrace("Sleeping %d miliseconds (-.-) ...zzzZZZ",milisegundos);
+
+	usleep(milisegundos*1000);//convierto micro en milisegundos
+
+	if(programaFinalizado()){
+		//envia el PCB de nuevo al Nucleo
+		informarNucleoFinPrograma(args->socketNucleo,pcbActual);
+		logTrace("CPU se encuentra libre");
+	} else {
+		informarNucleoQuantumFinished(args->socketNucleo,pcbActual);
+	}
+}
+
+//verifica si se terminaron las instrucciones del programa
+bool programaFinalizado(){
+	return pcbActual->codeIndex->instrucciones_size - pcbActual->programCounter <= 0;
 }
 
 void abortarProceso(arg_struct *args){
-	logTrace("Abortando proceso PID:%d",args->processID);
+	logTrace("Abortando proceso PID:%d",pcbActual->processID);
 	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
-	enviarMensajeSocket(args->socketNucleo,CPU_LIBRE,"");
+	informarNucleoCPUlibre(args->socketNucleo);
 }
 
-void ejecutarInstruccion(Package* package){
-	char* instruccion = getInstruccion_ejecutarInstruccion(package->message);
+void ejecutarInstruccion(){
+	char* instruccion = getSiguienteInstruccion();
 	printf("=================================\n");
 	printf("Ejecutando '%s'\n", instruccion);
 	analizadorLinea(instruccion, &functions, &kernel_functions);
@@ -162,6 +175,8 @@ void ejecutarInstruccion(Package* package){
 	if(instruccion!=NULL){
 		free(instruccion);
 	}
+	//incremento el PC cuando termina de ejecutar la instruccion
+	pcbActual->programCounter++;
 }
 
 
@@ -175,6 +190,22 @@ void analizarRespuestaUMC(){
 
 int getSocketUMC(){
 	return socketUMC;
+}
+
+
+char* getInstruccion(char* codigo, int offset, int length){
+	char* instruccion = malloc(sizeof(char)*length+1);
+	if(instruccion!=NULL){
+		memcpy(instruccion,codigo+offset,length);
+		instruccion[length]='\0';
+	}
+	return instruccion;
+}
+
+char* getSiguienteInstruccion(){
+	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
+	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
+	return getInstruccion(pcbActual->programa,offset,length);
 }
 
 

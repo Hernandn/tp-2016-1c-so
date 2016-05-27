@@ -26,6 +26,9 @@
 #define EXECUTION_FINISHED 73
 #define QUANTUM_SLEEP_CPU 74
 #define QUANTUM_FINISHED 75
+#define PROGRAM_FINISHED 76
+#define CONTEXT_SWITCH 77
+#define CONTEXT_SWITCH_FINISHED 78
 #define CPU_LIBRE 90
 //----------------------
 //codigos de operaciones con UMC
@@ -36,7 +39,6 @@
 typedef struct arg_struct {
 	Configuration* config;
 	int socketNucleo;
-	int processID;	//PID actualmente en ejecucion
 } arg_struct;
 
 //prototipos de funciones
@@ -46,12 +48,17 @@ Configuration* configurar();
 void comunicarUMC(int socketUMC, int accion);
 void enviarMensaje(int socket, int accion, char* message);
 void analizarMensaje(Package* package, arg_struct *args);
-void ejecutarProceso(arg_struct *args, Package* package);
+void contextSwitch(arg_struct *args);
+void cargarContextoPCB(Package* package);
+void ejecutarProceso(arg_struct *args);
 void quantumSleep(arg_struct *args, int milisegundos);
+bool programaFinalizado();
 void abortarProceso(arg_struct *args);
-void ejecutarInstruccion(Package* package);
+void ejecutarInstruccion();
 void analizarRespuestaUMC();
 int getSocketUMC();
+char* getInstruccion(char* codigo, int offset, int length);
+char* getSiguienteInstruccion();
 
 
 #endif /* CPU_H_ */

@@ -2,7 +2,7 @@ CC=gcc
 TARGET=CPU
 HEADERS=$(wildcard *.h)
 OBJECTS=$(patsubst %.c, %.o, $(wildcard *.c))
-LIBS=-lmllibs -lcommons -lpthread
+LIBS=-lmllibs -lcommons -lpthread -lparser-ansisop
 TARGET_PATH=$(shell pwd)
 
 all: $(TARGET)

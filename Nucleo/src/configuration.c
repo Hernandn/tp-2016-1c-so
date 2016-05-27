@@ -7,8 +7,6 @@
 
 #include "configuration.h"
 
-Configuration* config;
-
 void configurar(){
 
 	config = malloc(sizeof(Configuration));
@@ -39,6 +37,22 @@ void configurar(){
 	config->log_file = config_get_string_value(nConfig,LOG_FILE);
 	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
 	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
+
+	//levanto los dispositivos de entrada/salida
+	config->io_ids = config_get_array_value(nConfig,IO_IDS);
+	int len=0;
+	while(config->io_ids[len]!=NULL){
+		len++;
+	}
+	config->io_length = len;
+	char** io_sleep_aux = config_get_array_value(nConfig,IO_SLEEP);
+	config->io_sleep = malloc(sizeof(int)*len);
+	int i;
+	for(i=0; i<len; i++){
+		config->io_sleep[i] = atoi(io_sleep_aux[i]);
+		free(io_sleep_aux[i]);
+	}
+	free(io_sleep_aux);
 }
 
 Configuration* getConfiguration(){

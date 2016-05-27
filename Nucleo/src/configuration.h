@@ -18,6 +18,16 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/log/logger.h>
 #include <commons/config.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <commons/log.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <errno.h>
+#include <pthread.h>
 
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"
 #define NUCLEO_CONFIG_PATH_ECLIPSE "nucleo.conf"
@@ -34,6 +44,8 @@
 #define IO_SLEEP "IO_SLEEP"
 #define SHARED_VARS "SHARED_VARS"
 #define STACK_SIZE "STACK_SIZE"
+#define IO_IDS "IO_IDS"
+#define IO_SLEEP "IO_SLEEP"
 
 typedef struct Configuration {
 	int puerto_nucleo_cpu;
@@ -49,8 +61,12 @@ typedef struct Configuration {
 	char* log_program_name;
 	int log_print_console;
 	int size_pagina;
+	int io_length;
+	char** io_ids;
+	int* io_sleep;
 } Configuration;
 
+Configuration* config;
 
 void configurar();
 Configuration* getConfiguration();

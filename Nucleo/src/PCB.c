@@ -15,10 +15,23 @@
 #include <mllibs/sockets/package.h>
 #include <mllibs/sockets/client.h>
 #include <mllibs/log/logger.h>
+#include <semaphore.h>
 #include "planificador.h"
-#include "interfazCPU.h"
 
 int pidActual = 1;
+
+//mutex de colas/listas de estados
+pthread_mutex_t executeMutex;
+pthread_mutex_t exitMutex;
+pthread_mutex_t newMutex;
+pthread_mutex_t readyMutex;
+
+//array de mutex para cada dispositivo de entrada/salida (para ejecutar la instruccion IO)
+pthread_mutex_t* io_mutex_array;
+//array de mutex para cada dispositivo de entrada/salida (para encolar/desencolar en bloqueados)
+pthread_mutex_t* io_mutex_queues;
+//array de semaforos para cada dispositivo de entrada/salida
+sem_t* io_sem_array;
 
 //probando
 PCB* buildNewPCB(int consolaFD, char* programa){
@@ -35,15 +48,6 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	return new;
 }
 
-void destroyPCB(PCB* self){
-	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",self->processID,self->consolaFD);
-	free(self->codeIndex);
-	free(self->programa);
-	//free(self->stackIndex);
-	//free(self->tagIndex);
-	free(self);
-}
-
 int getNextPID(){
 	return pidActual++;
 }
@@ -51,49 +55,112 @@ int getNextPID(){
 Estados* inicializarEstados(){
 	logTrace("Inicializando Estados del Planificador");
 	Estados* estados = malloc(sizeof(Estados));
-	estados->block = queue_create();
+	//inicializo colas de bloqueados (1 por dispositivo)
+	estados->block = malloc(sizeof(t_queue*)*config->io_length);
+	int i;
+	for(i=0; i<config->io_length; i++){
+		estados->block[i] = queue_create();
+	}
+
 	estados->execute = list_create();
 	estados->exit = queue_create();
 	estados->new = queue_create();
 	estados->ready = queue_create();
+
+	io_mutex_queues = malloc(sizeof(pthread_mutex_t)*config->io_length);
+	//inicializo los mutex
+	for(i=0; i<config->io_length; i++){
+		pthread_mutex_init(&io_mutex_queues[i],NULL);
+	}
+	pthread_mutex_init(&executeMutex,NULL);
+	pthread_mutex_init(&exitMutex,NULL);
+	pthread_mutex_init(&newMutex,NULL);
+	pthread_mutex_init(&readyMutex,NULL);
+
 	return estados;
 }
 
+void destroyEstados(Estados* estados){
+	int i;
+	for(i=0; i<config->io_length; i++){
+		queue_destroy_and_destroy_elements(estados->block[i],(void*)destroy_solicitud_io);
+	}
+	list_destroy_and_destroy_elements(estados->execute,(void*)destroyPCB);
+	queue_destroy_and_destroy_elements(estados->exit,(void*)destroyPCB);
+	queue_destroy_and_destroy_elements(estados->new,(void*)destroyPCB);
+	queue_destroy_and_destroy_elements(estados->ready,(void*)destroyPCB);
+	for(i=0; i<config->io_length; i++){
+		pthread_mutex_destroy(&io_mutex_queues[i]);
+	}
+	pthread_mutex_destroy(&executeMutex);
+	pthread_mutex_destroy(&exitMutex);
+	pthread_mutex_destroy(&newMutex);
+	pthread_mutex_destroy(&readyMutex);
+}
+
+void destroy_solicitud_io(solicitud_io* self){
+	destroyPCB(self->pcb);
+	free(self->io_id);
+	free(self);
+}
+
 void sendToNEW(PCB* pcb, Estados* estados){
-	logTrace("Plan: PCB:%d / -> NEW",pcb->processID);
+	pthread_mutex_lock(&newMutex);
 	queue_push(estados->new,pcb);
+	pthread_mutex_unlock(&newMutex);
+	logTrace("Plan: PCB:%d / -> NEW",pcb->processID);
 }
 
 PCB* getNextFromNEW(Estados* estados){
+	pthread_mutex_lock(&newMutex);
 	PCB* pcb = queue_pop(estados->new);
+	pthread_mutex_unlock(&newMutex);
 	logTrace("Plan: PCB:%d / NEW -> next",pcb->processID);
 	return pcb;
 }
 
+solicitud_io* getNextFromBlock(Estados* estados, int io_index){
+	pthread_mutex_lock(&io_mutex_queues[io_index]);
+	solicitud_io* sol = queue_pop(estados->block[io_index]);
+	pthread_mutex_unlock(&io_mutex_queues[io_index]);
+	logTrace("Plan: PCB:%d / Block [%s] -> next",sol->pcb->processID,sol->io_id);
+	return sol;
+}
+
 PCB* getNextFromREADY(Estados* estados){
+	pthread_mutex_lock(&readyMutex);
 	PCB* pcb = queue_pop(estados->ready);
+	pthread_mutex_unlock(&readyMutex);
 	logTrace("Plan: PCB:%d / READY -> next",pcb->processID);
 	return pcb;
 }
 
 void sendToREADY(PCB* pcb, Estados* estados){
-	logTrace("Plan: PCB:%d / -> READY",pcb->processID);
+	pthread_mutex_lock(&readyMutex);
 	queue_push(estados->ready,pcb);
+	pthread_mutex_unlock(&readyMutex);
+	logTrace("Plan: PCB:%d / -> READY",pcb->processID);
 }
 
 void sendToEXEC(PCB* pcb, Estados* estados){
-	logTrace("Plan: PCB:%d / -> EXEC",pcb->processID);
+	pthread_mutex_lock(&executeMutex);
 	list_add(estados->execute,pcb);
+	pthread_mutex_unlock(&executeMutex);
+	logTrace("Plan: PCB:%d / -> EXEC",pcb->processID);
 }
 //TODO: ver si hay que organizar distintas colas de bloqueados
-void sendToBLOCK(PCB* pcb, Estados* estados){
-	logTrace("Plan: PCB:%d / -> BLOCK",pcb->processID);
-	queue_push(estados->block,pcb);
+void sendToBLOCK(solicitud_io* solicitud, int io_index, Estados* estados){
+	pthread_mutex_lock(&io_mutex_queues[io_index]);
+	queue_push(estados->block[io_index],solicitud);
+	pthread_mutex_unlock(&io_mutex_queues[io_index]);
+	logTrace("Plan: PCB:%d / -> BLOCK",solicitud->pcb->processID);
 }
 
 void sendToEXIT(PCB* pcb, Estados* estados){
-	logTrace("Plan: PCB:%d / -> EXIT",pcb->processID);
+	pthread_mutex_lock(&exitMutex);
 	queue_push(estados->exit,pcb);
+	pthread_mutex_unlock(&exitMutex);
+	logTrace("Plan: PCB:%d / -> EXIT",pcb->processID);
 }
 
 void sendFromEXECtoREADY(Estados* estados, int pid){
@@ -109,10 +176,11 @@ void abortFromREADY(Estados* estados,int index){
 	sendToEXIT(pcb,estados);
 }
 
-void abortFromBLOCK(Estados* estados,int index){
-	PCB* pcb = list_remove(estados->block->elements,index);
-	logTrace("Plan: PCB:%d / BLOCK -> abort",pcb->processID);
-	sendToEXIT(pcb,estados);
+void abortFromBLOCK(Estados* estados,int index, int io_index){
+	solicitud_io* solicitud = list_remove(estados->block[io_index]->elements,index);
+	logTrace("Plan: PCB:%d / BLOCK -> abort",solicitud->pcb->processID);
+	sendToEXIT(solicitud->pcb,estados);
+	free_solicitud_io(solicitud);
 }
 
 void abortFromNEW(Estados* estados,int index){
@@ -129,6 +197,8 @@ void abortFromEXEC(Estados* estados,int pid){
 
 PCB* removeFromEXEC(Estados* estados, int pid){
 	int i;
+	bool encontrado = false;
+	pthread_mutex_lock(&executeMutex);
 	t_list* enEjecucion = estados->execute;
 	PCB* proceso = NULL;
 	for( i=0; i < enEjecucion->elements_count; i++){
@@ -136,31 +206,51 @@ PCB* removeFromEXEC(Estados* estados, int pid){
 		//saca de la lista y retorna el proceso cuando lo encuentra por el ID
 		if(proceso->processID==pid){
 			list_remove(enEjecucion,i);
-			logTrace("Plan: PCB:%d / EXEC ->",pid);
-			return proceso;
+			encontrado = true;
+			break;
 		}
 	}
-	return NULL;
+	pthread_mutex_unlock(&executeMutex);
+	logTrace("Plan: PCB:%d / EXEC ->",pid);
+	if(encontrado){
+		return proceso;
+	} else {
+		return NULL;
+	}
 }
 
 PCB* removeNextFromEXIT(Estados* estados){
+	pthread_mutex_lock(&exitMutex);
 	PCB* pcb = queue_pop(estados->exit);
+	pthread_mutex_unlock(&exitMutex);
 	logTrace("Plan: PCB:%d / EXIT -> fin",pcb->processID);
 	return pcb;
 }
 
 PCB* getFromEXEC(Estados* estados, int pid){
 	int i;
+	bool encontrado = false;
+	pthread_mutex_lock(&executeMutex);
 	t_list* enEjecucion = estados->execute;
 	PCB* proceso = NULL;
 	for( i=0; i < enEjecucion->elements_count; i++){
 		proceso = list_get(enEjecucion,i);
 		//retorna el proceso cuando lo encuentra por el ID
 		if(proceso->processID==pid){
-			return proceso;
+			encontrado = true;
+			break;
 		}
 	}
-	return NULL;
+	pthread_mutex_unlock(&executeMutex);
+	if(encontrado){
+		return proceso;
+	} else {
+		return NULL;
+	}
+}
+
+bool hayProcesosEnREADY(Estados* estados){
+	return (estados->ready->elements->elements_count)>0;
 }
 
 int addQuantumToExecProcess(PCB* proceso, int quantum){
@@ -171,27 +261,16 @@ int addQuantumToExecProcess(PCB* proceso, int quantum){
 	return quantum - proceso->executedQuantums;
 }
 
-int incrementarContadorPrograma(PCB* pcb){//TODO: esto lo tiene que hacer la CPU despues
-	pcb->programCounter++;
-	logTrace("Plan: PCB:%d / Program Counter: %d/%d",pcb->processID,pcb->programCounter,pcb->codeIndex->instrucciones_size);
-	return pcb->codeIndex->instrucciones_size-pcb->programCounter;
-}
-
 void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
 		if(proceso->consolaActiva){
-			if(incrementarContadorPrograma(proceso)<=0){
-				finalizarPrograma(estados,proceso->processID,socketCPU,socketPlanificador);
+			//si se le terminaron los quantums al proceso
+			if(addQuantumToExecProcess(proceso,quantum)<=0){
+				proceso->executedQuantums=0;//reinicio los quantums ejecutados
+				switchProcess(estados,pid,socketCPU);
 			} else {
-				//si se le terminaron los quantums al proceso
-				if(addQuantumToExecProcess(proceso,quantum)<=0){
-					proceso->executedQuantums=0;//reinicio los quantums ejecutados
-					switchProcess(estados,pid,socketCPU);
-					sendFromEXECtoREADY(estados,pid);
-				} else {
-					continueExec(socketCPU,proceso);
-				}
+				continueExec(socketCPU,proceso);
 			}
 		} else {
 			//entra por aca si la consola cerro la conexion con el Nucleo
@@ -201,16 +280,36 @@ void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketC
 	}
 }
 
-void finalizarPrograma(Estados* estados, int pid, int socketCPU, int socketPlanificador){
-	switchProcess(estados,pid,socketCPU);
-	PCB* proceso = removeFromEXEC(estados,pid);
+void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado, int socketPlanificador){
+	PCB* proceso = removeFromEXEC(estados,pcbActualizado->processID);
+	if(proceso!=NULL){
+		actualizarPCB(proceso,pcbActualizado);
+		logTrace("Context Switch finished callback: PCB:%d / PC: %d/%d",proceso->processID,proceso->programCounter,proceso->codeIndex->instrucciones_size);
+		notifyProcessREADY(estados, proceso, socketPlanificador);
+	}
+}
+
+void notifyProcessREADY(Estados* estados, PCB* pcb, int socketPlanificador){
+	sendToREADY(pcb,estados);
+	logTrace("Informando Planificador [Program READY]");
+	informarPlanificador(socketPlanificador,PROGRAM_READY,pcb->processID);
+}
+
+void finalizarPrograma(Estados* estados, PCB* pcbActualizado, int socketCPU, int socketPlanificador){
+	PCB* proceso = removeFromEXEC(estados,pcbActualizado->processID);
+	actualizarPCB(proceso,pcbActualizado);
+	destroyPCB(pcbActualizado);
 	sendToEXIT(proceso,estados);
 	enviarMensajeSocket(socketPlanificador,FINALIZAR_PROGRAMA,"");
 }
 
+void actualizarPCB(PCB* local, PCB* actualizado){
+	local->programCounter = actualizado->programCounter;
+}
+
 void switchProcess(Estados* estados, int pid, int socketCPU){
 	logTrace("Informando CPU [Switch process]");
-	informarCPU(socketCPU,ABORT_EXECUTION,pid);
+	informarCPU(socketCPU,CONTEXT_SWITCH,pid);
 }
 
 void abortProcess(Estados* estados, int pid, int socketCPU){
@@ -220,23 +319,23 @@ void abortProcess(Estados* estados, int pid, int socketCPU){
 
 void continueExec(int socketCPU, PCB* pcb){
 	logTrace("Informando CPU [Continue process execution]");
-	informarEjecucionCPU(socketCPU,CONTINUE_EXECUTION,pcb);
+	continuarEjecucionProcesoCPU(socketCPU);
 }
 
 void startExec(Estados* estados, int socketCPU){
 	PCB* proceso = getNextFromREADY(estados);
 	sendToEXEC(proceso,estados);
 	logTrace("Informando CPU [Execute new process]");
-	informarEjecucionCPU(socketCPU,EXEC_NEW_PROCESS,proceso);
+	ejecutarNuevoProcesoCPU(socketCPU,proceso);
 }
-
+/*
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb){
 	char* instruccion = getSiguienteInstruccion(pcb);
 	char* serialized = serializar_EjecutarInstruccion(pcb->processID,instruccion);
 	int longitud = getLong_EjecutarInstruccion(instruccion);
 	enviarMensajeSocketConLongitud(socketCPU,EXEC_NEW_PROCESS,serialized,longitud);
 	free(serialized);
-}
+}*/
 
 void informarCPU(int socketCPU, int accion, int pid){
 	enviarMensajeSocket(socketCPU,accion,string_itoa(pid));
@@ -248,7 +347,7 @@ void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, ch
 	sendToNEW(nuevo,estados);
 
 	//esto es para pedirle a la UMC que reserve espacio para el programa
-	int socketUMC = getSocketUMC();
+	//int socketUMC = getSocketUMC();
 	int size_pagina = getConfiguration()->size_pagina;
 	int stack_size = getConfiguration()->stack_size;
 	int pagsNecesarias = getCantidadPaginasNecesarias(programa,size_pagina,stack_size);
@@ -277,40 +376,60 @@ void abortarPrograma(Estados* estados, int consolaFD){
 bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD){
 	int i;
 	PCB* pcb;
+	bool encontrado = false;
 	//busco en ready
+	pthread_mutex_lock(&readyMutex);
 	for(i=0; i<estados->ready->elements->elements_count; i++){
 		pcb = list_get(estados->ready->elements,i);
 		if(pcb->consolaFD==consolaFD){
 			pcb->consolaActiva = false;
 			abortFromREADY(estados,i);
-			return true;
+			encontrado = true;
+			break;
 		}
 	}
-	//busco en block
-	for(i=0; i<estados->block->elements->elements_count; i++){
-		pcb = list_get(estados->block->elements,i);
-		if(pcb->consolaFD==consolaFD){
-			pcb->consolaActiva = false;
-			abortFromBLOCK(estados,i);
-			return true;
+	pthread_mutex_unlock(&readyMutex);
+
+	int j=0;
+	while(!encontrado && j<config->io_length){
+		//busco en block
+		pthread_mutex_lock(&io_mutex_queues[i]);
+		for(i=0; i<estados->block[i]->elements->elements_count; i++){
+			solicitud_io* solicitud = list_get(estados->block[i]->elements,i);
+			if(solicitud->pcb->consolaFD==consolaFD){
+				solicitud->pcb->consolaActiva = false;
+				abortFromBLOCK(estados,i,j);
+				encontrado = true;
+				break;
+			}
 		}
+		pthread_mutex_unlock(&io_mutex_queues[i]);
+		j++;
 	}
-	//busco en new
-	for(i=0; i<estados->new->elements->elements_count; i++){
-		pcb = list_get(estados->new->elements,i);
-		if(pcb->consolaFD==consolaFD){
-			pcb->consolaActiva = false;
-			abortFromNEW(estados,i);
-			return true;
+
+	if(!encontrado){
+		//busco en new
+		pthread_mutex_lock(&newMutex);
+		for(i=0; i<estados->new->elements->elements_count; i++){
+			pcb = list_get(estados->new->elements,i);
+			if(pcb->consolaFD==consolaFD){
+				pcb->consolaActiva = false;
+				abortFromNEW(estados,i);
+				encontrado = true;
+				break;
+			}
 		}
+		pthread_mutex_unlock(&newMutex);
 	}
-	return false;
+
+	return encontrado;
 }
 
 void findAndExitPCBexecuting(Estados* estados, int consolaFD){
 	int i;
 	PCB* pcb;
 	//busco en EXEC
+	pthread_mutex_lock(&executeMutex);
 	for(i=0; i<estados->execute->elements_count; i++){
 		pcb = list_get(estados->execute,i);
 		if(pcb->consolaFD==consolaFD){
@@ -319,6 +438,7 @@ void findAndExitPCBexecuting(Estados* estados, int consolaFD){
 			//para abortarlo cuando termine la ejecucion actual
 		}
 	}
+	pthread_mutex_unlock(&executeMutex);
 }
 
 void informarPlanificador(int socketPlanificador, int accion, int pid){
@@ -374,21 +494,6 @@ int esInstruccionValida(char* str, int offset, int length){
 }
 */
 
-char* getInstruccion(char* codigo, int offset, int length){
-	char* instruccion = malloc(sizeof(char)*length+1);
-	if(instruccion!=NULL){
-		memcpy(instruccion,codigo+offset,length);
-		instruccion[length]='\0';
-	}
-	return instruccion;
-}
-
-char* getSiguienteInstruccion(PCB* pcb){
-	int offset = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].start;
-	int length = pcb->codeIndex->instrucciones_serializado[pcb->programCounter].offset;
-	return getInstruccion(pcb->programa,offset,length);
-}
-
 int getCantidadPaginasPrograma(char* programa, int size_pagina){
 	int length = strlen(programa);
 	int cantidad = length/size_pagina;
@@ -423,5 +528,91 @@ void destroyPaginas(pagina* paginas, int cantidad){
 		free(paginas[i]);
 	}
 	free(paginas);
+}
+
+void launch_IO_threads(Estados* estados, int socketPlanificador){
+	pthread_t thread_io;
+
+	io_sem_array = malloc(sizeof(sem_t)*config->io_length);
+	io_mutex_array = malloc(sizeof(pthread_mutex_t)*config->io_length);
+
+	int i;
+	for(i=0; i<config->io_length; i++){
+		io_arg_struct *args = malloc(sizeof(io_arg_struct));
+		args->estados = estados;
+		args->io_index = i;
+		args->socketPlanificador = socketPlanificador;
+
+		//inicializo el semaforo en 0 (vacio)
+		sem_init(&io_sem_array[i],0,0);
+		//inicializo mutex
+		pthread_mutex_init(&io_mutex_array[i],NULL);
+
+		pthread_create(&thread_io,NULL,(void*) ejecutarIO,(void*) args);
+		logTrace("Creado thread para atender dispositivo: %s",config->io_ids[i]);
+	}
+}
+
+void ejecutarIO(void* arguments){
+	io_arg_struct *args = arguments;
+
+	Estados* estados = args->estados;
+	int io_index = args->io_index;
+
+	while(1){
+
+		sem_wait(&io_sem_array[io_index]);//consumo 1, se suspende el hilo aca si no hay ninguno esperando en cola de bloqueados para este dispositivo
+
+		solicitud_io* solicitud = getNextFromBlock(estados,io_index);
+
+		//operacion critica de I/O
+		pthread_mutex_lock(&io_mutex_array[io_index]);
+
+		logTrace("Ejecutando %d operaciones de %s (%d ms sleep)",solicitud->cant_operaciones,solicitud->io_id,config->io_sleep[io_index]);
+		//hago un sleep del tiempo del dispositivo por la cantidad de operaciones
+		usleep(config->io_sleep[io_index]*solicitud->cant_operaciones*1000);//paso de micro a milisegundos (*1000)
+
+		pthread_mutex_unlock(&io_mutex_array[io_index]);
+
+		//mando el proceso a ready
+		notifyProcessREADY(estados, solicitud->pcb, args->socketPlanificador);
+
+		//libero la solicitud
+		free_solicitud_io(solicitud);
+	}
+
+	destroy_io_arg_struct(args);
+}
+
+void atenderSolicitudDispositivoIO(Estados* estados, uint32_t pid, char* io_id, uint32_t cant_operaciones){
+
+	int io_index = getPosicionDispositivo(config->io_ids,config->io_length,io_id);
+	PCB* pcb = removeFromEXEC(estados,pid);
+
+	solicitud_io* solicitud = malloc(sizeof(solicitud_io));
+	solicitud->pcb = pcb;
+	solicitud->io_id = io_id;
+	solicitud->cant_operaciones = cant_operaciones;
+
+	sendToBLOCK(solicitud,io_index,estados);
+
+	sem_post(&io_sem_array[io_index]);//incremento el semaforo
+}
+
+void destroy_io_arg_struct(io_arg_struct *args){
+	free(args);
+}
+
+int getPosicionDispositivo(char** lista_ids, int len, char* io_id){
+	int i=0;
+	while(i<len && !string_equals_ignore_case(lista_ids[i],io_id)){
+		i++;
+	}
+	return 0;
+}
+
+void free_solicitud_io(solicitud_io* solicitud){
+	free(solicitud->io_id);
+	free(solicitud);
 }
 

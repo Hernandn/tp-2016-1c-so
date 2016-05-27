@@ -72,7 +72,7 @@ void handleClients(){
 					logDebug("Se desconeccto el cliente %d",socket_cliente);
 					break;
 				case HANDSHAKE_CPU:
-					logDebug("Cliente %d es un CPU"),socket_cliente;
+					logDebug("Cliente %d es un CPU",socket_cliente);
 
 					//TODO No estoy liberando esto en ningun momento.
 					//Argumentos para el thread de la CPU. Mando una estructura porque es mas facil de modificar en un futuro.
@@ -379,3 +379,4 @@ void error_comando(char * comando)
 {
 	printf("comando inexistente\n");
 }
+

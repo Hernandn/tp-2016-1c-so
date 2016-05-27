@@ -11,6 +11,8 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
+#include <sys/time.h>
+#include <math.h>
 #include "configuration.h"
 
 //codigos de operaciones de la Consola
@@ -27,5 +29,8 @@ void comunicacionConNucleo(Configuration*, char*);
 void iniciarProgramaAnsisop(int, char*);
 char* obtener_programa(char*);
 
+//para tomar el tiempo
+int timeval_subtract(struct timeval *result, struct timeval *t2, struct timeval *t1);
+void timeval_print(struct timeval *tv);
 
 #endif /* FUNCIONES_H_ */
