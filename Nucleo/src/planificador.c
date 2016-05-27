@@ -25,8 +25,6 @@ void planificar(void* arguments){
 	inicializarSockets(socketCliente);
 	socketServidor = args->socketServerPlanificador;
 
-	logTrace("Iniciando Planificador");
-
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
 	 * por los clientes ya conectados */
@@ -63,12 +61,9 @@ void planificar(void* arguments){
 		 * mensaje */
 		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
 
-		logTrace("Planificador: Nueva solicitud");
-
 		/* Se comprueba si algún cliente ya conectado ha enviado algo */
 		for (i=0; i<numeroClientes; i++)
 		{
-			logTrace("Planificador: Solicitud %d",socketCliente[i]);
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
 				Package* package = malloc(sizeof(Package));

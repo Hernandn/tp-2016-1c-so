@@ -27,6 +27,7 @@
 #define PROGRAM_FINISHED 76
 #define CONTEXT_SWITCH 77
 #define CONTEXT_SWITCH_FINISHED 78
+#define EXEC_IO_OPERATION 79
 #define CPU_LIBRE 90
 //-------------------------------
 
@@ -42,6 +43,14 @@ typedef struct PCB {
 	char* programa;	//codigo del programa
 } PCB;
 
+//wrapper que se crea con cada solicitud de I/O de un proceso
+//va a la cola de bloqueados correspondiente al dispositivo (io_id)
+typedef struct solicitud_io {
+    PCB* pcb;
+    char* io_id;
+	int cant_operaciones;
+} solicitud_io;
+
 //serializacion PCB
 
 void destroyPCB(PCB* self);
@@ -51,6 +60,9 @@ char* serializar_metadata_program(t_metadata_program* metadata);
 uint32_t getLong_metadata_program(t_metadata_program* metadata);
 PCB* deserializar_PCB(char* serialized);
 t_metadata_program* deserializar_metadata_program(char* serialized);
+char* serializar_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones);
+uint32_t getLong_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones);
+solicitud_io* deserializar_ejecutarOperacionIO(char* serialized);
 
 
 
@@ -60,6 +72,7 @@ void informarNucleoFinPrograma(int socketNucleo, PCB* pcb);
 void informarNucleoQuantumFinished(int socketNucleo, PCB* pcb);
 void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb);
 void informarNucleoCPUlibre(int socketNucleo);
+void informarNucleoEjecutarOperacionIO(int socketNucleo, PCB* pcb, char* io_id, uint32_t cant_operaciones);
 
 //funciones interfaz Nucleo a CPU
 

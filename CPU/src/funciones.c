@@ -32,8 +32,8 @@ AnSISOP_kernel kernel_functions = {
 		.AnSISOP_signal = ml_signal,
 };
 
-//TODO: por ahora queda aca global para que lo usen las primitivas, hay que ver donde meterlo
-int socketUMC;
+
+
 
 PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
@@ -72,12 +72,14 @@ void conectarConNucleo(void* arguments){
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
 
+	proceso_fue_bloqueado = 0;
+
 	/* Se abre una conexión con el servidor */
-	args->socketNucleo = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
+	socketNucleo = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
 
 	/* Se lee el número de cliente, dato que nos da el servidor. Se escribe
 	 * dicho número en pantalla.*/
-	error = leerSocketClient(args->socketNucleo, (char *)&buffer, sizeof(int));
+	error = leerSocketClient(socketNucleo, (char *)&buffer, sizeof(int));
 
 	/* Si ha habido error de lectura lo indicamos y salimos */
 	if (error < 1)
@@ -93,7 +95,7 @@ void conectarConNucleo(void* arguments){
 	while (1)
 	{
 		Package* package = malloc(sizeof(Package));
-		if(recieve_and_deserialize(package,args->socketNucleo) > 0){
+		if(recieve_and_deserialize(package,socketNucleo) > 0){
 			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
 			analizarMensaje(package,args);
 		}
@@ -123,7 +125,8 @@ void contextSwitch(arg_struct *args){
 	logTrace("Cambiando contexto proceso PID:%d",pcbActual->processID);
 	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
-	informarNucleoContextSwitchFinished(args->socketNucleo,pcbActual);
+	informarNucleoContextSwitchFinished(socketNucleo,pcbActual);
+	destroyPCB(pcbActual);
 }
 
 void cargarContextoPCB(Package* package){
@@ -137,7 +140,7 @@ void ejecutarProceso(arg_struct *args){
 	ejecutarInstruccion();
 
 	logTrace("Informando al Nucleo que finalizo la ejecucion de 1 Quantum. (PC:%d/%d)",pcbActual->programCounter,pcbActual->codeIndex->instrucciones_size);
-	enviarMensajeSocket(args->socketNucleo,EXECUTION_FINISHED,"");
+	enviarMensajeSocket(socketNucleo,EXECUTION_FINISHED,"");
 }
 
 void quantumSleep(arg_struct *args, int milisegundos){
@@ -145,13 +148,21 @@ void quantumSleep(arg_struct *args, int milisegundos){
 
 	usleep(milisegundos*1000);//convierto micro en milisegundos
 
-	if(programaFinalizado()){
-		//envia el PCB de nuevo al Nucleo
-		informarNucleoFinPrograma(args->socketNucleo,pcbActual);
+	if(proceso_fue_bloqueado){
+		informarNucleoCPUlibre(socketNucleo);
 		logTrace("CPU se encuentra libre");
+		proceso_fue_bloqueado = 0;
 	} else {
-		informarNucleoQuantumFinished(args->socketNucleo,pcbActual);
+		if(programaFinalizado()){
+			//envia el PCB de nuevo al Nucleo
+			informarNucleoFinPrograma(socketNucleo,pcbActual);
+			destroyPCB(pcbActual);
+			logTrace("CPU se encuentra libre");
+		} else {
+			informarNucleoQuantumFinished(socketNucleo,pcbActual);
+		}
 	}
+
 }
 
 //verifica si se terminaron las instrucciones del programa
@@ -163,11 +174,16 @@ void abortarProceso(arg_struct *args){
 	logTrace("Abortando proceso PID:%d",pcbActual->processID);
 	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
-	informarNucleoCPUlibre(args->socketNucleo);
+	informarNucleoCPUlibre(socketNucleo);
+	destroyPCB(pcbActual);
 }
 
 void ejecutarInstruccion(){
 	char* instruccion = getSiguienteInstruccion();
+
+	//incremento el PC antes de ejecutar la instruccion por si se bloquea
+	pcbActual->programCounter++;
+
 	printf("=================================\n");
 	printf("Ejecutando '%s'\n", instruccion);
 	analizadorLinea(instruccion, &functions, &kernel_functions);
@@ -175,8 +191,6 @@ void ejecutarInstruccion(){
 	if(instruccion!=NULL){
 		free(instruccion);
 	}
-	//incremento el PC cuando termina de ejecutar la instruccion
-	pcbActual->programCounter++;
 }
 
 
@@ -206,6 +220,13 @@ char* getSiguienteInstruccion(){
 	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
 	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
 	return getInstruccion(pcbActual->programa,offset,length);
+}
+
+void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){
+	logTrace("Enviando al Nucleo ejecucion de operacion I/O");
+	informarNucleoEjecutarOperacionIO(socketNucleo, pcbActual, io_id, cant_operaciones);
+	destroyPCB(pcbActual);
+	proceso_fue_bloqueado = 1;
 }
 
 

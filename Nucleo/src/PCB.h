@@ -29,16 +29,7 @@ typedef struct Estados {
 typedef struct io_arg_struct {
     Estados* estados;
     int io_index;//posicion del dispositivo en los arrays
-    int socketPlanificador;
 } io_arg_struct;
-
-//wrapper que se crea con cada solicitud de I/O de un proceso
-//va a la cola de bloqueados correspondiente al dispositivo (io_id)
-typedef struct solicitud_io {
-    PCB* pcb;
-    char* io_id;
-	int cant_operaciones;
-} solicitud_io;
 
 
 //funciones
@@ -65,10 +56,10 @@ PCB* removeNextFromEXIT(Estados* estados);
 PCB* getFromEXEC(Estados* estados, int pid);
 bool hayProcesosEnREADY(Estados* estados);
 int addQuantumToExecProcess(PCB* proceso, int quantum);
-void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador);
-void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado, int socketPlanificador);
-void notifyProcessREADY(Estados* estados, PCB* pcb, int socketPlanificador);
-void finalizarPrograma(Estados* estados, PCB* pcb, int socketCPU, int socketPlanificador);
+void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU);
+void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado);
+void notifyProcessREADY(Estados* estados, PCB* pcb);
+void finalizarPrograma(Estados* estados, PCB* pcb, int socketCPU);
 void actualizarPCB(PCB* local, PCB* actualizado);
 void switchProcess(Estados* estados, int pid, int socketCPU);
 void abortProcess(Estados* estados, int pid, int socketCPU);
@@ -76,20 +67,20 @@ void continueExec(int socketCPU, PCB* pcb);
 void startExec(Estados* estados, int socketCPU);
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb);
 void informarCPU(int socketCPU, int accion, int pid);
-void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, char* programa);
+void iniciarPrograma(Estados* estados, int consolaFD, char* programa);
 void abortarPrograma(Estados* estados, int consolaFD);
 bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD);
 void findAndExitPCBexecuting(Estados* estados, int consolaFD);
-void informarPlanificador(int socketPlanificador, int accion, int pid);
+void informarPlanificador(int accion, int pid);
 void getCodeIndex(PCB* pcb, char* programa);
 int esInstruccionValida(char* str, int offset, int length);
 int getCantidadPaginasPrograma(char* programa, int size_pagina);
 int getCantidadPaginasNecesarias(char* programa, int size_pagina, int stack_size);
 pagina* getPaginasFromPrograma(char* programa, int size_pagina);
 void destroyPaginas(pagina* paginas, int cantidad);
-void launch_IO_threads(Estados* estados, int socketPlanificador);
+void launch_IO_threads(Estados* estados);
 void ejecutarIO(void* arguments);
-void atenderSolicitudDispositivoIO(Estados* estados, uint32_t pid, char* io_id, uint32_t cant_operaciones);
+void atenderSolicitudDispositivoIO(Estados* estados, solicitud_io* solicitud);
 void destroy_io_arg_struct(io_arg_struct *args);
 int getPosicionDispositivo(char** lista_ids, int len, char* io_id);
 void free_solicitud_io(solicitud_io* solicitud);

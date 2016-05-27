@@ -5,10 +5,8 @@
  *      Author: hernan
  */
 
-#include "configuration.h"
 #include "PCB.h"
-#include "planificador.h"
-
+#include "configuration.h"
 
 #ifndef NUCLEO_H_
 #define NUCLEO_H_
@@ -26,18 +24,6 @@
 //codigos de operacion con la UMC
 #define HANDSHAKE_UMC 5
 //---------------------
-//codigos de operaciones entre CPU/Nucleo
-#define CONTINUE_EXECUTION 70
-#define ABORT_EXECUTION 71
-#define EXEC_NEW_PROCESS 72
-#define EXECUTION_FINISHED 73
-#define QUANTUM_SLEEP_CPU 74
-#define QUANTUM_FINISHED 75
-#define PROGRAM_FINISHED 76
-#define CONTEXT_SWITCH 77
-#define CONTEXT_SWITCH_FINISHED 78
-#define CPU_LIBRE 90
-//---------------------
 
 //estructura de argumentos para pasarle a un thread
 typedef struct arg_struct {
@@ -46,7 +32,6 @@ typedef struct arg_struct {
     int socketServerCPU;
     int socketServerConsola;
     int socketServerPlanificador;
-    int socketClientPlanificador;
     t_list* listaCPUs;
     Configuration* config;
     Estados* estados;
@@ -58,6 +43,10 @@ typedef struct CPU {
     int libre;	// 0:ocupado / 1:libre
 } CPU;
 
+int socketUMC;
+int socketPlanificador;
+
+
 //prototipos de funciones
 void handleClients(Configuration* config);
 void handleConsolas();
@@ -68,9 +57,9 @@ void enviarMensaje(int socket, int accion, char* message);
 void imprimirArraySockets(int sockets[], int len);
 void inicializarArraySockets(arg_struct* args);
 int conectarConUMC(Configuration* config);
-void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador);
+void nuevoCPU(t_list* listaCPUs, int socketCPU);
 void destroyCPU(CPU* self);
-void liberarCPU(CPU* cpu, int socketPlanificador);
+void liberarCPU(CPU* cpu);
 void liberarCPUporSocketFD(int socketCPU, arg_struct *args);
 CPU* buscarCPUporSocketFD(int socketCPU, t_list* listaCPUs);
 void eliminarCPU(t_list* listaCPUs,int socketCPU);

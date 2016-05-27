@@ -261,7 +261,7 @@ int addQuantumToExecProcess(PCB* proceso, int quantum){
 	return quantum - proceso->executedQuantums;
 }
 
-void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU, int socketPlanificador){
+void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketCPU){
 	PCB* proceso = getFromEXEC(estados,pid);
 	if(proceso!=NULL){
 		if(proceso->consolaActiva){
@@ -280,22 +280,22 @@ void quantumFinishedCallback(Estados* estados, int pid, int quantum, int socketC
 	}
 }
 
-void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado, int socketPlanificador){
+void contextSwitchFinishedCallback(Estados* estados, PCB* pcbActualizado){
 	PCB* proceso = removeFromEXEC(estados,pcbActualizado->processID);
 	if(proceso!=NULL){
 		actualizarPCB(proceso,pcbActualizado);
 		logTrace("Context Switch finished callback: PCB:%d / PC: %d/%d",proceso->processID,proceso->programCounter,proceso->codeIndex->instrucciones_size);
-		notifyProcessREADY(estados, proceso, socketPlanificador);
+		notifyProcessREADY(estados, proceso);
 	}
 }
 
-void notifyProcessREADY(Estados* estados, PCB* pcb, int socketPlanificador){
+void notifyProcessREADY(Estados* estados, PCB* pcb){
 	sendToREADY(pcb,estados);
 	logTrace("Informando Planificador [Program READY]");
-	informarPlanificador(socketPlanificador,PROGRAM_READY,pcb->processID);
+	informarPlanificador(PROGRAM_READY,pcb->processID);
 }
 
-void finalizarPrograma(Estados* estados, PCB* pcbActualizado, int socketCPU, int socketPlanificador){
+void finalizarPrograma(Estados* estados, PCB* pcbActualizado, int socketCPU){
 	PCB* proceso = removeFromEXEC(estados,pcbActualizado->processID);
 	actualizarPCB(proceso,pcbActualizado);
 	destroyPCB(pcbActualizado);
@@ -341,7 +341,7 @@ void informarCPU(int socketCPU, int accion, int pid){
 	enviarMensajeSocket(socketCPU,accion,string_itoa(pid));
 }
 
-void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, char* programa){
+void iniciarPrograma(Estados* estados, int consolaFD, char* programa){
 	logTrace("Iniciando nuevo Programa Consola");
 	PCB* nuevo = buildNewPCB(consolaFD,programa);
 	sendToNEW(nuevo,estados);
@@ -360,7 +360,7 @@ void iniciarPrograma(Estados* estados, int consolaFD, int socketPlanificador, ch
 	nuevo = getNextFromNEW(estados);
 	sendToREADY(nuevo,estados);
 	logTrace("Informando Planificador [Program READY]");
-	informarPlanificador(socketPlanificador,PROGRAM_READY,nuevo->processID);
+	informarPlanificador(PROGRAM_READY,nuevo->processID);
 }
 
 void abortarPrograma(Estados* estados, int consolaFD){
@@ -441,7 +441,7 @@ void findAndExitPCBexecuting(Estados* estados, int consolaFD){
 	pthread_mutex_unlock(&executeMutex);
 }
 
-void informarPlanificador(int socketPlanificador, int accion, int pid){
+void informarPlanificador(int accion, int pid){
 	enviarMensajeSocket(socketPlanificador,accion,string_itoa(pid));
 }
 
@@ -530,7 +530,7 @@ void destroyPaginas(pagina* paginas, int cantidad){
 	free(paginas);
 }
 
-void launch_IO_threads(Estados* estados, int socketPlanificador){
+void launch_IO_threads(Estados* estados){
 	pthread_t thread_io;
 
 	io_sem_array = malloc(sizeof(sem_t)*config->io_length);
@@ -541,7 +541,6 @@ void launch_IO_threads(Estados* estados, int socketPlanificador){
 		io_arg_struct *args = malloc(sizeof(io_arg_struct));
 		args->estados = estados;
 		args->io_index = i;
-		args->socketPlanificador = socketPlanificador;
 
 		//inicializo el semaforo en 0 (vacio)
 		sem_init(&io_sem_array[i],0,0);
@@ -575,7 +574,7 @@ void ejecutarIO(void* arguments){
 		pthread_mutex_unlock(&io_mutex_array[io_index]);
 
 		//mando el proceso a ready
-		notifyProcessREADY(estados, solicitud->pcb, args->socketPlanificador);
+		notifyProcessREADY(estados, solicitud->pcb);
 
 		//libero la solicitud
 		free_solicitud_io(solicitud);
@@ -584,15 +583,11 @@ void ejecutarIO(void* arguments){
 	destroy_io_arg_struct(args);
 }
 
-void atenderSolicitudDispositivoIO(Estados* estados, uint32_t pid, char* io_id, uint32_t cant_operaciones){
+void atenderSolicitudDispositivoIO(Estados* estados, solicitud_io* solicitud){
 
-	int io_index = getPosicionDispositivo(config->io_ids,config->io_length,io_id);
-	PCB* pcb = removeFromEXEC(estados,pid);
-
-	solicitud_io* solicitud = malloc(sizeof(solicitud_io));
-	solicitud->pcb = pcb;
-	solicitud->io_id = io_id;
-	solicitud->cant_operaciones = cant_operaciones;
+	int io_index = getPosicionDispositivo(config->io_ids,config->io_length,solicitud->io_id);
+	PCB* pcb = removeFromEXEC(estados,solicitud->pcb->processID);
+	actualizarPCB(pcb,solicitud->pcb);
 
 	sendToBLOCK(solicitud,io_index,estados);
 

@@ -82,6 +82,7 @@ void ml_retornar(t_valor_variable retorno){
 
 void ml_entradaSalida(t_nombre_dispositivo dispositivo, int tiempo){
 	printf("\nEjecutando Entrada-Salida [Dispositivo: %s, Tiempo: %d]\n",dispositivo,tiempo);
+	//ejecutarOperacionIO(dispositivo,tiempo);
 }
 
 void ml_wait(t_nombre_semaforo identificador_semaforo){

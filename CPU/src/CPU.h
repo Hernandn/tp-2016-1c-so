@@ -38,8 +38,13 @@
 
 typedef struct arg_struct {
 	Configuration* config;
-	int socketNucleo;
 } arg_struct;
+
+
+int socketUMC;
+int socketNucleo;
+
+int proceso_fue_bloqueado;
 
 //prototipos de funciones
 void conectarConUMC();
@@ -59,6 +64,7 @@ void analizarRespuestaUMC();
 int getSocketUMC();
 char* getInstruccion(char* codigo, int offset, int length);
 char* getSiguienteInstruccion();
+void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones);
 
 
 #endif /* CPU_H_ */

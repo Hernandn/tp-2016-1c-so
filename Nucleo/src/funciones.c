@@ -6,15 +6,17 @@
  */
 
 #include "Nucleo.h"
-
-int socketUMC = -1;
+#include "planificador.h"
 
 void handleClients(Configuration* config){
 
 	arg_struct args;
 	args.config = config;
 	args.listaCPUs = list_create();
-	args.socketClientPlanificador = -1;
+
+	//inicializo variables globales de sockets
+	socketUMC = -1;
+	socketPlanificador = -1;
 
 	inicializarArraySockets(&args);
 
@@ -37,15 +39,11 @@ void handleClients(Configuration* config){
 	}
 	//abrir server para escuchar mensajes enviados por los Threads anteriores
 	args.socketServerPlanificador = abrirSocketInetServer(PLANIFICADOR_IP,PLANIFICADOR_PORT);
-	logDebug("Planificador Server creado.");
 	if (args.socketServerPlanificador == -1)
 	{
-		perror ("Error al abrir servidor para Threads");
+		perror ("Error al abrir servidor para Threads (Planificador)");
 		exit (-1);
-	} else {
-		logDebug("Conectando con Planificador Server.");
 	}
-
 
 	pthread_t hilo1;
 	pthread_create(&hilo1,NULL,(void*)handleConsolas,(void *)&args);
@@ -77,11 +75,14 @@ void handleConsolas(void* arguments){
 	 * por los clientes ya conectados */
 	while (1)
 	{
-		if(args->socketClientPlanificador==-1){
-			args->socketClientPlanificador = conectarConPlanificador(PLANIFICADOR_IP,PLANIFICADOR_PORT);
-		}
 		if(socketUMC==-1){
 			socketUMC = conectarConUMC(args->config);
+		}
+		if(socketPlanificador==-1){
+			socketPlanificador = conectarConPlanificador(PLANIFICADOR_IP,PLANIFICADOR_PORT);
+			if(socketPlanificador!=-1){
+				launch_IO_threads(estados);
+			}
 		}
 		/* Cuando un cliente cierre la conexión, se pondrá un -1 en su descriptor
 		 * de socket dentro del array socketCliente. La función compactaClaves()
@@ -124,7 +125,7 @@ void handleConsolas(void* arguments){
 					if(package->msgCode==NEW_ANSISOP_PROGRAM){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
 						comunicarCPU(args->cpuSockets);
-						iniciarPrograma(estados,socketCliente[i],args->socketClientPlanificador,package->message);
+						iniciarPrograma(estados,socketCliente[i],package->message);
 					}
 					destroyPackage(package);
 				}
@@ -227,7 +228,7 @@ void handleCPUs(void* arguments){
 			int numAnterior = numeroClientes;
 			nuevoCliente (socketServidor, socketCliente, &numeroClientes, MAX_CPUS);
 			if(numeroClientes > numAnterior){//nuevo CPU aceptado
-				nuevoCPU(listaCPUs,socketCliente[numeroClientes-1],args->socketClientPlanificador);
+				nuevoCPU(listaCPUs,socketCliente[numeroClientes-1]);
 			}
 		}
 	}
@@ -291,7 +292,6 @@ int conectarConUMC(Configuration* config){
 		logDebug("Conexion con UMC satisfactoria.");
 	}
 
-	logDebug("Realizando handshake con UMC");
 	//Se espera el handshake de la UMC para confirmar conexion
 	package=malloc(sizeof(Package));
 	if(recieve_and_deserialize(package, socket) > 0) {
@@ -303,17 +303,16 @@ int conectarConUMC(Configuration* config){
 
 	//Le aviso a la UMC que soy un nucleo
 	enviarMensajeSocket(socket,HANDSHAKE_NUCLEO,"");
-	logDebug("Handshake con UMC exitoso!!");
 
 	return socket;
 }
 
-void nuevoCPU(t_list* listaCPUs, int socketCPU, int socketPlanificador){
+void nuevoCPU(t_list* listaCPUs, int socketCPU){
 	CPU* nuevo = malloc(sizeof(CPU));
 	nuevo->cpuFD = socketCPU;
 	list_add(listaCPUs,nuevo);
 	logTrace("Creado nuevo CPU: %d", socketCPU);
-	liberarCPU(nuevo,socketPlanificador);
+	liberarCPU(nuevo);
 }
 
 void destroyCPU(CPU* self){
@@ -321,17 +320,17 @@ void destroyCPU(CPU* self){
 }
 
 //si se tiene el CPU
-void liberarCPU(CPU* cpu, int socketPlanificador){
+void liberarCPU(CPU* cpu){
 	cpu->libre = 1;	//true
 	logTrace("Informando Planificador(%d) [CPU LIBRE]",socketPlanificador);
-	informarPlanificador(socketPlanificador,CPU_LIBRE,0);
+	informarPlanificador(CPU_LIBRE,0);
 }
 
 //si solo se tiene el socket del CPU
 void liberarCPUporSocketFD(int socketCPU, arg_struct *args){
 	CPU* cpu = buscarCPUporSocketFD(socketCPU,args->listaCPUs);
 	if(cpu!=NULL){
-		liberarCPU(cpu,args->socketClientPlanificador);
+		liberarCPU(cpu);
 	}
 }
 
@@ -363,10 +362,8 @@ int conectarConPlanificador(char* ip, int puerto){
 	int socket;		/* descriptor de conexión con el servidor */
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
-	logDebug("Planificador datos ip %s puerto %d.",ip,puerto);
 	/* Se abre una conexión con el servidor */
 	socket = abrirConexionInetConServer(ip, puerto);
-	logDebug("Planificador conectado.");
 	/* Se lee el número de cliente, dato que nos da el servidor.*/
 	error = leerSocketClient(socket, (char *)&buffer, sizeof(int));
 
@@ -387,20 +384,24 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
 	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
-		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU,args->socketClientPlanificador);
+		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU);
 	} else if(package->msgCode==PROGRAM_FINISHED){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
 		int socketConsola = getFromEXEC(args->estados,pcbActualizado->processID)->consolaFD;
-		finalizarPrograma(args->estados,pcbActualizado,socketCPU,args->socketClientPlanificador);
+		finalizarPrograma(args->estados,pcbActualizado,socketCPU);
 		borrarSocketConsola(args,socketConsola);
 	} else if(package->msgCode==CONTEXT_SWITCH_FINISHED){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
-		contextSwitchFinishedCallback(args->estados,pcbActualizado,args->socketClientPlanificador);
+		contextSwitchFinishedCallback(args->estados,pcbActualizado);
 	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);
+	} else if(package->msgCode==EXEC_IO_OPERATION){
+		logTrace("Solicitada operacion I/O");
+		solicitud_io* solicitud = deserializar_ejecutarOperacionIO(package->message);
+		atenderSolicitudDispositivoIO(args->estados,solicitud);
 	}
 }
 

@@ -4,4 +4,5 @@ begin
 	a = 3
 	b = 5
 	a = b + 12
+	io Disco 5
 end

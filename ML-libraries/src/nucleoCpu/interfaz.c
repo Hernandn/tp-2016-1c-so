@@ -202,6 +202,72 @@ void destroyPCB(PCB* self){
 	free(self);
 }
 
+//envio la solicitud IO mas el PCB entero para hacer el context switch y que se bloquee en el Nucleo
+char* serializar_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones){
+	uint32_t size_pcb = getLong_PCB(pcb);
+	uint32_t total_size = getLong_ejecutarOperacionIO(pcb,io_id,cant_operaciones);
+
+	char *serializedPackage = malloc(total_size);
+
+	int offset = 0;
+	int size_to_send;
+
+	uint32_t io_id_length = strlen(io_id)+1;
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(io_id_length), size_to_send);
+	offset += size_to_send;
+
+	size_to_send = strlen(io_id)+1;
+	memcpy(serializedPackage + offset, io_id, size_to_send);
+	offset += size_to_send;
+
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(cant_operaciones), size_to_send);
+	offset += size_to_send;
+
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(size_pcb), size_to_send);
+	offset += size_to_send;
+
+	char* serialized_pcb = serializarPCB(pcb);
+	size_to_send = sizeof(char)*size_pcb;
+	memcpy(serializedPackage + offset, serialized_pcb, size_to_send);
+	offset += size_to_send;
+	free(serialized_pcb);
+
+	return serializedPackage;
+}
+
+uint32_t getLong_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones){
+	return strlen(io_id)+1 + sizeof(uint32_t)*3 + getLong_PCB(pcb);
+}
+
+solicitud_io* deserializar_ejecutarOperacionIO(char* serialized){
+	solicitud_io* sol = malloc(sizeof(solicitud_io));
+	int offset = 0;
+
+	uint32_t io_id_length;
+	memcpy(&(io_id_length),serialized+offset,sizeof(uint32_t));
+	offset+=sizeof(uint32_t);
+	memcpy(sol->io_id,serialized+offset,sizeof(char)*io_id_length);
+	offset+=io_id_length;
+	memcpy(&(sol->cant_operaciones),serialized+offset,sizeof(uint32_t));
+	offset+=sizeof(uint32_t);
+
+	int size_pcb;
+	memcpy(&size_pcb,serialized+offset,sizeof(uint32_t));
+	offset+=sizeof(uint32_t);
+
+	char* serialized_pcb = malloc(sizeof(char)*size_pcb);
+	memcpy(serialized_pcb,serialized+offset,size_pcb);
+	offset+=size_pcb;
+
+	sol->pcb = deserializar_PCB(serialized_pcb);
+	free(serialized_pcb);
+
+	return sol;
+}
+
 
 //funciones interfaz CPU a Nucleo
 
@@ -210,7 +276,6 @@ void informarNucleoFinPrograma(int socketNucleo, PCB* pcb){
 	uint32_t longitud = getLong_PCB(pcb);
 	enviarMensajeSocketConLongitud(socketNucleo,PROGRAM_FINISHED,serialized,longitud);
 	free(serialized);
-	//TODO: destruir PCB
 }
 
 void informarNucleoQuantumFinished(int socketNucleo, PCB* pcb){
@@ -222,11 +287,17 @@ void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb){
 	uint32_t longitud = getLong_PCB(pcb);
 	enviarMensajeSocketConLongitud(socketNucleo,CONTEXT_SWITCH_FINISHED,serialized,longitud);
 	free(serialized);
-	//TODO: destruir PCB
 }
 
 void informarNucleoCPUlibre(int socketNucleo){
 	enviarMensajeSocket(socketNucleo,CPU_LIBRE,"");
+}
+
+void informarNucleoEjecutarOperacionIO(int socketNucleo, PCB* pcb, char* io_id, uint32_t cant_operaciones){
+	char* serialized = serializar_ejecutarOperacionIO(pcb,io_id,cant_operaciones);
+	uint32_t longitud = getLong_ejecutarOperacionIO(pcb,io_id,cant_operaciones);
+	enviarMensajeSocketConLongitud(socketNucleo,EXEC_IO_OPERATION,serialized,longitud);
+	free(serialized);
 }
 
 
