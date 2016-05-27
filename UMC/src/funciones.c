@@ -7,6 +7,7 @@
 
 #include "funciones.h"
 #include "interfazSwap.h"
+//#include "configuration.h"
 
 memoria memoria_principal;
 tableRow* tabla;
@@ -261,18 +262,24 @@ tableRow* crearTablaDePaginas(int cantidadFrames){
 
 void handleComandos()
 {
-	while(1)
+
+	char * comando;
+	int size_buff, continua;
+	continua = 1;
+	while(continua)
 	{
-		char * comando;
-		int size_buff;
 		printf("pone el comando \n");
 		comando = NULL;
 		getline(&comando,&size_buff,stdin);
+		if(comando == "exit")
+		{
+			continua = 0;
+		}
 		intepretarComando(comando);
 		printf("termine handle comando\n");
 		free(comando);
+	}
 }
-
 void intepretarComando(char* comando)
 {
 	char** comando_parseado = malloc (sizeof(char*)*2);
@@ -315,7 +322,6 @@ void intepretarComando(char* comando)
 
 		error_comando(comando);
 	}
-	//free(comando_parseado);
 }
 
 int parsear_comando(char * comando, char ** comando_parseado)
@@ -343,11 +349,6 @@ int parsear_comando(char * comando, char ** comando_parseado)
 	*(comando_parseado + contador)= malloc(sizeof(char)*palabra);
 	strncpy(*(comando_parseado + contador),tmp,palabra);
 	*(*(comando_parseado + contador)+palabra-1) = '\0';
-
-	printf("comando recibido %s \n", comando);
-	printf("comando parseado %s \n", *comando_parseado);
-	//free(tmp);
-
 	return contador+1;
 }
 
@@ -359,9 +360,8 @@ void dump ()
 
 void retardo (int segundos)
 {
-	printf("hola soy el retardo y mis segundos son %d \n",segundos);
 	sleep(segundos);
-	printf("me desperte\n");
+	config->retraso = segundos;
 }
 
 void flush_tlb()

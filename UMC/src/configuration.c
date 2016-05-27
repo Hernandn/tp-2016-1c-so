@@ -27,5 +27,4 @@ void configurar(){
 	config->log_file = config_get_string_value(nConfig,LOG_FILE);
 	config->log_program_name = config_get_string_value(nConfig,LOG_PROGRAM_NAME);
 	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
-
 }

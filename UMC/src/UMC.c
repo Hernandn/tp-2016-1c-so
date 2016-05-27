@@ -31,7 +31,9 @@ int main(void) {
 
 	inicializarUMC(config);
 
+	pthread_mutex_lock(&retardo_mutex);
 	pthread_create(&hilo1,NULL,(void*)handleComandos,NULL);
+	pthread_mutex_unlock(&retardo_mutex);
 	handleClients();
     pthread_cancel(hilo1);
 

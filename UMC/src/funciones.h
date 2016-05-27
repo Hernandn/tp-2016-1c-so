@@ -72,6 +72,7 @@ void flush_tlb();
 void retardo (int segundos);
 void dump ();
 int parsear_comando(char * comando, char ** comando_parseado);
+void cambiar_retardo(int seg);
 
 
 #endif /* FUNCIONES_H_ */
