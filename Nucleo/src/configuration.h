@@ -44,6 +44,8 @@
 #define IO_SLEEP "IO_SLEEP"
 #define SHARED_VARS "SHARED_VARS"
 #define STACK_SIZE "STACK_SIZE"
+#define IO_IDS "IO_IDS"
+#define IO_SLEEP "IO_SLEEP"
 
 typedef struct Configuration {
 	int puerto_nucleo_cpu;
@@ -59,8 +61,12 @@ typedef struct Configuration {
 	char* log_program_name;
 	int log_print_console;
 	int size_pagina;
+	int io_length;
+	char** io_ids;
+	int* io_sleep;
 } Configuration;
 
+Configuration* config;
 
 void configurar();
 Configuration* getConfiguration();
