@@ -7,6 +7,7 @@
 
 #include "PCB.h"
 #include "configuration.h"
+#include <mllibs/nucleoCpu/interfaz.h>
 
 #ifndef NUCLEO_H_
 #define NUCLEO_H_

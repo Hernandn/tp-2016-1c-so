@@ -249,7 +249,7 @@ solicitud_io* deserializar_ejecutarOperacionIO(char* serialized){
 	uint32_t io_id_length;
 	memcpy(&(io_id_length),serialized+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
-	memcpy(sol->io_id,serialized+offset,sizeof(char)*io_id_length);
+	sol->io_id = strdup(serialized+offset);
 	offset+=io_id_length;
 	memcpy(&(sol->cant_operaciones),serialized+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);

@@ -417,3 +417,5 @@ void borrarSocketConsola(arg_struct *args, int socketConsola){
 		}
 	}
 }
+
+
