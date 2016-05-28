@@ -14,6 +14,7 @@
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
 #include <mllibs/sockets/client.h>
+#include <mllibs/umc/interfaz.h>
 #include <mllibs/log/logger.h>
 #include <semaphore.h>
 #include "planificador.h"
@@ -588,6 +589,10 @@ void atenderSolicitudDispositivoIO(Estados* estados, solicitud_io* solicitud){
 	int io_index = getPosicionDispositivo(config->io_ids,config->io_length,solicitud->io_id);
 	PCB* pcb = removeFromEXEC(estados,solicitud->pcb->processID);
 	actualizarPCB(pcb,solicitud->pcb);
+
+	destroyPCB(solicitud->pcb);
+
+	solicitud->pcb = pcb;
 
 	sendToBLOCK(solicitud,io_index,estados);
 
