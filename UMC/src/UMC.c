@@ -31,10 +31,15 @@ int main(void) {
 
 	inicializarUMC(config);
 
-	pthread_mutex_lock(&retardo_mutex);
-	pthread_create(&hilo1,NULL,(void*)handleComandos,NULL);
-	pthread_mutex_unlock(&retardo_mutex);
-	handleClients();
+	pthread_create(&hilo1,NULL,(void*)handleClients,NULL);
+
+	handleComandos();
+
+	/*TODO estaria bueno que el handle clients
+	 * tambien use la variable continua para
+	 * termina bien y en vez de hacer un cancel
+	 * hacer un join
+	 */
     pthread_cancel(hilo1);
 
 	logDestroy();

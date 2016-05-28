@@ -63,17 +63,19 @@ int conectarConSwap();
 void inicializarUMC();
 tableRow* crearTablaDePaginas(int);
 void handle_cpu(t_arg_thread_cpu*);
-void handleNucleo(t_arg_thread_nucleo* args);
+void handleNucleo(t_arg_thread_nucleo*);
 void retardo (int segundos);
 void handleComandos();
-void intepretarComando(char* comando);
-void error_comando(char * comando);
+void intepretarComando(char*);
+void error_comando(char*);
 void flush_memory();
 void flush_tlb();
-void retardo (int segundos);
+void retardo (int);
 void dump ();
-int parsear_comando(char * comando, char ** comando_parseado);
-void cambiar_retardo(int seg);
+int parsear_comando(char*, char **);
+void fin_programa();
+void print_retardo();
+void limpiar_pantalla();
 
 
 #endif /* FUNCIONES_H_ */
