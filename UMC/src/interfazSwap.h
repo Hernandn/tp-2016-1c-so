@@ -8,8 +8,8 @@
 #ifndef INTERFAZSWAP_H_
 #define INTERFAZSWAP_H_
 
-#include "configuration.h"
 #include "funciones.h"
+#include "configuration.h"
 #include <commons/string.h>
 
 char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags);
@@ -21,5 +21,6 @@ int getLong_SolicitarPagina();
 char* serializar_EliminarPrograma(uint32_t pid);
 int getLong_EliminarPrograma();
 pagina llenarPagina(char* cad, int size);
+int comunicarSWAPNuevoPrograma(uint32_t,uint32_t,char*);
 
 #endif /* INTERFAZSWAP_H_ */

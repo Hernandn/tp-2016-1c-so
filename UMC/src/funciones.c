@@ -10,7 +10,14 @@
 
 //----------------------------------PRIVADO---------------------------------------
 
-static memoria memoria_principal;
+static t_memoria_principal memoria_principal;
+static t_tabla** tablas_de_paginas=NULL;
+static t_tabla** tlbs=NULL;
+static int maximo_tablas_de_paginas=0;
+static int cant_tablas_de_paginas=0;
+static int maximo_tlbs=0;
+static int cant_tlbs=0;
+
 static int socket_swap = -1;
 
 static pthread_mutex_t
@@ -107,7 +114,7 @@ void handleClients(){
 	pthread_attr_destroy(&thread_detached_attr);
 }
 
-void comunicarSWAP(int socket_swap, int accion){
+void comunicarSWAP(int accion){
 
 	//Bloqueo la comunicacion con swap
 	pthread_mutex_lock(&comunicacion_swap_mutex);
@@ -200,18 +207,21 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP);
+				//inicializar_programa(package->message);
+				comunicarSWAP(NUEVO_PROGRAMA_SWAP);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
+				//leer_pagina(package->message);
 				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
+				//escribir_pagina(package->message);
 				enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
 			}
 		} else {
 			//Si el cliente cerro la conexion se termino el thread
 			sigue=0;
-			logInfo("Cliente ha cerrado la conexión, cerrando thread");
+			logInfo("CPU ha cerrado la conexión, cerrando thread");
 		}
 		destroyPackage(package);
 	}
@@ -229,16 +239,19 @@ void handleNucleo(t_arg_thread_nucleo* args){
 			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-				inicializar_programa(package->message);
-				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP);
+				//inicializar_programa(package->message);
+				comunicarSWAP(NUEVO_PROGRAMA_SWAP);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
+				//leer_pagina(package->message);
 				enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
+				//escribir_pagina(package->message);
 				enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
 			} else if(package->msgCode==END_PROGRAM){
 				logDebug("Se ha solicitado la finalizacion de un programa.");
+				//finalizar_programa(package->message);
 			}
 		} else {
 			//Si el cliente cerro la conexion se termino el thread
@@ -258,14 +271,56 @@ void inicializarUMC(){
 	memoria_principal=crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 }
 
-tableRow* crearTablaDePaginas(int cantidadFrames){
-	logDebug("Creando tabla de paginas con %d paginas\n",cantidadFrames);
-	return (tableRow*) malloc(sizeof(tableRow)*cantidadFrames);
+t_memoria_principal crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
+
+	t_memoria_principal memoria;
+	char* bits = malloc(sizeof(char)*cantidad_paginas);
+	int i;
+
+	logDebug("Creando memoria principal de tamanio %d\n", cantidad_paginas*size_pagina);
+
+	for(i=0;i<cantidad_paginas;i++){
+		bits[i]=0;
+	}
+
+	memoria.memoria = malloc(cantidad_paginas*size_pagina);
+	memoria.bitmap = bitarray_create(bits,cantidad_paginas);
+
+	return memoria;
 }
 
-void* crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
-	logDebug("Creando memoria principal de tamanio %d\n", cantidad_paginas*size_pagina);
-	return (void*) malloc(cantidad_paginas*size_pagina);
+void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
+
+	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
+
+	nueva_tabla->pid = pid;
+	nueva_tabla->filas = malloc(sizeof(t_fila_tabla)*cant_paginas);
+	nueva_tabla->filas->activo = 0;
+
+	insertar_tabla(nueva_tabla,tablas_de_paginas,maximo_tablas_de_paginas,cant_tablas_de_paginas);
+
+}
+
+void crear_tlb(uint32_t pid, uint32_t cant_paginas){
+
+	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
+
+	nueva_tabla->pid = pid;
+	nueva_tabla->filas = malloc(sizeof(t_fila_tabla)*cant_paginas);
+
+	insertar_tabla(nueva_tabla,tlbs,maximo_tlbs,cant_tlbs);
+}
+
+void insertar_tabla(t_tabla *nueva_tabla, t_tabla **lista_tablas, int cant_maximo_tablas, int cant_tablas){
+
+	if(cant_tablas >= cant_maximo_tablas){
+		lista_tablas=realloc((void*)lista_tablas,(sizeof(t_tabla)*5)+cant_maximo_tablas);
+		cant_maximo_tablas+=5;
+	}
+
+	cant_tablas += 1;
+
+	lista_tablas[cant_tablas] = nueva_tabla;
 }
 
 void handleComandos(){

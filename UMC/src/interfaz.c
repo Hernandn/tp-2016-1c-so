@@ -6,6 +6,7 @@
  */
 
 #include "interfaz.h"
+#include "interfazSwap.h"
 
 //----------------------------------PRIVADO---------------------------------------
 
@@ -30,6 +31,7 @@ static void deserializar_parametros(int cant_parametros, char* mensaje, ...){
 		}
 
 		va_end(valist);
+
 }
 
 //----------------------------------PUBLICO---------------------------------------
@@ -37,21 +39,19 @@ static void deserializar_parametros(int cant_parametros, char* mensaje, ...){
 int inicializar_programa(char* mensaje_serializado){
 
 	uint32_t pid, cant_paginas;
+	char* contenido=NULL;
+	int resultado;
 
-	deserializar_parametros(2, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas);
+	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, (int)cant_paginas, (void*) contenido);
 
-	logInfo("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
+	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
 
+	if(!(resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas,contenido))){
+		crear_tabla_de_paginas(pid,cant_paginas);
+		crear_tlb(pid,cant_paginas);
+	}
 
-	/*TODO
-	 * 1-¿La tabla de paginas tiene el tamanio de las paginas que pide el programa
-	 * 	o la hacemos del tamanio total por defecto?.
-	 * 2-Cuando creo un proceso nuevo, ¿Donde miro si hay espacio?, ¿En la UMC o en SWAP?,
-	 * 	¿Que evaluo para contestar si hay espacio o no?
-	 */
-	//crearTablaDePaginas(cant_paginas);
-
-	return 0;
+	return resultado;
 }
 
 char* leer_pagina(char* mensaje_serializado){
@@ -61,7 +61,7 @@ char* leer_pagina(char* mensaje_serializado){
 
 	deserializar_parametros(3, mensaje_serializado, sizeof(t_direccion_pagina), (void*) &dir, sizeof(uint32_t), (void*) &tamanio);
 
-	logInfo("Leyendo pagina %d, cantidad paginas %d", dir.direccion_logica, tamanio);
+	logDebug("Leyendo pagina %d, cantidad paginas %d", dir.direccion_logica, tamanio);
 
 	return "";
 }
@@ -74,7 +74,7 @@ int escribir_pagina(char* mensaje_serializado){
 
 	deserializar_parametros(3, mensaje_serializado, sizeof(t_direccion_pagina), (void*) &dir, sizeof(uint32_t), (void*) &tamanio, sizeof(char*), (void*) contenido);
 
-	logInfo("Escribiendo pagina %d, tamanio %d, contenido %s", dir.direccion_logica, tamanio, contenido);
+	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir.direccion_logica, tamanio, contenido);
 
 	return 0;
 }
@@ -85,7 +85,7 @@ int finalizar_programa(char* mensaje_serializado){
 
 	deserializar_parametros(1, mensaje_serializado, sizeof(uint32_t), (void*) &pid);
 
-	logInfo("Finalizando programa %d", pid);
+	logDebug("Finalizando programa %d", pid);
 
 	return 0;
 }

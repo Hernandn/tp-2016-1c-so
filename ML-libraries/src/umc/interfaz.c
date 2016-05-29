@@ -50,7 +50,7 @@ void definir_socket_umc(int* id){
 	socket_umc = id;
 }
 
-int inicializar_programa(uint32_t pid, uint32_t paginas){
+int inicializar_programa(uint32_t pid, uint32_t paginas, char* contenido){
 
 	char* parametros_serializados;
 	Package* package;
@@ -58,7 +58,7 @@ int inicializar_programa(uint32_t pid, uint32_t paginas){
 	int tamanio_uint32=sizeof(uint32_t);
 
 	logDebug("Se ha solicitado inicializar el programa %d con %d paginas.",pid,paginas);
-	parametros_serializados=serializar_parametros(2, tamanio_uint32, (void*)&pid, tamanio_uint32, (void*)&paginas);
+	parametros_serializados=serializar_parametros(3, tamanio_uint32, (void*)&pid, tamanio_uint32, (void*)&paginas, (int) paginas, (void*) contenido);
 
 	enviarMensajeSocketConLongitud(*socket_umc,INICIALIZAR_PROGRAMA_UMC,parametros_serializados,tamanio_uint32*2);
 	if(recieve_and_deserialize(package,*socket_umc) > 0)

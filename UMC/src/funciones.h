@@ -13,6 +13,7 @@
 #include <mllibs/sockets/package.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <commons/bitarray.h>
 #include "interfaz.h"
 #include "configuration.h"
 
@@ -39,11 +40,6 @@
 //codigos de operacion con los CPU's
 #define HANDSHAKE_CPU 5
 
-typedef struct tableRow {
-	int pid;
-	int page;
-}tableRow;
-
 typedef struct arg_thread_cpu {
 	int socket_cpu;
 } t_arg_thread_cpu;
@@ -56,13 +52,28 @@ typedef struct arg_thread_nucleo {
 typedef char* pagina;
 typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
 
+typedef struct memoria_principal{
+	memoria memoria;
+	t_bitarray* bitmap;
+} t_memoria_principal;
+
+typedef struct fila_tabla{
+	uint16_t numero_pagina;
+	uint16_t numero_marco;
+	char activo;
+} t_fila_tabla;
+
+typedef struct tabla{
+	t_fila_tabla* filas;
+	uint32_t pid;
+} t_tabla;
+
 pthread_mutex_t retardo_mutex;
 
 void handleClients();
-void comunicarSWAP(int, int);
+void comunicarSWAP(int);
 int conectarConSwap();
 void inicializarUMC();
-tableRow* crearTablaDePaginas(int);
 void handle_cpu(t_arg_thread_cpu*);
 void handleNucleo(t_arg_thread_nucleo*);
 void retardo (int segundos);
@@ -77,6 +88,9 @@ int parsear_comando(char*, char **);
 void fin_programa();
 void print_retardo();
 void limpiar_pantalla();
-void* crearMemoriaPrincipal(int, int);
+t_memoria_principal crearMemoriaPrincipal(int, int);
+void crear_tabla_de_paginas(uint32_t,uint32_t);
+void crear_tlb(uint32_t,uint32_t);
+void insertar_tabla(t_tabla*,t_tabla**,int,int);
 
 #endif /* FUNCIONES_H_ */

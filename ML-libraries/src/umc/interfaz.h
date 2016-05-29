@@ -23,7 +23,7 @@
 typedef char* pagina;
 
 //Interfaz---------------------------------------------
-int inicializar_programa(uint32_t,uint32_t);
+int inicializar_programa(uint32_t,uint32_t,char*);
 char* leer_pagina(uint32_t,uint32_t);
 int escribir_pagina(uint32_t,uint32_t,char*);
 int finalizar_programa(uint32_t);

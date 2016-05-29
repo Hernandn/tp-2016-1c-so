@@ -93,6 +93,12 @@ int getLong_EliminarPrograma(){
 	return sizeof(uint32_t);
 }
 
+int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas, char* contenido){
+
+
+
+	return 0;
+}
 
 //TODO: borrar (solo para probar)
 //hace un relleno de pagina con la letra pasada en "cad"
