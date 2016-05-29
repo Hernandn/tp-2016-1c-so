@@ -7,10 +7,10 @@
 
 #include "funciones.h"
 #include "interfazSwap.h"
-//#include "configuration.h"
 
-memoria memoria_principal;
-tableRow* tabla;
+//----------------------------------PRIVADO---------------------------------------
+
+static memoria memoria_principal;
 static int socket_swap = -1;
 
 static pthread_mutex_t
@@ -19,6 +19,8 @@ static pthread_mutex_t
 	continua_mutex;
 
 static int continua=1;
+
+//----------------------------------PUBLICO---------------------------------------
 
 void handleClients(){
 
@@ -227,6 +229,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
 				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
+				inicializar_programa(package->message);
 				comunicarSWAP(socket_swap,NUEVO_PROGRAMA_SWAP);
 			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
 				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
@@ -251,15 +254,18 @@ void inicializarUMC(){
 
 	logDebug("Inicializando la UMC");
 
-	tabla = crearTablaDePaginas(config->cantidad_paginas);
-	memoria_principal=malloc(config->cantidad_paginas*config->size_pagina);
-	logDebug("Creando memoria principal de tamanio %d\n", config->cantidad_paginas*config->size_pagina);
+	//tabla = crearTablaDePaginas(config->cantidad_paginas);
+	memoria_principal=crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 }
 
 tableRow* crearTablaDePaginas(int cantidadFrames){
-	tableRow* table = malloc(sizeof(tableRow)*cantidadFrames);
 	logDebug("Creando tabla de paginas con %d paginas\n",cantidadFrames);
-	return table;
+	return (tableRow*) malloc(sizeof(tableRow)*cantidadFrames);
+}
+
+void* crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
+	logDebug("Creando memoria principal de tamanio %d\n", cantidad_paginas*size_pagina);
+	return (void*) malloc(cantidad_paginas*size_pagina);
 }
 
 void handleComandos(){
@@ -288,6 +294,7 @@ void intepretarComando(char* comando){
 	char** comando_parseado = malloc(sizeof(char*)*2);
 	int cantidad;
 
+	//TODO no estoy liberando comando_parseado en ningun momento
 	cantidad=parsear_comando(comando, comando_parseado);
 
 	if(!strcmp(*comando_parseado,"dump")) dump();

@@ -13,6 +13,7 @@
 #include <mllibs/sockets/package.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include "interfaz.h"
 #include "configuration.h"
 
 #define MAX_CLIENTES 10 //cantidad maxima de conexiones por socket (CPUs)
@@ -76,6 +77,6 @@ int parsear_comando(char*, char **);
 void fin_programa();
 void print_retardo();
 void limpiar_pantalla();
-
+void* crearMemoriaPrincipal(int, int);
 
 #endif /* FUNCIONES_H_ */
