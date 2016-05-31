@@ -9,6 +9,7 @@
 #define CPU_H_
 
 #include "configuration.h"
+#include <mllibs/nucleoCpu/interfaz.h>
 
 //codigos de operaciones de la UMC
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas
@@ -45,6 +46,8 @@ int socketUMC;
 int socketNucleo;
 
 int proceso_fue_bloqueado;
+
+PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
 //prototipos de funciones
 void conectarConUMC();

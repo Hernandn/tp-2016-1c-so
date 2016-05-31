@@ -16,6 +16,7 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/umc/interfaz.h>
 #include <mllibs/log/logger.h>
+#include <mllibs/stack/stack.h>
 #include <semaphore.h>
 #include "planificador.h"
 
@@ -43,7 +44,9 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	new->executedQuantums = 0;
 	new->consolaActiva = true;
 	new->codeIndex = metadata_desde_literal(programa);
-	new->programa = strdup(programa);
+	new->stackIndex = stack_create();
+	crearNuevoContexto(new);//inicializo el contexto del "main"
+	new->programa = strdup(programa);//TODO: borrar
 	logTrace("Creado PCB [PID:%d, ConsolaFD:%d, QuantumsExec:%d]",new->processID,new->consolaFD,new->executedQuantums);
 	return new;
 }

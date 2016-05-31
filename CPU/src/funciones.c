@@ -8,7 +8,6 @@
 #include "CPU.h"
 #include "configuration.h"
 #include "primitivas.h"
-#include <mllibs/nucleoCpu/interfaz.h>
 
 AnSISOP_funciones functions = {
 		.AnSISOP_definirVariable		= ml_definirVariable,
@@ -33,9 +32,6 @@ AnSISOP_kernel kernel_functions = {
 };
 
 
-
-
-PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
 void conectarConUMC(void* arguments){
 	arg_struct *args = arguments;

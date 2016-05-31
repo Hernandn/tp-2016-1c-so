@@ -39,8 +39,8 @@ typedef struct dir_memoria {
 } dir_memoria;
 
 typedef struct contexto {
-	t_dictionary* argumentos;//coleccion de dir_memoria
-	t_dictionary* variables;//coleccion de dir_memoria
+	t_dictionary* argumentos;//coleccion de pares ("identificador_variable",dir_memoria)
+	t_dictionary* variables;//coleccion de pares ("identificador_variable",dir_memoria)
     t_puntero_instruccion retPos;
 	dir_memoria retVar;
 } contexto;
@@ -54,7 +54,7 @@ typedef struct PCB {
 	t_metadata_program* codeIndex;		//indice de codigo
 	t_stack* stackIndex;		//pila con elementos "contexto"
 	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
-	char* programa;	//codigo del programa
+	char* programa;	//codigo del programa TODO: borrar
 } PCB;
 
 //wrapper que se crea con cada solicitud de I/O de un proceso
@@ -77,7 +77,15 @@ t_metadata_program* deserializar_metadata_program(char* serialized);
 char* serializar_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones);
 uint32_t getLong_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones);
 solicitud_io* deserializar_ejecutarOperacionIO(char* serialized);
-
+char* serializar_contexto(contexto* contexto);
+uint32_t getLong_contexto(contexto* contexto);
+char* serializar_dictionary(t_dictionary* dictionary);
+uint32_t getLong_dictionary(t_dictionary* dictionary);
+char* serializar_stack(t_stack* stack);
+uint32_t getLong_stack(t_stack* stack);
+void crearNuevoContexto(PCB* pcb);
+void destroy_contexto(contexto* contexto);
+void destroy_dir_memoria(dir_memoria* dir);
 
 
 //funciones interfaz CPU a Nucleo

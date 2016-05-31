@@ -10,7 +10,6 @@
 //funciones serializacion del PCB
 
 char* serializarPCB(PCB* pcb){
-	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
 	uint32_t total_size = getLong_PCB(pcb);
 
 	char *serializedPackage = malloc(total_size);
@@ -30,6 +29,8 @@ char* serializarPCB(PCB* pcb){
 	memcpy(serializedPackage + offset, &(pcb->stackFirstPage), size_to_send);
 	offset += size_to_send;
 
+	//serializar code index
+	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
 	size_to_send = sizeof(uint32_t);
 	memcpy(serializedPackage + offset, &(size_metadata_program), size_to_send);
 	offset += size_to_send;
@@ -39,6 +40,18 @@ char* serializarPCB(PCB* pcb){
 	memcpy(serializedPackage + offset, serialized_metadata, size_to_send);
 	offset += size_to_send;
 	free(serialized_metadata);
+
+	//serializar stack
+	uint32_t size_stack = getLong_stack(pcb->stackIndex);
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(size_stack), size_to_send);
+	offset += size_to_send;
+
+	char* serialized_stack = serializar_stack(pcb->stackIndex);
+	size_to_send = sizeof(char)*size_stack;
+	memcpy(serializedPackage + offset, serialized_stack, size_to_send);
+	offset += size_to_send;
+	free(serialized_stack);
 
 	//TODO: borrar (solo para probar al principio le mando el programa hasta que funcione la UMC)
 	size_to_send = strlen(pcb->programa)+1;
@@ -197,6 +210,7 @@ t_metadata_program* deserializar_metadata_program(char* serialized){
 void destroyPCB(PCB* self){
 	free(self->programa);
 	metadata_destruir(self->codeIndex);
+	stack_destroy_and_destroy_elements(self->stackIndex,(void*)destroy_contexto);
 	//free(self->stackIndex);
 	//free(self->tagIndex);
 	free(self);
@@ -266,6 +280,161 @@ solicitud_io* deserializar_ejecutarOperacionIO(char* serialized){
 	free(serialized_pcb);
 
 	return sol;
+}
+
+
+char* serializar_contexto(contexto* contexto){
+	uint32_t total_size = getLong_contexto(contexto);
+	char *serializedPackage = malloc(total_size);
+
+	int offset = 0;
+	int size_to_send;
+
+	//cantidad de argumentos
+	uint32_t argumentos_length = dictionary_size(contexto->argumentos);
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(argumentos_length), size_to_send);
+	offset += size_to_send;
+
+	//serializar diccionario de argumentos
+	char* serialized_dictionary = serializar_dictionary(contexto->argumentos);
+	uint32_t size_dictionary = getLong_dictionary(contexto->argumentos);
+	size_to_send = sizeof(char)*size_dictionary;
+	memcpy(serializedPackage + offset, serialized_dictionary, size_to_send);
+	offset += size_to_send;
+	free(serialized_dictionary);
+
+	//cantidad de variables
+	uint32_t variables_length = dictionary_size(contexto->variables);
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(variables_length), size_to_send);
+	offset += size_to_send;
+
+	//serializar diccionario de variables
+	serialized_dictionary = serializar_dictionary(contexto->variables);
+	size_dictionary = getLong_dictionary(contexto->variables);
+	size_to_send = sizeof(char)*size_dictionary;
+	memcpy(serializedPackage + offset, serialized_dictionary, size_to_send);
+	offset += size_to_send;
+	free(serialized_dictionary);
+
+	//posicion de retorno
+	size_to_send = sizeof(t_puntero_instruccion);
+	memcpy(serializedPackage + offset, &(contexto->retPos), size_to_send);
+	offset += size_to_send;
+
+	//direccion de variable de retorno
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(contexto->retVar.pagina), size_to_send);
+	offset += size_to_send;
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(contexto->retVar.offset), size_to_send);
+	offset += size_to_send;
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(contexto->retVar.size), size_to_send);
+	offset += size_to_send;
+
+	return serializedPackage;
+}
+
+uint32_t getLong_contexto(contexto* contexto){
+	uint32_t longitud = 0;
+	longitud += getLong_dictionary(contexto->argumentos);
+	longitud += getLong_dictionary(contexto->variables);
+	longitud += sizeof(contexto->retPos);
+	longitud += sizeof(contexto->retVar);
+	return longitud;
+}
+
+char* serializar_dictionary(t_dictionary* dictionary){
+	uint32_t total_size = getLong_dictionary(dictionary);
+	char *serializedPackage = malloc(total_size);
+
+	int offset = 0;
+	int size_to_send;
+	int i;
+	for (i = 0; i < dictionary->table_max_size; i++) {
+		t_hash_element *element = dictionary->elements[i];
+
+		while (element != NULL) {
+			char key = *(element->key);
+			size_to_send = sizeof(char);
+			memcpy(serializedPackage + offset, &(key), size_to_send);
+			offset += size_to_send;
+			dir_memoria* dir = element->data;
+			size_to_send = sizeof(uint32_t);
+			memcpy(serializedPackage + offset, &(dir->pagina), size_to_send);
+			offset += size_to_send;
+			size_to_send = sizeof(uint32_t);
+			memcpy(serializedPackage + offset, &(dir->offset), size_to_send);
+			offset += size_to_send;
+			size_to_send = sizeof(uint32_t);
+			memcpy(serializedPackage + offset, &(dir->size), size_to_send);
+			offset += size_to_send;
+
+			element = element->next;
+		}
+	}
+	return serializedPackage;
+}
+
+uint32_t getLong_dictionary(t_dictionary* dictionary){
+	return (sizeof(char)+sizeof(dir_memoria))*dictionary_size(dictionary);
+}
+
+char* serializar_stack(t_stack* stack){
+	uint32_t total_size = getLong_stack(stack);
+	char *serializedPackage = malloc(total_size);
+
+	int offset = 0;
+	int size_to_send;
+
+	//cantidad de contextos
+	uint32_t contextos_length = stack_size(stack);
+	size_to_send = sizeof(uint32_t);
+	memcpy(serializedPackage + offset, &(contextos_length), size_to_send);
+	offset += size_to_send;
+
+	int i;
+	for (i = 0; i < stack_size(stack); i++) {
+		contexto* contexto = list_get(stack->elements,i);
+		char* serialized_contexto = serializar_contexto(contexto);
+		uint32_t size_contexto = getLong_contexto(contexto);
+		size_to_send = sizeof(char)*size_contexto;
+		memcpy(serializedPackage + offset, serialized_contexto, size_to_send);
+		offset += size_to_send;
+		free(serialized_contexto);
+	}
+	return serializedPackage;
+}
+
+uint32_t getLong_stack(t_stack* stack){
+	uint32_t total = 0;
+	int i;
+	for(i=0; i<stack_size(stack); i++){
+		t_dictionary* dictionary = list_get(stack->elements,i);
+		total += getLong_dictionary(dictionary);
+	}
+	return total;
+}
+
+
+void crearNuevoContexto(PCB* pcb){
+	contexto* contexto = malloc(sizeof(contexto));
+	contexto->argumentos = dictionary_create();
+	contexto->variables = dictionary_create();
+
+	stack_push(pcb->stackIndex,contexto);
+}
+
+void destroy_contexto(contexto* contexto){
+	dictionary_destroy_and_destroy_elements(contexto->argumentos,(void*)destroy_dir_memoria);
+	dictionary_destroy_and_destroy_elements(contexto->variables,(void*)destroy_dir_memoria);
+	free(contexto);
+}
+
+void destroy_dir_memoria(dir_memoria* dir){
+	free(dir);
 }
 
 
