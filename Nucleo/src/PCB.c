@@ -40,7 +40,6 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	new->processID = getNextPID();
 	new->consolaFD = consolaFD;
 	new->programCounter = 0;
-	new->pagesQty = 10;			//ejemplo
 	new->executedQuantums = 0;
 	new->consolaActiva = true;
 	new->codeIndex = metadata_desde_literal(programa);

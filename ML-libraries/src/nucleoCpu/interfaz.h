@@ -14,6 +14,7 @@
 #include "../sockets/client.h"
 #include "../sockets/package.h"
 #include "../log/logger.h"
+#include "../stack/stack.h"
 #include <stdint.h>
 #include <parser/metadata_program.h>
 
@@ -31,14 +32,27 @@
 #define CPU_LIBRE 90
 //-------------------------------
 
+typedef struct dir_memoria {
+	uint32_t pagina;
+	uint32_t offset;
+	uint32_t size;
+} dir_memoria;
+
+typedef struct contexto {
+	t_dictionary* argumentos;//coleccion de dir_memoria
+	t_dictionary* variables;//coleccion de dir_memoria
+    t_puntero_instruccion retPos;
+	dir_memoria retVar;
+} contexto;
+
 typedef struct PCB {
 	uint32_t processID;		//identificador unico del proceso
 	int consolaFD;		//file descriptor del socket de la consola que inicio el programa
 	uint32_t programCounter;	//contador de programa
-	uint32_t pagesQty;		//cantidad de paginas de codigo ANSISOP
+	uint32_t stackFirstPage;		//numero de pagina de inicio del stack en la UMC
 	int executedQuantums;	//cantidad de quantums ya ejecutados
 	t_metadata_program* codeIndex;		//indice de codigo
-	int* stackIndex;		//indice del stack (todavia no implementado)
+	t_stack* stackIndex;		//pila con elementos "contexto"
 	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
 	char* programa;	//codigo del programa
 } PCB;

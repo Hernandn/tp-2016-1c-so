@@ -27,7 +27,7 @@ char* serializarPCB(PCB* pcb){
 	offset += size_to_send;
 
 	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(pcb->pagesQty), size_to_send);
+	memcpy(serializedPackage + offset, &(pcb->stackFirstPage), size_to_send);
 	offset += size_to_send;
 
 	size_to_send = sizeof(uint32_t);
@@ -133,7 +133,7 @@ PCB* deserializar_PCB(char* serialized){
 	offset+=sizeof(uint32_t);
 	memcpy(&(pcb->programCounter),serialized+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
-	memcpy(&(pcb->pagesQty),serialized+offset,sizeof(uint32_t));
+	memcpy(&(pcb->stackFirstPage),serialized+offset,sizeof(uint32_t));
 	offset+=sizeof(uint32_t);
 
 	int size_metadata_program;

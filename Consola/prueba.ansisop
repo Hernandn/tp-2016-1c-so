@@ -5,4 +5,11 @@ begin
 	b = 5
 	a = b + 12
 	io Disco 5
+	a <- doble b
+end
+
+function doble
+	variables f
+    f = $0 + $0
+    return f
 end
