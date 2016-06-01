@@ -9,6 +9,16 @@
 
 //funciones serializacion del PCB
 
+void serializarDato(char* buffer, void* dato, int size_to_send, int* offset){
+	memcpy(buffer + *offset, dato, size_to_send);
+	*offset += size_to_send;
+}
+
+void deserializarDato(void* dato, char* buffer, int size, int* offset){
+	memcpy(dato,buffer + *offset,size);
+	*offset += size;
+}
+
 char* serializarPCB(PCB* pcb){
 	uint32_t total_size = getLong_PCB(pcb);
 
@@ -17,32 +27,20 @@ char* serializarPCB(PCB* pcb){
 	int offset = 0;
 	int size_to_send;
 
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(pcb->processID), size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(pcb->programCounter), size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(pcb->stackFirstPage), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(pcb->processID),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(pcb->programCounter),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(pcb->stackFirstPage),sizeof(uint32_t),&offset);
 
 	//serializar code index
 	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(size_metadata_program), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(size_metadata_program),sizeof(uint32_t),&offset);
 
 	char* serialized_metadata = serializar_metadata_program(pcb->codeIndex);
-	size_to_send = sizeof(char)*size_metadata_program;
-	memcpy(serializedPackage + offset, serialized_metadata, size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,serialized_metadata,sizeof(char)*size_metadata_program,&offset);
 	free(serialized_metadata);
 
 	//serializar stack
-	uint32_t size_stack = getLong_stack(pcb->stackIndex);
+	/*uint32_t size_stack = getLong_stack(pcb->stackIndex);
 	size_to_send = sizeof(uint32_t);
 	memcpy(serializedPackage + offset, &(size_stack), size_to_send);
 	offset += size_to_send;
@@ -51,7 +49,7 @@ char* serializarPCB(PCB* pcb){
 	size_to_send = sizeof(char)*size_stack;
 	memcpy(serializedPackage + offset, serialized_stack, size_to_send);
 	offset += size_to_send;
-	free(serialized_stack);
+	free(serialized_stack);*/
 
 	//TODO: borrar (solo para probar al principio le mando el programa hasta que funcione la UMC)
 	size_to_send = strlen(pcb->programa)+1;
@@ -83,46 +81,23 @@ char* serializar_metadata_program(t_metadata_program* metadata){
 	int size_to_send;
 
 	//campo instruccion_inicio
-	size_to_send = sizeof(metadata->instruccion_inicio);
-	memcpy(serialized + offset, &(metadata->instruccion_inicio), size_to_send);
-	offset += size_to_send;
-
+	serializarDato(serialized,&(metadata->instruccion_inicio),sizeof(metadata->instruccion_inicio),&offset);
 	//campo instrucciones_size
-	size_to_send = sizeof(metadata->instrucciones_size);
-	memcpy(serialized + offset, &(metadata->instrucciones_size), size_to_send);
-	offset += size_to_send;
-
+	serializarDato(serialized,&(metadata->instrucciones_size),sizeof(metadata->instrucciones_size),&offset);
 	//array instrucciones_serializado
 	int i;
 	for(i=0; i < metadata->instrucciones_size; i++){
-		size_to_send = sizeof(metadata->instrucciones_serializado[i].start);
-		memcpy(serialized + offset, &(metadata->instrucciones_serializado[i].start), size_to_send);
-		offset += size_to_send;
-
-		size_to_send = sizeof(metadata->instrucciones_serializado[i].offset);
-		memcpy(serialized + offset, &(metadata->instrucciones_serializado[i].offset), size_to_send);
-		offset += size_to_send;
+		serializarDato(serialized,&(metadata->instrucciones_serializado[i].start),sizeof(metadata->instrucciones_serializado[i].start),&offset);
+		serializarDato(serialized,&(metadata->instrucciones_serializado[i].offset),sizeof(metadata->instrucciones_serializado[i].offset),&offset);
 	}
-
 	//campo etiquetas_size
-	size_to_send = sizeof(metadata->etiquetas_size);
-	memcpy(serialized + offset, &(metadata->etiquetas_size), size_to_send);
-	offset += size_to_send;
-
+	serializarDato(serialized,&(metadata->etiquetas_size),sizeof(metadata->etiquetas_size),&offset);
 	//campo string etiquetas
-	size_to_send = sizeof(char)*metadata->etiquetas_size;
-	memcpy(serialized + offset, metadata->etiquetas, size_to_send);
-	offset += size_to_send;
-
+	serializarDato(serialized,metadata->etiquetas,sizeof(char)*metadata->etiquetas_size,&offset);
 	//campo cantidad_de_funciones
-	size_to_send = sizeof(int);
-	memcpy(serialized + offset, &(metadata->cantidad_de_funciones), size_to_send);
-	offset += size_to_send;
-
+	serializarDato(serialized,&(metadata->cantidad_de_funciones),sizeof(metadata->cantidad_de_funciones),&offset);
 	//campo cantidad_de_etiquetas
-	size_to_send = sizeof(int);
-	memcpy(serialized + offset, &(metadata->cantidad_de_etiquetas), size_to_send);
-	offset += size_to_send;
+	serializarDato(serialized,&(metadata->cantidad_de_etiquetas),sizeof(metadata->cantidad_de_etiquetas),&offset);
 
 	return serialized;
 }
@@ -142,21 +117,15 @@ PCB* deserializar_PCB(char* serialized){
 	PCB* pcb = malloc(sizeof(PCB));
 	int offset = 0;
 
-	memcpy(&(pcb->processID),serialized+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	memcpy(&(pcb->programCounter),serialized+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
-	memcpy(&(pcb->stackFirstPage),serialized+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
+	deserializarDato(&(pcb->processID),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(pcb->programCounter),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(pcb->stackFirstPage),serialized,sizeof(uint32_t),&offset);
 
 	int size_metadata_program;
-	memcpy(&size_metadata_program,serialized+offset,sizeof(uint32_t));
-	offset+=sizeof(uint32_t);
+	deserializarDato(&size_metadata_program,serialized,sizeof(uint32_t),&offset);
 
 	char* serialized_metadata = malloc(sizeof(char)*size_metadata_program);
-	memcpy(serialized_metadata,serialized+offset,size_metadata_program);
-	offset+=size_metadata_program;
-
+	deserializarDato(serialized_metadata,serialized,size_metadata_program,&offset);
 	pcb->codeIndex = deserializar_metadata_program(serialized_metadata);
 	free(serialized_metadata);
 
@@ -210,7 +179,8 @@ t_metadata_program* deserializar_metadata_program(char* serialized){
 void destroyPCB(PCB* self){
 	free(self->programa);
 	metadata_destruir(self->codeIndex);
-	stack_destroy_and_destroy_elements(self->stackIndex,(void*)destroy_contexto);
+	//TODO ver como destruir stack
+	//stack_destroy_and_destroy_elements(self->stackIndex,(void*)destroy_contexto);
 	//free(self->stackIndex);
 	//free(self->tagIndex);
 	free(self);
@@ -227,26 +197,13 @@ char* serializar_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operac
 	int size_to_send;
 
 	uint32_t io_id_length = strlen(io_id)+1;
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(io_id_length), size_to_send);
-	offset += size_to_send;
-
-	size_to_send = strlen(io_id)+1;
-	memcpy(serializedPackage + offset, io_id, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(cant_operaciones), size_to_send);
-	offset += size_to_send;
-
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(size_pcb), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(io_id_length),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,io_id,io_id_length,&offset);
+	serializarDato(serializedPackage,&(cant_operaciones),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(size_pcb),sizeof(uint32_t),&offset);
 
 	char* serialized_pcb = serializarPCB(pcb);
-	size_to_send = sizeof(char)*size_pcb;
-	memcpy(serializedPackage + offset, serialized_pcb, size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,serialized_pcb,sizeof(char)*size_pcb,&offset);
 	free(serialized_pcb);
 
 	return serializedPackage;
@@ -292,47 +249,31 @@ char* serializar_contexto(contexto* contexto){
 
 	//cantidad de argumentos
 	uint32_t argumentos_length = dictionary_size(contexto->argumentos);
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(argumentos_length), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(argumentos_length),sizeof(uint32_t),&offset);
 
 	//serializar diccionario de argumentos
 	char* serialized_dictionary = serializar_dictionary(contexto->argumentos);
 	uint32_t size_dictionary = getLong_dictionary(contexto->argumentos);
-	size_to_send = sizeof(char)*size_dictionary;
-	memcpy(serializedPackage + offset, serialized_dictionary, size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,serialized_dictionary,sizeof(char)*size_dictionary,&offset);
 	free(serialized_dictionary);
 
 	//cantidad de variables
 	uint32_t variables_length = dictionary_size(contexto->variables);
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(variables_length), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(variables_length),sizeof(uint32_t),&offset);
 
 	//serializar diccionario de variables
 	serialized_dictionary = serializar_dictionary(contexto->variables);
 	size_dictionary = getLong_dictionary(contexto->variables);
-	size_to_send = sizeof(char)*size_dictionary;
-	memcpy(serializedPackage + offset, serialized_dictionary, size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,serialized_dictionary,sizeof(char)*size_dictionary,&offset);
 	free(serialized_dictionary);
 
 	//posicion de retorno
-	size_to_send = sizeof(t_puntero_instruccion);
-	memcpy(serializedPackage + offset, &(contexto->retPos), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(contexto->retPos),sizeof(contexto->retPos),&offset);
 
 	//direccion de variable de retorno
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(contexto->retVar.pagina), size_to_send);
-	offset += size_to_send;
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(contexto->retVar.offset), size_to_send);
-	offset += size_to_send;
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(contexto->retVar.size), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(contexto->retVar.pagina),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(contexto->retVar.offset),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(contexto->retVar.size),sizeof(uint32_t),&offset);
 
 	return serializedPackage;
 }
@@ -358,19 +299,12 @@ char* serializar_dictionary(t_dictionary* dictionary){
 
 		while (element != NULL) {
 			char key = *(element->key);
-			size_to_send = sizeof(char);
-			memcpy(serializedPackage + offset, &(key), size_to_send);
-			offset += size_to_send;
+			serializarDato(serializedPackage,&(key),sizeof(char),&offset);
+
 			dir_memoria* dir = element->data;
-			size_to_send = sizeof(uint32_t);
-			memcpy(serializedPackage + offset, &(dir->pagina), size_to_send);
-			offset += size_to_send;
-			size_to_send = sizeof(uint32_t);
-			memcpy(serializedPackage + offset, &(dir->offset), size_to_send);
-			offset += size_to_send;
-			size_to_send = sizeof(uint32_t);
-			memcpy(serializedPackage + offset, &(dir->size), size_to_send);
-			offset += size_to_send;
+			serializarDato(serializedPackage,&(dir->pagina),sizeof(uint32_t),&offset);
+			serializarDato(serializedPackage,&(dir->offset),sizeof(uint32_t),&offset);
+			serializarDato(serializedPackage,&(dir->size),sizeof(uint32_t),&offset);
 
 			element = element->next;
 		}
@@ -391,18 +325,14 @@ char* serializar_stack(t_stack* stack){
 
 	//cantidad de contextos
 	uint32_t contextos_length = stack_size(stack);
-	size_to_send = sizeof(uint32_t);
-	memcpy(serializedPackage + offset, &(contextos_length), size_to_send);
-	offset += size_to_send;
+	serializarDato(serializedPackage,&(contextos_length),sizeof(uint32_t),&offset);
 
 	int i;
 	for (i = 0; i < stack_size(stack); i++) {
 		contexto* contexto = list_get(stack->elements,i);
 		char* serialized_contexto = serializar_contexto(contexto);
 		uint32_t size_contexto = getLong_contexto(contexto);
-		size_to_send = sizeof(char)*size_contexto;
-		memcpy(serializedPackage + offset, serialized_contexto, size_to_send);
-		offset += size_to_send;
+		serializarDato(serializedPackage,serialized_contexto,sizeof(char)*size_contexto,&offset);
 		free(serialized_contexto);
 	}
 	return serializedPackage;

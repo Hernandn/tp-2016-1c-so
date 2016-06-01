@@ -68,6 +68,8 @@ typedef struct solicitud_io {
 //serializacion PCB
 
 void destroyPCB(PCB* self);
+void serializarDato(char* buffer, void* dato, int size_to_send, int* offset);
+void deserializarDato(void* dato, char* buffer, int size, int* offset);
 char* serializarPCB(PCB* pcb);
 uint32_t getLong_PCB(PCB* pcb);
 char* serializar_metadata_program(t_metadata_program* metadata);
