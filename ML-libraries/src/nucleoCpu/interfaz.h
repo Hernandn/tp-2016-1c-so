@@ -81,10 +81,13 @@ uint32_t getLong_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operac
 solicitud_io* deserializar_ejecutarOperacionIO(char* serialized);
 char* serializar_contexto(contexto* contexto);
 uint32_t getLong_contexto(contexto* contexto);
+contexto* deserializar_contexto(char* serialized);
 char* serializar_dictionary(t_dictionary* dictionary);
 uint32_t getLong_dictionary(t_dictionary* dictionary);
+t_dictionary* deserializar_dictionary(char* serialized, uint32_t size);
 char* serializar_stack(t_stack* stack);
 uint32_t getLong_stack(t_stack* stack);
+t_stack* deserializar_stack(char* serialized);
 void crearNuevoContexto(PCB* pcb);
 void destroy_contexto(contexto* contexto);
 void destroy_dir_memoria(dir_memoria* dir);
