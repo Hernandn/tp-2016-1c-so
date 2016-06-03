@@ -13,6 +13,18 @@ static const int POSICION_MEMORIA = 0x10;
 
 t_puntero ml_definirVariable(t_nombre_variable variable) {
 	printf("Definir la variable %c\n", variable);
+/*	contexto* contexto = stack_peek(pcbActual->stackIndex);
+	char* var = malloc(sizeof(char)*2);
+	var[0]=variable;
+	var[1]='\0';
+	dir_memoria* direccion = malloc(sizeof(dir_memoria));
+	direccion->pagina = pcbActual->stackFirstPage;
+	direccion->offset = pcbActual->stackOffset;
+	direccion->size = sizeof(uint32_t);
+	dictionary_put(contexto->variables,var,direccion);
+	pcbActual->stackOffset += sizeof(uint32_t);
+	printf("Variable definida: Nom: %s, Pag:%d,Offset:%d,Size:%d\n",var,direccion->pagina,direccion->offset,direccion->size);
+*/
 	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
 	printf("Enviando escritura de Bytes a UMC\n");
 	analizarRespuestaUMC();

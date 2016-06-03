@@ -30,6 +30,7 @@ char* serializarPCB(PCB* pcb){
 	serializarDato(serializedPackage,&(pcb->processID),sizeof(uint32_t),&offset);
 	serializarDato(serializedPackage,&(pcb->programCounter),sizeof(uint32_t),&offset);
 	serializarDato(serializedPackage,&(pcb->stackFirstPage),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(pcb->stackOffset),sizeof(uint32_t),&offset);
 
 	//serializar code index
 	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
@@ -59,7 +60,7 @@ uint32_t getLong_PCB(PCB* pcb){
 	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
 //	uint32_t size_stack = getLong_stack(pcb->stackIndex);
 
-	total_size += sizeof(uint32_t)*3;//PID + PC + pagesQty
+	total_size += sizeof(uint32_t)*4;//PID + PC + stackFirstPage + stackOffset
 	total_size += sizeof(uint32_t);//campo size_metadata_program
 	total_size += size_metadata_program;
 //	total_size += size_stack;
@@ -119,6 +120,7 @@ PCB* deserializar_PCB(char* serialized){
 	deserializarDato(&(pcb->processID),serialized,sizeof(uint32_t),&offset);
 	deserializarDato(&(pcb->programCounter),serialized,sizeof(uint32_t),&offset);
 	deserializarDato(&(pcb->stackFirstPage),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(pcb->stackOffset),serialized,sizeof(uint32_t),&offset);
 
 	int size_metadata_program;
 	deserializarDato(&size_metadata_program,serialized,sizeof(uint32_t),&offset);
@@ -127,8 +129,8 @@ PCB* deserializar_PCB(char* serialized){
 	deserializarDato(serialized_metadata,serialized,size_metadata_program,&offset);
 	pcb->codeIndex = deserializar_metadata_program(serialized_metadata);
 	free(serialized_metadata);
-/*
-	int size_stack;
+
+/*	int size_stack;
 	deserializarDato(&size_stack,serialized,sizeof(uint32_t),&offset);
 
 	char* serialized_stack = malloc(sizeof(char)*size_stack);
@@ -287,7 +289,9 @@ char* serializar_contexto(contexto* contexto){
 
 uint32_t getLong_contexto(contexto* contexto){
 	uint32_t longitud = 0;
+	longitud += sizeof(uint32_t);
 	longitud += getLong_dictionary(contexto->argumentos);
+	longitud += sizeof(uint32_t);
 	longitud += getLong_dictionary(contexto->variables);
 	longitud += sizeof(contexto->retPos);
 	longitud += sizeof(contexto->retVar);
@@ -403,8 +407,10 @@ char* serializar_stack(t_stack* stack){
 
 uint32_t getLong_stack(t_stack* stack){
 	uint32_t total = 0;
+	total += sizeof(uint32_t);
 	int i;
 	for(i=0; i<stack_size(stack); i++){
+		total += sizeof(uint32_t);
 		contexto* contexto = list_get(stack->elements,i);
 		total += getLong_contexto(contexto);
 	}

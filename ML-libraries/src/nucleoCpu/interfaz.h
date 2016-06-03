@@ -50,6 +50,7 @@ typedef struct PCB {
 	int consolaFD;		//file descriptor del socket de la consola que inicio el programa
 	uint32_t programCounter;	//contador de programa
 	uint32_t stackFirstPage;		//numero de pagina de inicio del stack en la UMC
+	uint32_t stackOffset;	//offset actual donde agregar variables en el stack
 	int executedQuantums;	//cantidad de quantums ya ejecutados
 	t_metadata_program* codeIndex;		//indice de codigo
 	t_stack* stackIndex;		//pila con elementos "contexto"

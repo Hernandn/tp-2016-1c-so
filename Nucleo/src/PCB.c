@@ -40,6 +40,8 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	PCB *new = malloc(sizeof(PCB));
 	new->processID = getNextPID();
 	new->consolaFD = consolaFD;
+	new->stackFirstPage = 0;
+	new->stackOffset = 0;
 	new->programCounter = 0;
 	new->executedQuantums = 0;
 	new->consolaActiva = true;
@@ -354,6 +356,7 @@ void iniciarPrograma(Estados* estados, int consolaFD, char* programa){
 	int size_pagina = getConfiguration()->size_pagina;
 	int stack_size = getConfiguration()->stack_size;
 	int pagsNecesarias = getCantidadPaginasNecesarias(programa,size_pagina,stack_size);
+	nuevo-> stackFirstPage = pagsNecesarias;
 	logDebug("Se necesitan %d paginas para almacenar el programa",pagsNecesarias);
 
 	//pagina* paginas = getPaginasFromPrograma(programa,size_pagina);
