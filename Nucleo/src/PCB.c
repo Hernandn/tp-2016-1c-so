@@ -333,6 +333,7 @@ void startExec(Estados* estados, int socketCPU){
 	logTrace("Informando CPU [Execute new process]");
 	ejecutarNuevoProcesoCPU(socketCPU,proceso);
 }
+
 /*
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb){
 	char* instruccion = getSiguienteInstruccion(pcb);

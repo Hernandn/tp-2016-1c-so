@@ -38,9 +38,16 @@ typedef struct dir_memoria {
 	uint32_t size;
 } dir_memoria;
 
+typedef struct variable {
+	dir_memoria direccion;
+	char nombre;
+} variable;
+
 typedef struct contexto {
-	t_dictionary* argumentos;//coleccion de pares ("identificador_variable",dir_memoria)
-	t_dictionary* variables;//coleccion de pares ("identificador_variable",dir_memoria)
+	variable* argumentos;//coleccion de pares ("identificador_variable",dir_memoria)
+	uint32_t arg_len;
+	variable* variables;//coleccion de pares ("identificador_variable",dir_memoria)
+	uint32_t var_len;
     t_puntero_instruccion retPos;
 	dir_memoria retVar;
 } contexto;
@@ -53,7 +60,8 @@ typedef struct PCB {
 	uint32_t stackOffset;	//offset actual donde agregar variables en el stack
 	int executedQuantums;	//cantidad de quantums ya ejecutados
 	t_metadata_program* codeIndex;		//indice de codigo
-	t_stack* stackIndex;		//pila con elementos "contexto"
+	contexto* stackIndex;		//pila con elementos "contexto"
+	uint32_t context_len;
 	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
 	char* programa;	//codigo del programa TODO: borrar
 } PCB;
@@ -83,12 +91,11 @@ solicitud_io* deserializar_ejecutarOperacionIO(char* serialized);
 char* serializar_contexto(contexto* contexto);
 uint32_t getLong_contexto(contexto* contexto);
 contexto* deserializar_contexto(char* serialized);
-char* serializar_dictionary(t_dictionary* dictionary);
-uint32_t getLong_dictionary(t_dictionary* dictionary);
-t_dictionary* deserializar_dictionary(char* serialized, uint32_t size);
-char* serializar_stack(t_stack* stack);
-uint32_t getLong_stack(t_stack* stack);
-t_stack* deserializar_stack(char* serialized);
+char* serializar_array_variables(variable* variables, uint32_t len);
+variable* deserializar_array_variables(char* serialized, uint32_t len);
+char* serializar_stack(contexto* contextos, uint32_t contextos_length);
+uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length);
+contexto* deserializar_stack(char* serialized);
 void crearNuevoContexto(PCB* pcb);
 void destroy_contexto(contexto* contexto);
 void destroy_dir_memoria(dir_memoria* dir);
