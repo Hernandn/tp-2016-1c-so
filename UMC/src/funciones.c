@@ -12,11 +12,9 @@
 
 static t_memoria_principal memoria_principal;
 static t_tabla** tablas_de_paginas=NULL;
-static t_tabla** tlbs=NULL;
+static t_fila_tlb* tlb=NULL;
 static int maximo_tablas_de_paginas=0;
 static int cant_tablas_de_paginas=0;
-static int maximo_tlbs=0;
-static int cant_tlbs=0;
 
 static int socket_swap = -1;
 
@@ -26,6 +24,8 @@ static pthread_mutex_t
 	continua_mutex;
 
 static int continua=1;
+
+static pthread_key_t key_pid;
 
 //----------------------------------PUBLICO---------------------------------------
 
@@ -50,6 +50,8 @@ void handleClients(){
 	pthread_attr_init(&thread_detached_attr);
 	pthread_attr_setdetachstate(&thread_detached_attr,PTHREAD_CREATE_DETACHED);
 
+	//Creo la key para los pids de cpus
+	pthread_key_create(&key_pid, NULL);
 
 	/* Se abre el socket servidor, avisando por pantalla y saliendo si hay
 	 * algún problema */
@@ -111,6 +113,7 @@ void handleClients(){
 		}
 	}
 
+	pthread_key_delete(key_pid);
 	pthread_attr_destroy(&thread_detached_attr);
 }
 
@@ -201,6 +204,13 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 		*socket_cpu = &argumentos->socket_cpu;	//Lo guardo en variables para que sea mas comodo de usar
 	Package* package;
 
+	crear_key_pid();
+
+	//Prueba de key_pid borrar cuando haya pid posta
+	logDebug("Valor antes de setear un pid %d",obtener_pid());
+	setear_pid(rand() % 20);
+	logDebug("Valor key seteado %d",obtener_pid());
+
 	while(sigue){
 		 package = malloc(sizeof(Package));
 		if(recieve_and_deserialize(package,*socket_cpu) > 0){
@@ -223,9 +233,35 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 			sigue=0;
 			logInfo("CPU ha cerrado la conexión, cerrando thread");
 		}
-		destroyPackage(package);
+		//Todo el destroyPackage tira violacion de segmento
+		//destroyPackage(package);
 	}
-	logInfo("Fin thread CPU");
+	logInfo("Fin thread CPU pid %d",obtener_pid());
+	borrar_key_pid();
+}
+
+void crear_key_pid(){
+	uint32_t *pid=malloc(sizeof(uint32_t));
+	pthread_setspecific(key_pid,(void*) pid);
+}
+
+void borrar_key_pid(){
+	free(pthread_getspecific(key_pid));
+}
+
+void setear_pid(uint32_t pid){
+	uint32_t *p_pid;
+
+	p_pid=pthread_getspecific(key_pid);
+	*p_pid=pid;
+}
+
+uint32_t obtener_pid(){
+	uint32_t *pid;
+	pid=pthread_getspecific(key_pid);
+
+	if(pid==NULL) return 0;
+	else return *pid;
 }
 
 void handleNucleo(t_arg_thread_nucleo* args){
@@ -267,7 +303,7 @@ void inicializarUMC(){
 
 	logDebug("Inicializando la UMC");
 
-	//tabla = crearTablaDePaginas(config->cantidad_paginas);
+	tlb=crear_tlb(32);	//Todo agregar el tamanio de la tlb a la estructura config
 	memoria_principal=crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 }
 
@@ -292,35 +328,116 @@ t_memoria_principal crearMemoriaPrincipal(int cantidad_paginas, int size_pagina)
 void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
 
 	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
+	int i;
 
 	nueva_tabla->pid = pid;
+	nueva_tabla->tamanio = cant_paginas;
 	nueva_tabla->filas = malloc(sizeof(t_fila_tabla)*cant_paginas);
-	nueva_tabla->filas->activo = 0;
+
+	for(i=0; i<cant_paginas; i++){
+		nueva_tabla->filas[i].modificacion = 0;
+	}
 
 	insertar_tabla(nueva_tabla,tablas_de_paginas,maximo_tablas_de_paginas,cant_tablas_de_paginas);
 
 }
 
-void crear_tlb(uint32_t pid, uint32_t cant_paginas){
+void eliminar_tabla_de_paginas(uint32_t pid){
 
-	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
+	t_tabla *tabla;
 
-	nueva_tabla->pid = pid;
-	nueva_tabla->filas = malloc(sizeof(t_fila_tabla)*cant_paginas);
+	logDebug("Eliminando tabla con pid %d", pid);
 
-	insertar_tabla(nueva_tabla,tlbs,maximo_tlbs,cant_tlbs);
+	tabla=obtener_tabla_de_paginas(pid);
+
+	eliminar_tabla(tabla, tablas_de_paginas, cant_tablas_de_paginas);
+
+	free(tabla->filas);
+	free(tabla);
+}
+
+t_tabla* obtener_tabla_de_paginas(uint32_t pid){
+
+	t_tabla *tabla=*tablas_de_paginas;
+	int i=0;
+
+	while(tabla->pid != pid && i <= maximo_tablas_de_paginas){
+		tabla++;
+		i++;
+	}
+
+	if(tabla->pid==pid) return tabla;
+
+	return NULL;
+}
+
+t_fila_tlb* crear_tlb(uint32_t cant_paginas){
+
+	t_fila_tlb *nueva_tabla = malloc(sizeof(t_fila_tlb)*cant_paginas);
+	int i;
+
+	logDebug("Nueva TLB creada con %d paginas",cant_paginas);
+
+	//Inicializo los pids en 0
+	for(i=0; i<cant_paginas; i++){
+		nueva_tabla[i].pid=0;
+	}
+
+	return nueva_tabla;
 }
 
 void insertar_tabla(t_tabla *nueva_tabla, t_tabla **lista_tablas, int cant_maximo_tablas, int cant_tablas){
 
+	int i;
+
 	if(cant_tablas >= cant_maximo_tablas){
-		lista_tablas=realloc((void*)lista_tablas,(sizeof(t_tabla)*5)+cant_maximo_tablas);
+		lista_tablas=realloc((void*)lista_tablas,(sizeof(t_tabla*)*5)+cant_maximo_tablas);
 		cant_maximo_tablas+=5;
+
+		//Inicializo las tablas en null
+		for(i=cant_tablas+1; i<cant_maximo_tablas; i++){
+			lista_tablas[i]=NULL;
+		}
 	}
 
+	//Sumo una tabla mas a la cantidad de tablas
 	cant_tablas += 1;
 
-	lista_tablas[cant_tablas] = nueva_tabla;
+	//Agrego la tabla a la lista
+	for(i=0; i<cant_maximo_tablas; i++){
+		if(lista_tablas[i]==NULL){
+			lista_tablas[i] = nueva_tabla;
+		}
+	}
+
+}
+
+void eliminar_tabla(t_tabla *tabla, t_tabla **lista_tablas, int cant_tablas){
+
+	int i=0;
+
+	//Busco el indice de la tabla
+	while(lista_tablas[i]==tabla && i<=cant_tablas){
+		i++;
+	}
+
+	//Pongo el puntero en NULL
+	lista_tablas[i]=NULL;
+}
+
+uint32_t obtener_dir_fisica(uint32_t dir_logica){
+	//Todo buscar la dir en la tlb
+	return 0;
+}
+
+char* obtener_contenido_memoria(uint32_t dir_fisica, uint32_t offset, uint32_t tamanio){
+	//Todo busar en memoria el contenido
+	return NULL;
+}
+
+int escribir_contenido_memoria(uint32_t dir_fisica, uint32_t offset, uint32_t tamanio, char* contenido){
+	//Todo escribir contenido en memoria
+	return 0;
 }
 
 void handleComandos(){

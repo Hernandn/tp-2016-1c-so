@@ -95,7 +95,20 @@ int getLong_EliminarPrograma(){
 
 int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas, char* contenido){
 
+	return 0;
+}
 
+char* lleerPaginaSwap(uint32_t pagina, uint32_t offset, uint32_t tamanio){
+
+	return NULL;
+}
+
+int escribirPaginaSwap(uint32_t pagina, uint32_t offset, uint32_t tamanio, char* contenido){
+
+	return 0;
+}
+
+int finalizarProgramaSwap(uint32_t pid){
 
 	return 0;
 }

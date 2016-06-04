@@ -260,7 +260,8 @@ char* serializar_contexto(contexto* contexto){
 	serializarDato(serializedPackage,&(contexto->arg_len),sizeof(uint32_t),&offset);
 
 	//serializar array de argumentos
-	char* serialized_dictionary = serializar_array_variables(contexto->argumentos);
+	//TODO fala pasarle 1 argumento o tiene uno de mas la funcion
+	char* serialized_dictionary /*= serializar_array_variables(contexto->argumentos)*/;
 	serializarDato(serializedPackage,serialized_dictionary,sizeof(variable)*contexto->arg_len,&offset);
 	free(serialized_dictionary);
 
@@ -268,7 +269,8 @@ char* serializar_contexto(contexto* contexto){
 	serializarDato(serializedPackage,&(contexto->var_len),sizeof(uint32_t),&offset);
 
 	//serializar array de variables
-	serialized_dictionary = serializar_array_variables(contexto->variables);
+	//TODO fala pasarle 1 argumento o tiene uno de mas la funcion
+	/*serialized_dictionary = serializar_array_variables(contexto->variables)*/;
 	serializarDato(serializedPackage,serialized_dictionary,sizeof(variable)*contexto->var_len,&offset);
 	free(serialized_dictionary);
 
@@ -366,8 +368,8 @@ char* serializar_stack(contexto* contextos, uint32_t contextos_length){
 
 	int i;
 	for (i = 0; i < contextos_length; i++) {
-		char* serialized_contexto = serializar_contexto(contextos[i]);
-		uint32_t size_contexto = getLong_contexto(contextos[i]);
+		char* serialized_contexto = serializar_contexto((contextos+i));
+		uint32_t size_contexto = getLong_contexto((contextos+i));
 		serializarDato(serializedPackage,&(size_contexto),sizeof(uint32_t),&offset);//size contexto
 		serializarDato(serializedPackage,serialized_contexto,sizeof(char)*size_contexto,&offset);//contexto
 		free(serialized_contexto);
@@ -398,7 +400,7 @@ contexto* deserializar_stack(char* serialized){
 	deserializarDato(&(contextos_length),serialized,sizeof(uint32_t),&offset);
 
 	contexto* contextos = NULL;
-
+/*Todo no compila
 	int i;
 	for (i = 0; i < contextos_length; i++) {
 		uint32_t size_contexto;
@@ -406,9 +408,9 @@ contexto* deserializar_stack(char* serialized){
 		char* serialized_contexto = malloc(sizeof(char)*size_contexto);
 		contextos = realloc(contextos,sizeof(contexto)*(i+1));
 		deserializarDato(serialized_contexto,serialized,size_contexto,&offset);
-		contextos[i] = deserializar_contexto(serialized_contexto);
+		(contextos+i) = deserializar_contexto(serialized_contexto);
 		free(serialized_contexto);
-	}
+	}*/
 	return contextos;
 }
 

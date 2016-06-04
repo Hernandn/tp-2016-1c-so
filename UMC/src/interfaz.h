@@ -15,14 +15,10 @@
 #include <mllibs/log/logger.h>
 #include "funciones.h"
 
-typedef union direccion_pagina {
-	uint32_t direccion_logica;
-	uint16_t direccion_fisica[2];
-} t_direccion_pagina;
-
 int inicializar_programa(char*);
 char* leer_pagina(char*);
 int escribir_pagina(char*);
 int finalizar_programa(char*);
+void nuevo_pid(char*);
 
 #endif /* INTERFAZ_H_ */

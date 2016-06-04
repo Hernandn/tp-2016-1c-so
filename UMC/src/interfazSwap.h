@@ -22,5 +22,8 @@ char* serializar_EliminarPrograma(uint32_t pid);
 int getLong_EliminarPrograma();
 pagina llenarPagina(char* cad, int size);
 int comunicarSWAPNuevoPrograma(uint32_t,uint32_t,char*);
+char* lleerPaginaSwap(uint32_t, uint32_t, uint32_t);
+int escribirPaginaSwap(uint32_t, uint32_t, uint32_t, char*);
+int finalizarProgramaSwap(uint32_t);
 
 #endif /* INTERFAZSWAP_H_ */

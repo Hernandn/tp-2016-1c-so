@@ -48,7 +48,6 @@ int inicializar_programa(char* mensaje_serializado){
 
 	if(!(resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas,contenido))){
 		crear_tabla_de_paginas(pid,cant_paginas);
-		crear_tlb(pid,cant_paginas);
 	}
 
 	return resultado;
@@ -56,27 +55,38 @@ int inicializar_programa(char* mensaje_serializado){
 
 char* leer_pagina(char* mensaje_serializado){
 
-	t_direccion_pagina dir;
-	uint32_t tamanio;
+	uint32_t dir, offset, tamanio, dir_fisica;
+	char* contenido=NULL;
 
-	deserializar_parametros(3, mensaje_serializado, sizeof(t_direccion_pagina), (void*) &dir, sizeof(uint32_t), (void*) &tamanio);
+	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 
-	logDebug("Leyendo pagina %d, cantidad paginas %d", dir.direccion_logica, tamanio);
+	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
 
-	return "";
+	dir_fisica=obtener_dir_fisica(dir);
+
+	if(dir_fisica != -1){
+		contenido=obtener_contenido_memoria(dir_fisica, offset, tamanio);
+	}
+
+	return contenido;
 }
 
 int escribir_pagina(char* mensaje_serializado){
 
-	t_direccion_pagina dir;
-	uint32_t tamanio;
+	uint32_t dir, offset, tamanio, dir_fisica, result=-1;
 	char* contenido=NULL;
 
-	deserializar_parametros(3, mensaje_serializado, sizeof(t_direccion_pagina), (void*) &dir, sizeof(uint32_t), (void*) &tamanio, sizeof(char*), (void*) contenido);
+	deserializar_parametros(4, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio, sizeof(char*), (void*) contenido);
 
-	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir.direccion_logica, tamanio, contenido);
+	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, contenido);
 
-	return 0;
+	dir_fisica=obtener_dir_fisica(dir);
+
+	if(dir_fisica != -1){
+		result=escribir_contenido_memoria(dir_fisica, offset, tamanio, contenido);
+	}
+
+	return result;
 }
 
 int finalizar_programa(char* mensaje_serializado){
@@ -87,5 +97,19 @@ int finalizar_programa(char* mensaje_serializado){
 
 	logDebug("Finalizando programa %d", pid);
 
+	eliminar_tabla_de_paginas(pid);
+	finalizarProgramaSwap(pid);
+
 	return 0;
+}
+
+void nuevo_pid(char* mensaje_serializado){
+
+	uint32_t pid;
+
+	deserializar_parametros(1, mensaje_serializado, sizeof(uint32_t), (void*) &pid);
+	logDebug("Se recivio un nuevo pid %d",pid);
+
+	setear_pid(pid);
+
 }
