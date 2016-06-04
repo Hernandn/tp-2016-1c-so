@@ -190,13 +190,20 @@ Package* fillPackage(uint32_t msgCode, char* message, uint32_t message_long){
 	return package;
 }
 
+Package* createPackage(){
+	Package* tmp;
+
+	tmp=malloc(sizeof(Package));
+	tmp->message=NULL;
+
+	return tmp;
+}
+
 void destroyPackage(Package* package){
-	if(package->message!=NULL){
+	if(package!=NULL){
 		free(package->message);
 	}
-	if(package!=NULL){
-		free(package);
-	}
+	free(package);
 }
 
 int getLongitudPackage(Package *package){

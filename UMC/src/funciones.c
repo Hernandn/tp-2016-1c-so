@@ -212,7 +212,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 	logDebug("Valor key seteado %d",obtener_pid());
 
 	while(sigue){
-		 package = malloc(sizeof(Package));
+		 package = createPackage();
 		if(recieve_and_deserialize(package,*socket_cpu) > 0){
 			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
 			if(package->msgCode==INIT_PROGRAM){
@@ -233,8 +233,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 			sigue=0;
 			logInfo("CPU ha cerrado la conexión, cerrando thread");
 		}
-		//Todo el destroyPackage tira violacion de segmento
-		//destroyPackage(package);
+		destroyPackage(package);
 	}
 	logInfo("Fin thread CPU pid %d",obtener_pid());
 	borrar_key_pid();
