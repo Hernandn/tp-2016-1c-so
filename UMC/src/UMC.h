@@ -11,6 +11,7 @@
 #define UMC_H_
 
 #include "configuration.h"
+#include "comandos.h"
 #include "funciones.h"
 
 #endif /* UMC_H_ */

@@ -31,6 +31,9 @@ int main(void) {
 
 	inicializarUMC(config);
 
+	//No uso mutex porque todavia no hay threads
+	continua=1;
+
 	pthread_create(&hilo1,NULL,(void*)handleClients,NULL);
 
 	handleComandos();
