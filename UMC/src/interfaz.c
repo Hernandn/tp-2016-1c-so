@@ -55,38 +55,29 @@ int inicializar_programa(char* mensaje_serializado){
 
 char* leer_pagina(char* mensaje_serializado){
 
-	uint32_t dir, offset, tamanio, dir_fisica;
+	uint32_t dir, offset, tamanio;
 	char* contenido=NULL;
 
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 
 	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
 
-	dir_fisica=obtener_dir_fisica(dir);
-
-	if(dir_fisica != -1){
-		contenido=obtener_contenido_memoria(dir_fisica, offset, tamanio);
-	}
+	contenido=obtener_contenido_memoria(dir, offset, tamanio);
 
 	return contenido;
 }
 
 int escribir_pagina(char* mensaje_serializado){
 
-	uint32_t dir, offset, tamanio, dir_fisica, result=-1;
+	uint32_t dir, offset, tamanio;
 	char* contenido=NULL;
 
 	deserializar_parametros(4, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio, sizeof(char*), (void*) contenido);
 
 	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, contenido);
 
-	dir_fisica=obtener_dir_fisica(dir);
+	return escribir_contenido_memoria(dir, offset, tamanio, contenido);
 
-	if(dir_fisica != -1){
-		result=escribir_contenido_memoria(dir_fisica, offset, tamanio, contenido);
-	}
-
-	return result;
 }
 
 int finalizar_programa(char* mensaje_serializado){

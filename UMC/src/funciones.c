@@ -10,10 +10,6 @@
 
 //----------------------------------PRIVADO---------------------------------------
 
-static t_memoria_principal memoria_principal;
-static t_list *tablas_de_paginas;
-static t_tabla_tlb *tlb;
-
 static int socket_swap = -1;
 
 static pthread_mutex_t
@@ -300,98 +296,8 @@ void inicializarUMC(){
 
 	logDebug("Inicializando la UMC");
 
-	tlb=crear_tlb(32); //Todo agregar tamanio de la tlb a la estructura config
-	memoria_principal=crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
-}
-
-t_memoria_principal crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
-
-	t_memoria_principal memoria;
-	char* bits = malloc(sizeof(char)*cantidad_paginas);
-	int i;
-
-	logDebug("Creando memoria principal de tamanio %d\n", cantidad_paginas*size_pagina);
-
-	for(i=0;i<cantidad_paginas;i++){
-		bits[i]=0;
-	}
-
-	memoria.memoria = malloc(cantidad_paginas*size_pagina);
-	memoria.bitmap = bitarray_create(bits,cantidad_paginas);
-
-	return memoria;
-}
-
-void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
-
-	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
-
-	nueva_tabla->pid = pid;
-	nueva_tabla->tamanio = cant_paginas;
-	nueva_tabla->filas = list_create();
-
-	list_add(tablas_de_paginas,(void*) nueva_tabla);
-
-}
-
-void destructor_tabla(void* tabla){
-	t_tabla *tmp;
-
-	tmp=(t_tabla*) tabla;
-
-	if(tmp!=NULL){
-		free(tmp->filas);
-		free(tmp);
-	}
-}
-
-void eliminar_tabla_de_paginas(uint32_t pid){
-
-	logDebug("Eliminando tabla con pid %d", pid);
-
-	bool tiene_igual_pid (void* elemento){
-		return ((t_tabla*) elemento)->pid==pid;
-	}
-
-	list_remove_and_destroy_by_condition(tablas_de_paginas,tiene_igual_pid,destructor_tabla);
-
-}
-
-t_tabla_tlb* crear_tlb(uint32_t tamanio){
-
-	t_tabla_tlb *nueva_tabla = malloc(sizeof(t_tabla_tlb));
-
-	nueva_tabla->tamanio=tamanio;
-	nueva_tabla->filas=list_create();
-
-	logDebug("Nueva TLB creada");
-
-	return nueva_tabla;
-}
-
-void elimina_tlb(t_tabla_tlb *tabla){
-
-	void eliminar_fila(void *fila){
-		free(fila);
-	}
-
-	list_destroy_and_destroy_elements(tabla->filas, eliminar_fila);
-
-}
-
-uint32_t obtener_dir_fisica(uint32_t dir_logica){
-	//Todo buscar la dir en la tlb
-	return 0;
-}
-
-char* obtener_contenido_memoria(uint32_t dir_fisica, uint32_t offset, uint32_t tamanio){
-	//Todo busar en memoria el contenido
-	return NULL;
-}
-
-int escribir_contenido_memoria(uint32_t dir_fisica, uint32_t offset, uint32_t tamanio, char* contenido){
-	//Todo escribir contenido en memoria
-	return 0;
+	crear_tlb(32); //Todo agregar tamanio de la tlb a la estructura config
+	crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 }
 
 void handleComandos(){

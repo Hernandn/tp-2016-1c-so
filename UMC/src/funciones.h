@@ -18,6 +18,7 @@
 #include <commons/collections/list.h>
 #include "interfaz.h"
 #include "configuration.h"
+#include "memoria.h"
 
 #define MAX_CLIENTES 10 //cantidad maxima de conexiones por socket (CPUs)
 
@@ -51,37 +52,6 @@ typedef struct arg_thread_nucleo {
 	Configuration* config;
 } t_arg_thread_nucleo;
 
-typedef char* pagina;
-typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
-
-typedef struct memoria_principal{
-	memoria memoria;
-	t_bitarray* bitmap;
-} t_memoria_principal;
-
-typedef struct fila_tabla{
-	uint16_t numero_pagina;
-	uint16_t numero_marco;
-	char modificacion;
-} t_fila_tabla;
-
-typedef struct tabla{
-	t_list* filas;
-	uint32_t pid;
-	uint32_t tamanio;
-} t_tabla;
-
-typedef struct fila_tlb{
-	uint32_t dir_logica;
-	uint32_t dir_fisica;
-	uint32_t pid;
-} t_fila_tlb;
-
-typedef struct tabla_tlb{
-	uint32_t tamanio;
-	t_list* filas;
-} t_tabla_tlb;
-
 pthread_mutex_t retardo_mutex;
 
 void handleClients();
@@ -102,15 +72,6 @@ int parsear_comando(char*, char **);
 void fin_programa();
 void print_retardo();
 void limpiar_pantalla();
-t_memoria_principal crearMemoriaPrincipal(int, int);
-void crear_tabla_de_paginas(uint32_t,uint32_t);
-t_tabla_tlb* crear_tlb(uint32_t tamanio);
-void eliminar_tabla_de_paginas(uint32_t);
-t_tabla* obtener_tabla_de_paginas(uint32_t);
-void eliminar_tabla(t_tabla*, t_tabla**, int);
-uint32_t obtener_dir_fisica(uint32_t);
-char* obtener_contenido_memoria(uint32_t, uint32_t, uint32_t);
-int escribir_contenido_memoria(uint32_t, uint32_t, uint32_t, char*);
 void setear_pid(uint32_t);
 uint32_t obtener_pid();
 void crear_key_pid();
