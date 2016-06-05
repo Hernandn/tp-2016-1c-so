@@ -623,3 +623,4 @@ void free_solicitud_io(solicitud_io* solicitud){
 	free(solicitud);
 }
 
+

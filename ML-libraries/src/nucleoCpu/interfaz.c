@@ -40,8 +40,11 @@ char* serializarPCB(PCB* pcb){
 	serializarDato(serializedPackage,serialized_metadata,sizeof(char)*size_metadata_program,&offset);
 	free(serialized_metadata);
 
+	//cantidad de contextos
+/*	serializarDato(serializedPackage,&(pcb->context_len),sizeof(uint32_t),&offset);
+
 	//serializar stack
-/*	uint32_t size_stack = getLong_stack(pcb->stackIndex,pcb->context_len);
+	uint32_t size_stack = getLong_stack(pcb->stackIndex,pcb->context_len);
 	serializarDato(serializedPackage,&(size_stack),sizeof(uint32_t),&offset);
 
 	char* serialized_stack = serializar_stack(&(pcb->stackIndex),pcb->context_len);
@@ -58,19 +61,54 @@ char* serializarPCB(PCB* pcb){
 uint32_t getLong_PCB(PCB* pcb){
 	uint32_t total_size = 0;
 	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
-//	uint32_t size_stack = getLong_stack(pcb->stackIndex,pcb->context_len);
 
 	total_size += sizeof(uint32_t)*4;//PID + PC + stackFirstPage + stackOffset
 	total_size += sizeof(uint32_t);//campo size_metadata_program
 	total_size += size_metadata_program;
-//	total_size += sizeof(uint32_t);//campo size_stack
-//	total_size += size_stack;
-
+/*
+	uint32_t size_stack = getLong_stack(pcb->stackIndex,pcb->context_len);
+	total_size += sizeof(uint32_t)*2;//campo context_len y size_stack
+	total_size += size_stack;
+*/
 
 	//TODO: borrar (solo para probar al principio le mando el programa hasta que funcione la UMC)
 	total_size += strlen(pcb->programa)+1;
 
 	return total_size;
+}
+
+PCB* deserializar_PCB(char* serialized){
+	PCB* pcb = malloc(sizeof(PCB));
+	int offset = 0;
+
+	deserializarDato(&(pcb->processID),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(pcb->programCounter),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(pcb->stackFirstPage),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(pcb->stackOffset),serialized,sizeof(uint32_t),&offset);
+
+	uint32_t size_metadata_program;
+	deserializarDato(&size_metadata_program,serialized,sizeof(uint32_t),&offset);
+
+	char* serialized_metadata = malloc(sizeof(char)*size_metadata_program);
+	deserializarDato(serialized_metadata,serialized,size_metadata_program,&offset);
+	pcb->codeIndex = deserializar_metadata_program(serialized_metadata);
+	free(serialized_metadata);
+
+	//cantidad de contextos
+/*	deserializarDato(&(pcb->context_len),serialized,sizeof(uint32_t),&offset);
+
+	uint32_t size_stack;
+	deserializarDato(&size_stack,serialized,sizeof(uint32_t),&offset);
+
+	char* serialized_stack = malloc(sizeof(char)*size_stack);
+	deserializarDato(serialized_stack,serialized,size_stack,&offset);
+	pcb->stackIndex = deserializar_stack(serialized_stack,pcb->context_len);
+	free(serialized_stack);
+*/
+	//TODO: borrar (solo para probar al principio le mando el programa hasta que funcione la UMC)
+	pcb->programa = strdup(serialized+offset);
+
+	return pcb;
 }
 
 char* serializar_metadata_program(t_metadata_program* metadata){
@@ -112,37 +150,6 @@ uint32_t getLong_metadata_program(t_metadata_program* metadata){
 	total_size += sizeof(char)*metadata->etiquetas_size;//string de etiquetas serializado
 	total_size += sizeof(int)*2;//cant funciones y etiquetas
 	return total_size;
-}
-
-PCB* deserializar_PCB(char* serialized){
-	PCB* pcb = malloc(sizeof(PCB));
-	int offset = 0;
-
-	deserializarDato(&(pcb->processID),serialized,sizeof(uint32_t),&offset);
-	deserializarDato(&(pcb->programCounter),serialized,sizeof(uint32_t),&offset);
-	deserializarDato(&(pcb->stackFirstPage),serialized,sizeof(uint32_t),&offset);
-	deserializarDato(&(pcb->stackOffset),serialized,sizeof(uint32_t),&offset);
-
-	uint32_t size_metadata_program;
-	deserializarDato(&size_metadata_program,serialized,sizeof(uint32_t),&offset);
-
-	char* serialized_metadata = malloc(sizeof(char)*size_metadata_program);
-	deserializarDato(serialized_metadata,serialized,size_metadata_program,&offset);
-	pcb->codeIndex = deserializar_metadata_program(serialized_metadata);
-	free(serialized_metadata);
-
-/*	uint32_t size_stack;
-	deserializarDato(&size_stack,serialized,sizeof(uint32_t),&offset);
-
-	char* serialized_stack = malloc(sizeof(char)*size_stack);
-	deserializarDato(serialized_stack,serialized,size_stack,&offset);
-	pcb->stackIndex = deserializar_stack(serialized_stack);
-	free(serialized_stack);
-*/
-	//TODO: borrar (solo para probar al principio le mando el programa hasta que funcione la UMC)
-	pcb->programa = strdup(serialized+offset);
-
-	return pcb;
 }
 
 t_metadata_program* deserializar_metadata_program(char* serialized){
@@ -363,9 +370,6 @@ char* serializar_stack(contexto** contextos, uint32_t contextos_length){
 
 	int offset = 0;
 
-	//cantidad de contextos
-	serializarDato(serializedPackage,&(contextos_length),sizeof(uint32_t),&offset);
-
 	int i;
 	for (i = 0; i < contextos_length; i++) {
 		char* serialized_contexto = serializar_contexto(&aux_contextos[i]);//TODO: ver como pasarle el puntero como parametro
@@ -379,7 +383,6 @@ char* serializar_stack(contexto** contextos, uint32_t contextos_length){
 
 uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length){
 	uint32_t total = 0;
-	total += sizeof(uint32_t);
 	int i;
 	for(i=0; i<contextos_length; i++){
 		total += sizeof(variable)*contextos[i].arg_len;
@@ -392,12 +395,8 @@ uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length){
 	return total;
 }
 
-contexto* deserializar_stack(char* serialized){
+contexto* deserializar_stack(char* serialized, uint32_t contextos_length){
 	int offset = 0;
-
-	//cantidad de contextos
-	uint32_t contextos_length;
-	deserializarDato(&(contextos_length),serialized,sizeof(uint32_t),&offset);
 
 	//contexto* contextos = NULL;
 	contexto* contextos = malloc(sizeof(contexto)*contextos_length);

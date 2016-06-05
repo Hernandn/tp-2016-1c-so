@@ -225,5 +225,3 @@ void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){
 	proceso_fue_bloqueado = 1;
 }
 
-
-

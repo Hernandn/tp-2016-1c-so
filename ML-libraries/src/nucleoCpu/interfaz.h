@@ -95,7 +95,7 @@ char* serializar_array_variables(variable** variables, uint32_t len);
 variable* deserializar_array_variables(char* serialized, uint32_t len);
 char* serializar_stack(contexto** contextos, uint32_t contextos_length);
 uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length);
-contexto* deserializar_stack(char* serialized);
+contexto* deserializar_stack(char* serialized,uint32_t contextos_length);
 void crearNuevoContexto(PCB* pcb);
 void destroy_contexto(contexto* contexto);
 void destroy_dir_memoria(dir_memoria* dir);
