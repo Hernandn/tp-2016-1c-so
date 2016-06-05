@@ -11,10 +11,8 @@
 //----------------------------------PRIVADO---------------------------------------
 
 static t_memoria_principal memoria_principal;
-static t_tabla** tablas_de_paginas=NULL;
-static t_fila_tlb* tlb=NULL;
-static int maximo_tablas_de_paginas=0;
-static int cant_tablas_de_paginas=0;
+static t_list *tablas_de_paginas;
+static t_tabla_tlb *tlb;
 
 static int socket_swap = -1;
 
@@ -302,7 +300,7 @@ void inicializarUMC(){
 
 	logDebug("Inicializando la UMC");
 
-	tlb=crear_tlb(32);	//Todo agregar el tamanio de la tlb a la estructura config
+	tlb=crear_tlb(32); //Todo agregar tamanio de la tlb a la estructura config
 	memoria_principal=crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 }
 
@@ -327,101 +325,58 @@ t_memoria_principal crearMemoriaPrincipal(int cantidad_paginas, int size_pagina)
 void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
 
 	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
-	int i;
 
 	nueva_tabla->pid = pid;
 	nueva_tabla->tamanio = cant_paginas;
-	nueva_tabla->filas = malloc(sizeof(t_fila_tabla)*cant_paginas);
+	nueva_tabla->filas = list_create();
 
-	for(i=0; i<cant_paginas; i++){
-		nueva_tabla->filas[i].modificacion = 0;
+	list_add(tablas_de_paginas,(void*) nueva_tabla);
+
+}
+
+void destructor_tabla(void* tabla){
+	t_tabla *tmp;
+
+	tmp=(t_tabla*) tabla;
+
+	if(tmp!=NULL){
+		free(tmp->filas);
+		free(tmp);
 	}
-
-	insertar_tabla(nueva_tabla,tablas_de_paginas,maximo_tablas_de_paginas,cant_tablas_de_paginas);
-
 }
 
 void eliminar_tabla_de_paginas(uint32_t pid){
 
-	t_tabla *tabla;
-
 	logDebug("Eliminando tabla con pid %d", pid);
 
-	tabla=obtener_tabla_de_paginas(pid);
-
-	eliminar_tabla(tabla, tablas_de_paginas, cant_tablas_de_paginas);
-
-	free(tabla->filas);
-	free(tabla);
-}
-
-t_tabla* obtener_tabla_de_paginas(uint32_t pid){
-
-	t_tabla *tabla=*tablas_de_paginas;
-	int i=0;
-
-	while(tabla->pid != pid && i <= maximo_tablas_de_paginas){
-		tabla++;
-		i++;
+	bool tiene_igual_pid (void* elemento){
+		return ((t_tabla*) elemento)->pid==pid;
 	}
 
-	if(tabla->pid==pid) return tabla;
+	list_remove_and_destroy_by_condition(tablas_de_paginas,tiene_igual_pid,destructor_tabla);
 
-	return NULL;
 }
 
-t_fila_tlb* crear_tlb(uint32_t cant_paginas){
+t_tabla_tlb* crear_tlb(uint32_t tamanio){
 
-	t_fila_tlb *nueva_tabla = malloc(sizeof(t_fila_tlb)*cant_paginas);
-	int i;
+	t_tabla_tlb *nueva_tabla = malloc(sizeof(t_tabla_tlb));
 
-	logDebug("Nueva TLB creada con %d paginas",cant_paginas);
+	nueva_tabla->tamanio=tamanio;
+	nueva_tabla->filas=list_create();
 
-	//Inicializo los pids en 0
-	for(i=0; i<cant_paginas; i++){
-		nueva_tabla[i].pid=0;
-	}
+	logDebug("Nueva TLB creada");
 
 	return nueva_tabla;
 }
 
-void insertar_tabla(t_tabla *nueva_tabla, t_tabla **lista_tablas, int cant_maximo_tablas, int cant_tablas){
+void elimina_tlb(t_tabla_tlb *tabla){
 
-	int i;
-
-	if(cant_tablas >= cant_maximo_tablas){
-		lista_tablas=realloc((void*)lista_tablas,(sizeof(t_tabla*)*5)+cant_maximo_tablas);
-		cant_maximo_tablas+=5;
-
-		//Inicializo las tablas en null
-		for(i=cant_tablas+1; i<cant_maximo_tablas; i++){
-			lista_tablas[i]=NULL;
-		}
+	void eliminar_fila(void *fila){
+		free(fila);
 	}
 
-	//Sumo una tabla mas a la cantidad de tablas
-	cant_tablas += 1;
+	list_destroy_and_destroy_elements(tabla->filas, eliminar_fila);
 
-	//Agrego la tabla a la lista
-	for(i=0; i<cant_maximo_tablas; i++){
-		if(lista_tablas[i]==NULL){
-			lista_tablas[i] = nueva_tabla;
-		}
-	}
-
-}
-
-void eliminar_tabla(t_tabla *tabla, t_tabla **lista_tablas, int cant_tablas){
-
-	int i=0;
-
-	//Busco el indice de la tabla
-	while(lista_tablas[i]==tabla && i<=cant_tablas){
-		i++;
-	}
-
-	//Pongo el puntero en NULL
-	lista_tablas[i]=NULL;
 }
 
 uint32_t obtener_dir_fisica(uint32_t dir_logica){

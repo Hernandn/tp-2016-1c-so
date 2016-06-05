@@ -13,7 +13,9 @@
 #include <mllibs/sockets/package.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <commons/bitarray.h>
+#include <commons/collections/list.h>
 #include "interfaz.h"
 #include "configuration.h"
 
@@ -64,7 +66,7 @@ typedef struct fila_tabla{
 } t_fila_tabla;
 
 typedef struct tabla{
-	t_fila_tabla* filas;
+	t_list* filas;
 	uint32_t pid;
 	uint32_t tamanio;
 } t_tabla;
@@ -74,6 +76,11 @@ typedef struct fila_tlb{
 	uint32_t dir_fisica;
 	uint32_t pid;
 } t_fila_tlb;
+
+typedef struct tabla_tlb{
+	uint32_t tamanio;
+	t_list* filas;
+} t_tabla_tlb;
 
 pthread_mutex_t retardo_mutex;
 
@@ -97,8 +104,7 @@ void print_retardo();
 void limpiar_pantalla();
 t_memoria_principal crearMemoriaPrincipal(int, int);
 void crear_tabla_de_paginas(uint32_t,uint32_t);
-t_fila_tlb* crear_tlb(uint32_t);
-void insertar_tabla(t_tabla*,t_tabla**,int,int);
+t_tabla_tlb* crear_tlb(uint32_t tamanio);
 void eliminar_tabla_de_paginas(uint32_t);
 t_tabla* obtener_tabla_de_paginas(uint32_t);
 void eliminar_tabla(t_tabla*, t_tabla**, int);
