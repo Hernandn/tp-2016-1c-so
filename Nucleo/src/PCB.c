@@ -47,6 +47,7 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	new->consolaActiva = true;
 	new->codeIndex = metadata_desde_literal(programa);
 	new->context_len = 0;
+	new->stackIndex = NULL;
 	crearNuevoContexto(new);//inicializo el contexto del "main"
 	new->programa = strdup(programa);//TODO: borrar
 	logTrace("Creado PCB [PID:%d, ConsolaFD:%d, QuantumsExec:%d]",new->processID,new->consolaFD,new->executedQuantums);

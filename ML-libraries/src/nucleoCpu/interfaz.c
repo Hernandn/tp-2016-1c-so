@@ -41,10 +41,10 @@ char* serializarPCB(PCB* pcb){
 	free(serialized_metadata);
 
 	//serializar stack
-/*	uint32_t size_stack = getLong_stack(pcb->stackIndex);
+/*	uint32_t size_stack = getLong_stack(pcb->stackIndex,pcb->context_len);
 	serializarDato(serializedPackage,&(size_stack),sizeof(uint32_t),&offset);
 
-	char* serialized_stack = serializar_stack(pcb->stackIndex);
+	char* serialized_stack = serializar_stack(&(pcb->stackIndex),pcb->context_len);
 	serializarDato(serializedPackage,serialized_stack,sizeof(char)*size_stack,&offset);
 	free(serialized_stack);
 */
@@ -58,14 +58,14 @@ char* serializarPCB(PCB* pcb){
 uint32_t getLong_PCB(PCB* pcb){
 	uint32_t total_size = 0;
 	uint32_t size_metadata_program = getLong_metadata_program(pcb->codeIndex);
-//	uint32_t size_stack = getLong_stack(pcb->stackIndex);
+//	uint32_t size_stack = getLong_stack(pcb->stackIndex,pcb->context_len);
 
 	total_size += sizeof(uint32_t)*4;//PID + PC + stackFirstPage + stackOffset
 	total_size += sizeof(uint32_t);//campo size_metadata_program
 	total_size += size_metadata_program;
-/*	total_size += sizeof(uint32_t);//campo size_stack
-	total_size += size_stack;
-*/
+//	total_size += sizeof(uint32_t);//campo size_stack
+//	total_size += size_stack;
+
 
 	//TODO: borrar (solo para probar al principio le mando el programa hasta que funcione la UMC)
 	total_size += strlen(pcb->programa)+1;
@@ -123,7 +123,7 @@ PCB* deserializar_PCB(char* serialized){
 	deserializarDato(&(pcb->stackFirstPage),serialized,sizeof(uint32_t),&offset);
 	deserializarDato(&(pcb->stackOffset),serialized,sizeof(uint32_t),&offset);
 
-	int size_metadata_program;
+	uint32_t size_metadata_program;
 	deserializarDato(&size_metadata_program,serialized,sizeof(uint32_t),&offset);
 
 	char* serialized_metadata = malloc(sizeof(char)*size_metadata_program);
@@ -131,7 +131,7 @@ PCB* deserializar_PCB(char* serialized){
 	pcb->codeIndex = deserializar_metadata_program(serialized_metadata);
 	free(serialized_metadata);
 
-/*	int size_stack;
+/*	uint32_t size_stack;
 	deserializarDato(&size_stack,serialized,sizeof(uint32_t),&offset);
 
 	char* serialized_stack = malloc(sizeof(char)*size_stack);
@@ -260,7 +260,7 @@ char* serializar_contexto(contexto* contexto){
 	serializarDato(serializedPackage,&(contexto->arg_len),sizeof(uint32_t),&offset);
 
 	//serializar array de argumentos
-	char* serialized_dictionary = serializar_array_variables(contexto->argumentos,contexto->arg_len);
+	char* serialized_dictionary = serializar_array_variables(&(contexto->argumentos),contexto->arg_len);
 	serializarDato(serializedPackage,serialized_dictionary,sizeof(variable)*contexto->arg_len,&offset);
 	free(serialized_dictionary);
 
@@ -268,7 +268,7 @@ char* serializar_contexto(contexto* contexto){
 	serializarDato(serializedPackage,&(contexto->var_len),sizeof(uint32_t),&offset);
 
 	//serializar array de variables
-	serialized_dictionary = serializar_array_variables(contexto->variables,contexto->var_len);
+	serialized_dictionary = serializar_array_variables(&(contexto->variables),contexto->var_len);
 	serializarDato(serializedPackage,serialized_dictionary,sizeof(variable)*contexto->var_len,&offset);
 	free(serialized_dictionary);
 
@@ -325,17 +325,18 @@ contexto* deserializar_contexto(char* serialized){
 	return contexto;
 }
 
-char* serializar_array_variables(variable* variables, uint32_t len){
+char* serializar_array_variables(variable** variables, uint32_t len){
 	char *serializedPackage = malloc(sizeof(variable)*len);
+	variable* aux_variables = *variables;
 
 	int offset = 0;
 
 	int i;
 	for (i = 0; i < len; i++) {
-		serializarDato(serializedPackage,&(variables[i].nombre),sizeof(char),&offset);
-		serializarDato(serializedPackage,&(variables[i].direccion.pagina),sizeof(uint32_t),&offset);
-		serializarDato(serializedPackage,&(variables[i].direccion.offset),sizeof(uint32_t),&offset);
-		serializarDato(serializedPackage,&(variables[i].direccion.size),sizeof(uint32_t),&offset);
+		serializarDato(serializedPackage,&(aux_variables[i].nombre),sizeof(char),&offset);
+		serializarDato(serializedPackage,&(aux_variables[i].direccion.pagina),sizeof(uint32_t),&offset);
+		serializarDato(serializedPackage,&(aux_variables[i].direccion.offset),sizeof(uint32_t),&offset);
+		serializarDato(serializedPackage,&(aux_variables[i].direccion.size),sizeof(uint32_t),&offset);
 	}
 	return serializedPackage;
 }
@@ -355,8 +356,9 @@ variable* deserializar_array_variables(char* serialized, uint32_t len){
 	return variables;
 }
 
-char* serializar_stack(contexto* contextos, uint32_t contextos_length){
-	uint32_t total_size = getLong_stack(contextos, contextos_length);
+char* serializar_stack(contexto** contextos, uint32_t contextos_length){
+	contexto* aux_contextos = *contextos;
+	uint32_t total_size = getLong_stack(aux_contextos, contextos_length);
 	char *serializedPackage = malloc(total_size);
 
 	int offset = 0;
@@ -366,8 +368,8 @@ char* serializar_stack(contexto* contextos, uint32_t contextos_length){
 
 	int i;
 	for (i = 0; i < contextos_length; i++) {
-		char* serialized_contexto = serializar_contexto((contextos+i));
-		uint32_t size_contexto = getLong_contexto((contextos+i));
+		char* serialized_contexto = serializar_contexto(&aux_contextos[i]);//TODO: ver como pasarle el puntero como parametro
+		uint32_t size_contexto = getLong_contexto(&aux_contextos[i]);
 		serializarDato(serializedPackage,&(size_contexto),sizeof(uint32_t),&offset);//size contexto
 		serializarDato(serializedPackage,serialized_contexto,sizeof(char)*size_contexto,&offset);//contexto
 		free(serialized_contexto);
@@ -426,10 +428,10 @@ contexto* deserializar_stack(char* serialized){
 
 
 void crearNuevoContexto(PCB* pcb){
-	pcb->context_len++;
-	pcb->stackIndex = realloc(pcb->stackIndex,sizeof(contexto)*(pcb->context_len));
+	pcb->stackIndex = realloc(pcb->stackIndex,sizeof(contexto)*(pcb->context_len+1));
 	pcb->stackIndex[pcb->context_len].arg_len = 0;
 	pcb->stackIndex[pcb->context_len].var_len = 0;
+	pcb->context_len++;
 }
 
 void destroy_contexto(contexto* contexto){
