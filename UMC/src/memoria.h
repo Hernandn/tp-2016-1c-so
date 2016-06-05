@@ -11,12 +11,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <commons/collections/list.h>
 #include <commons/bitarray.h>
 #include <mllibs/log/logger.h>
+#include "configuration.h"
+#include "funciones.h"
+
 
 typedef char* pagina;
-typedef void* memoria; //TODO No me convence mucho el nombre pero es lo primero que se me ocurrio, sean libres de modificarlo
+typedef char* memoria;
 
 typedef struct memoria_principal{
 	memoria memoria;
@@ -50,10 +54,8 @@ void crearMemoriaPrincipal(int, int);
 void crear_tabla_de_paginas(uint32_t,uint32_t);
 void crear_tlb(uint32_t tamanio);
 void eliminar_tabla_de_paginas(uint32_t);
-t_tabla* obtener_tabla_de_paginas(uint32_t);
 void eliminar_tabla(t_tabla*, t_tabla**, int);
-uint32_t obtener_dir_fisica(uint32_t);
-char* obtener_contenido_memoria(uint32_t, uint32_t, uint32_t);
+int obtener_contenido_memoria(char*, uint32_t, uint32_t, uint32_t);
 int escribir_contenido_memoria(uint32_t, uint32_t, uint32_t, char*);
 
 #endif /* MEMORIA_H_ */

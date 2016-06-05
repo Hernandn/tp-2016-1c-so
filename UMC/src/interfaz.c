@@ -53,18 +53,15 @@ int inicializar_programa(char* mensaje_serializado){
 	return resultado;
 }
 
-char* leer_pagina(char* mensaje_serializado){
+int leer_pagina(char* mensaje_serializado, char* contenido){
 
 	uint32_t dir, offset, tamanio;
-	char* contenido=NULL;
 
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 
 	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
 
-	contenido=obtener_contenido_memoria(dir, offset, tamanio);
-
-	return contenido;
+	return obtener_contenido_memoria(contenido, dir, offset, tamanio);
 }
 
 int escribir_pagina(char* mensaje_serializado){

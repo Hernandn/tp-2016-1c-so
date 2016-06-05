@@ -13,10 +13,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <mllibs/log/logger.h>
-#include "funciones.h"
+#include "memoria.h"
 
 int inicializar_programa(char*);
-char* leer_pagina(char*);
+int leer_pagina(char*, char*);
 int escribir_pagina(char*);
 int finalizar_programa(char*);
 void nuevo_pid(char*);
