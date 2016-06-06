@@ -16,17 +16,6 @@ pthread_mutex_t continua_mutex;
 
 int continua;
 
-void retardo (int segundos);
 void handleComandos();
-void intepretarComando(char*);
-void error_comando(char*);
-void flush_memory();
-void flush_tlb();
-void retardo (int);
-void dump ();
-int parsear_comando(char*, char **);
-void fin_programa();
-void print_retardo();
-void limpiar_pantalla();
 
 #endif /* COMANDOS_H_ */

@@ -61,7 +61,7 @@ int leer_pagina(char* mensaje_serializado, char* contenido){
 
 	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
 
-	return obtener_contenido_memoria(contenido, dir, offset, tamanio);
+	return obtener_contenido_memoria(&contenido, dir, offset, tamanio);
 }
 
 int escribir_pagina(char* mensaje_serializado){

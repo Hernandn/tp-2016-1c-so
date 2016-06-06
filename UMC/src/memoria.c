@@ -149,7 +149,7 @@ void elimina_tlb(t_tabla_tlb *tabla){
 	list_destroy_and_destroy_elements(tabla->filas, eliminar_fila);
 }
 
-int obtener_contenido_memoria(char* contenido, uint32_t dir_logica, uint32_t offset, uint32_t tamanio){
+int obtener_contenido_memoria(char** contenido, uint32_t dir_logica, uint32_t offset, uint32_t tamanio){
 
 	uint32_t dir_fisica=obtener_dir_fisica(dir_logica);
 	memoria mem=memoria_principal.memoria+offset+dir_fisica;
@@ -158,9 +158,9 @@ int obtener_contenido_memoria(char* contenido, uint32_t dir_logica, uint32_t off
 	if(dir_fisica<0) return dir_fisica;
 
 	//Pueden mandarme un puntero a NULL o un puntero a espacio ya reservado (actualmente solo pasa la primera)
-	if(contenido==NULL) contenido=malloc(sizeof(tamanio));
+	if(*contenido==NULL) *contenido=malloc(sizeof(tamanio));
 
-	memcpy(contenido,mem,tamanio);
+	memcpy(*contenido,mem,tamanio);
 
 	return 0;
 }
