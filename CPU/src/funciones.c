@@ -52,8 +52,8 @@ void conectarConUMC(void* arguments){
 	if(recieve_and_deserialize(package, socket) > 0) {
 		if(package->msgCode==HANDSHAKE_UMC){
 			if(package->msgCode==HANDSHAKE_UMC){
-				args->config->size_pagina = atoi(package->message);//recibo el tamanio de pagina
-				logDebug("Conexion con UMC confirmada, tamanio de pagina: %d",args->config->size_pagina);
+				size_pagina = atoi(package->message);//recibo el tamanio de pagina
+				logDebug("Conexion con UMC confirmada, tamanio de pagina: %d",size_pagina);
 			}
 		}
 	}
@@ -224,4 +224,3 @@ void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){
 	destroyPCB(pcbActual);
 	proceso_fue_bloqueado = 1;
 }
-

@@ -38,7 +38,6 @@ typedef struct Configuration {
 	char* log_file;
 	char* log_program_name;
 	int log_print_console;
-	int size_pagina;
 } Configuration;
 
 #endif /* CONFIGURATION_H_ */

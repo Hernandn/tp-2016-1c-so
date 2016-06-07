@@ -11,20 +11,43 @@
 static const int CONTENIDO_VARIABLE = 20;
 static const int POSICION_MEMORIA = 0x10;
 
+void crearVariable(t_nombre_variable variable){
+	contexto* contexto = &(pcbActual->stackIndex[pcbActual->context_len-1]);
+	contexto->variables = realloc(contexto->variables,sizeof(variable)*contexto->var_len+1);
+	contexto->variables[contexto->var_len].nombre = variable;
+	contexto->variables[contexto->var_len].direccion.pagina = pcbActual->stackFirstPage;
+	contexto->variables[contexto->var_len].direccion.offset = pcbActual->stackOffset;
+	contexto->variables[contexto->var_len].direccion.size = sizeof(uint32_t);
+	contexto->var_len++;
+	pcbActual->stackOffset += sizeof(uint32_t);
+}
+
+dir_memoria* puntero_a_direccion_logica(t_puntero puntero){
+	dir_memoria* dir = malloc(sizeof(dir_memoria));
+	int pagina_num = puntero/size_pagina;
+	int offset = puntero%size_pagina;
+	dir->pagina = pcbActual->stackFirstPage + pagina_num;
+	dir->offset = offset;
+	dir->size = sizeof(uint32_t);
+	return dir;
+}
+
+t_puntero direccion_logica_a_puntero(dir_memoria* dir){
+	t_puntero puntero = 0;
+	puntero += (dir->pagina - pcbActual->stackFirstPage);
+	puntero += dir->offset;
+	return puntero;
+}
+
+
+
 t_puntero ml_definirVariable(t_nombre_variable variable) {
 	printf("Definir la variable %c\n", variable);
-/*	contexto* contexto = stack_peek(pcbActual->stackIndex);
-	char* var = malloc(sizeof(char)*2);
-	var[0]=variable;
-	var[1]='\0';
-	dir_memoria* direccion = malloc(sizeof(dir_memoria));
-	direccion->pagina = pcbActual->stackFirstPage;
-	direccion->offset = pcbActual->stackOffset;
-	direccion->size = sizeof(uint32_t);
-	dictionary_put(contexto->variables,var,direccion);
-	pcbActual->stackOffset += sizeof(uint32_t);
-	printf("Variable definida: Nom: %s, Pag:%d,Offset:%d,Size:%d\n",var,direccion->pagina,direccion->offset,direccion->size);
-*/
+
+	/*crearVariable(variable);
+	contexto* contexto = &(pcbActual->stackIndex[pcbActual->context_len-1]);
+	printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);*/
+
 	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
 	printf("Enviando escritura de Bytes a UMC\n");
 	analizarRespuestaUMC();

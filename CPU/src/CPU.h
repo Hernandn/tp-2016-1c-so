@@ -47,6 +47,8 @@ int socketNucleo;
 
 int proceso_fue_bloqueado;
 
+int size_pagina;
+
 PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
 //prototipos de funciones
