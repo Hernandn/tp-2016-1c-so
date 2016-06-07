@@ -11,6 +11,7 @@
 #include <mllibs/sockets/client.h>
 #include <mllibs/sockets/server.h>
 #include <mllibs/sockets/package.h>
+#include <mllibs/nucleoCpu/interfaz.h>
 #include <sys/time.h>
 #include <math.h>
 #include "configuration.h"

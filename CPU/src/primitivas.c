@@ -9,16 +9,30 @@
 #include "CPU.h"
 
 static const int CONTENIDO_VARIABLE = 20;
-static const int POSICION_MEMORIA = 0x10;
 
-void crearVariable(t_nombre_variable variable){
-	contexto* contexto = &(pcbActual->stackIndex[pcbActual->context_len-1]);
-	contexto->variables = realloc(contexto->variables,sizeof(variable)*contexto->var_len+1);
-	contexto->variables[contexto->var_len].nombre = variable;
+contexto* getContextoActual(){
+	return &(pcbActual->stackIndex[pcbActual->context_len-1]);
+}
+
+void crearVariable(t_nombre_variable variable_nom){
+	contexto* contexto = getContextoActual();
+	contexto->variables = realloc(contexto->variables,sizeof(variable)*(contexto->var_len+1));
+	contexto->variables[contexto->var_len].nombre = variable_nom;
 	contexto->variables[contexto->var_len].direccion.pagina = pcbActual->stackFirstPage;
 	contexto->variables[contexto->var_len].direccion.offset = pcbActual->stackOffset;
 	contexto->variables[contexto->var_len].direccion.size = sizeof(uint32_t);
 	contexto->var_len++;
+	pcbActual->stackOffset += sizeof(uint32_t);
+}
+
+void crearArgumento(t_nombre_variable variable_nom){
+	contexto* contexto = getContextoActual();
+	contexto->argumentos = realloc(contexto->argumentos,sizeof(variable)*(contexto->arg_len+1));
+	contexto->argumentos[contexto->arg_len].nombre = variable_nom;
+	contexto->argumentos[contexto->arg_len].direccion.pagina = pcbActual->stackFirstPage;
+	contexto->argumentos[contexto->arg_len].direccion.offset = pcbActual->stackOffset;
+	contexto->argumentos[contexto->arg_len].direccion.size = sizeof(uint32_t);
+	contexto->arg_len++;
 	pcbActual->stackOffset += sizeof(uint32_t);
 }
 
@@ -41,48 +55,112 @@ t_puntero direccion_logica_a_puntero(dir_memoria* dir){
 
 
 
-t_puntero ml_definirVariable(t_nombre_variable variable) {
-	printf("Definir la variable %c\n", variable);
-
-	/*crearVariable(variable);
-	contexto* contexto = &(pcbActual->stackIndex[pcbActual->context_len-1]);
-	printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);*/
-
-	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
-	printf("Enviando escritura de Bytes a UMC\n");
-	analizarRespuestaUMC();
-	return POSICION_MEMORIA;
+variable* obtener_variable(t_nombre_variable variable_nom){
+	variable* var = NULL;
+	contexto* contexto = getContextoActual();
+	int i;
+	for(i=0; i<contexto->var_len; i++){
+		if(contexto->variables[i].nombre==variable_nom){
+			var = &(contexto->variables[i]);
+		}
+	}
+	return var;
 }
 
-t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable) {
-	printf("Obtener posicion de %c\n", variable);
-	printf("Enviando lectura de Bytes a UMC\n");
+variable* obtener_argumento(t_nombre_variable variable_nom){
+	variable* var = NULL;
+	contexto* contexto = getContextoActual();
+	int i;
+	for(i=0; i<contexto->arg_len; i++){
+		if(contexto->argumentos[i].nombre==variable_nom){
+			var = &(contexto->argumentos[i]);
+		}
+	}
+	return var;
+}
+
+
+//************************************************************
+//						PRIMITIVAS
+//************************************************************
+
+t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
+	printf("Definir la variable %c\n", variable_nom);
+
+	contexto* contexto = getContextoActual();
+	if(isdigit(variable_nom)){
+		crearArgumento(variable_nom);
+		printf("Argumento definido: Nom: %c\n",contexto->argumentos[contexto->arg_len-1].nombre);
+	} else {
+		crearVariable(variable_nom);
+		printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);
+	}
+
+
+
+	/*enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
+	printf("Enviando escritura de Bytes a UMC\n");
+	analizarRespuestaUMC();*/
+
+	t_puntero puntero = direccion_logica_a_puntero(&(contexto->variables[contexto->var_len-1].direccion));
+	dir_memoria dir = contexto->variables[contexto->var_len-1].direccion;
+	printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir.pagina,dir.offset,dir.size,puntero);
+
+	return puntero;
+}
+
+t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable_nom) {
+	printf("Obtener posicion de %c\n", variable_nom);
+	/*printf("Enviando lectura de Bytes a UMC\n");
 	enviarMensajeSocket(getSocketUMC(),SOLICITAR_BYTES_PAGINA,"");
-	analizarRespuestaUMC();
-	return POSICION_MEMORIA;
+	analizarRespuestaUMC();*/
+
+	variable* variable = NULL;
+	if(isdigit(variable_nom)){
+		variable = obtener_argumento(variable_nom);
+	} else {
+		variable = obtener_variable(variable_nom);
+	}
+
+	dir_memoria* dir = &(variable->direccion);
+	t_puntero puntero = direccion_logica_a_puntero(dir);
+	printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir->pagina,dir->offset,dir->size,puntero);
+
+	return puntero;
 }
 
 t_valor_variable ml_dereferenciar(t_puntero puntero) {
 	printf("Dereferenciar %d y su valor es: %d\n", puntero, CONTENIDO_VARIABLE);
-	printf("Enviando lectura de Bytes a UMC\n");
+	/*printf("Enviando lectura de Bytes a UMC\n");
 	enviarMensajeSocket(getSocketUMC(),SOLICITAR_BYTES_PAGINA,"");
-	analizarRespuestaUMC();
+	analizarRespuestaUMC();*/
+
+	dir_memoria* dir = puntero_a_direccion_logica(puntero);
+	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+	free(dir);
+
 	return CONTENIDO_VARIABLE;
 }
 
 void ml_asignar(t_puntero puntero, t_valor_variable variable) {
 	printf("Asignando en %d el valor %d\n", puntero, variable);
-	printf("Enviando escritura de Bytes a UMC\n");
+	/*printf("Enviando escritura de Bytes a UMC\n");
 	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
-	analizarRespuestaUMC();
+	analizarRespuestaUMC();*/
+
+	dir_memoria* dir = puntero_a_direccion_logica(puntero);
+	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+	free(dir);
 }
 
 void ml_imprimir(t_valor_variable valor) {
 	printf("Imprimir %d\n", valor);
+	informarNucleoImprimirVariable(socketNucleo,pcbActual->processID,valor);
 }
 
 void ml_imprimirTexto(char* texto) {
 	printf("ImprimirTexto: %s", texto);
+	informarNucleoImprimirTexto(socketNucleo,pcbActual->processID,texto);
 }
 
 t_valor_variable ml_obtenerValorCompartida(t_nombre_compartida variable){

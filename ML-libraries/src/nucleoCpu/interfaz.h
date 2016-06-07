@@ -29,6 +29,8 @@
 #define CONTEXT_SWITCH 77
 #define CONTEXT_SWITCH_FINISHED 78
 #define EXEC_IO_OPERATION 79
+#define PRINT_VARIABLE 80
+#define PRINT_TEXT 81
 #define CPU_LIBRE 90
 //-------------------------------
 
@@ -44,9 +46,9 @@ typedef struct variable {
 } variable;
 
 typedef struct contexto {
-	variable* argumentos;//coleccion de pares ("identificador_variable",dir_memoria)
+	variable* argumentos;
 	uint32_t arg_len;
-	variable* variables;//coleccion de pares ("identificador_variable",dir_memoria)
+	variable* variables;
 	uint32_t var_len;
     t_puntero_instruccion retPos;
 	dir_memoria retVar;
@@ -60,8 +62,8 @@ typedef struct PCB {
 	uint32_t stackOffset;	//offset actual donde agregar variables en el stack
 	int executedQuantums;	//cantidad de quantums ya ejecutados
 	t_metadata_program* codeIndex;		//indice de codigo
-	contexto* stackIndex;		//pila con elementos "contexto"
-	uint32_t context_len;
+	contexto* stackIndex;		//array con elementos "contexto"
+	uint32_t context_len;		//largo del array stackIndex
 	bool consolaActiva;	//indica si la consola esta activa o si cerro la conexion
 	char* programa;	//codigo del programa TODO: borrar
 } PCB;
@@ -73,6 +75,16 @@ typedef struct solicitud_io {
     char* io_id;
 	int cant_operaciones;
 } solicitud_io;
+
+typedef struct print_var {
+	uint32_t pid;
+	uint32_t valor;
+} print_var;
+
+typedef struct print_text {
+	uint32_t pid;
+	char* text;
+} print_text;
 
 //serializacion PCB
 
@@ -97,8 +109,16 @@ char* serializar_stack(contexto** contextos, uint32_t contextos_length);
 uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length);
 contexto* deserializar_stack(char* serialized,uint32_t contextos_length);
 void crearNuevoContexto(PCB* pcb);
-void destroy_contexto(contexto* contexto);
+void destroy_stackIndex(contexto* contexto, uint32_t context_len);
 void destroy_dir_memoria(dir_memoria* dir);
+char* serializar_imprimirVariable(uint32_t pid, uint32_t valor);
+print_var* deserializar_imprimirVariable(char* serialized);
+char* serializar_imprimirTexto(uint32_t pid, char* texto);
+print_text* deserializar_imprimirTexto(char* serialized);
+void destroy_print_text(print_text* self);
+void destroy_print_var(print_var* self);
+char* serializar_imprimirVariable_consola(uint32_t valor);
+uint32_t deserializar_imprimirVariable_consola(char* serialized);
 
 
 //funciones interfaz CPU a Nucleo
@@ -108,6 +128,8 @@ void informarNucleoQuantumFinished(int socketNucleo, PCB* pcb);
 void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb);
 void informarNucleoCPUlibre(int socketNucleo);
 void informarNucleoEjecutarOperacionIO(int socketNucleo, PCB* pcb, char* io_id, uint32_t cant_operaciones);
+void informarNucleoImprimirVariable(int socketNucleo, uint32_t pid, t_valor_variable valor);
+void informarNucleoImprimirTexto(int socketNucleo, uint32_t pid, char* texto);
 
 //funciones interfaz Nucleo a CPU
 

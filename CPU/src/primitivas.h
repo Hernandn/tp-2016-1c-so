@@ -12,6 +12,7 @@
 #include <parser/metadata_program.h>
 #include "configuration.h"
 #include <stdio.h>
+#include <ctype.h>
 
 t_puntero ml_definirVariable(t_nombre_variable variable);
 t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable);

@@ -192,17 +192,6 @@ t_metadata_program* deserializar_metadata_program(char* serialized){
 	return metadata;
 }
 
-
-void destroyPCB(PCB* self){
-	free(self->programa);
-	metadata_destruir(self->codeIndex);
-	//TODO ver como destruir stack
-	//stack_destroy_and_destroy_elements(self->stackIndex,(void*)destroy_contexto);
-	//free(self->stackIndex);
-	//free(self->tagIndex);
-	free(self);
-}
-
 //envio la solicitud IO mas el PCB entero para hacer el context switch y que se bloquee en el Nucleo
 char* serializar_ejecutarOperacionIO(PCB* pcb, char* io_id, uint32_t cant_operaciones){
 	uint32_t size_pcb = getLong_PCB(pcb);
@@ -413,18 +402,6 @@ contexto* deserializar_stack(char* serialized, uint32_t contextos_length){
 	return contextos;
 }
 
-/*
- * variable* variables = NULL;
-
-	for(i=0 ; i<4; i++){
-		variables = realloc(variables,sizeof(variable)*(i+1));
-		variables[i].direccion.pagina = i;
-		variables[i].direccion.offset = i;
-		variables[i].direccion.size = i;
-		variables[i].nombre = 97+i;
-	}
- */
-
 
 void crearNuevoContexto(PCB* pcb){
 	pcb->stackIndex = realloc(pcb->stackIndex,sizeof(contexto)*(pcb->context_len+1));
@@ -433,9 +410,81 @@ void crearNuevoContexto(PCB* pcb){
 	pcb->context_len++;
 }
 
-void destroy_contexto(contexto* contexto){
+void destroy_stackIndex(contexto* contexto, uint32_t context_len){
+	int i;
+	for(i=0; i<context_len; i++){
+		free(contexto[i].variables);
+		free(contexto[i].argumentos);
+	}
 	free(contexto);
 }
+
+void destroyPCB(PCB* self){
+	free(self->programa);
+	metadata_destruir(self->codeIndex);
+	//TODO ver como destruir stack
+	destroy_stackIndex(self->stackIndex,self->context_len);
+	//free(self->stackIndex);
+	//free(self->tagIndex);
+	free(self);
+}
+
+
+char* serializar_imprimirVariable(uint32_t pid, uint32_t valor){
+	char *serializedPackage = malloc(sizeof(uint32_t)*2);
+	int offset = 0;
+	serializarDato(serializedPackage,&(pid),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,&(valor),sizeof(uint32_t),&offset);
+	return serializedPackage;
+}
+
+print_var* deserializar_imprimirVariable(char* serialized){
+	print_var* print = malloc(sizeof(print_var));
+	int offset = 0;
+	deserializarDato(&(print->pid),serialized,sizeof(uint32_t),&offset);
+	deserializarDato(&(print->valor),serialized,sizeof(uint32_t),&offset);
+	return print;
+}
+
+char* serializar_imprimirTexto(uint32_t pid, char* texto){
+	char *serializedPackage = malloc(sizeof(uint32_t)+strlen(texto)+sizeof(char));
+	int offset = 0;
+	serializarDato(serializedPackage,&(pid),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,texto,strlen(texto)+sizeof(char),&offset);
+	return serializedPackage;
+}
+
+print_text* deserializar_imprimirTexto(char* serialized){
+	print_text* print = malloc(sizeof(print_text));
+	int offset = 0;
+	deserializarDato(&(print->pid),serialized,sizeof(uint32_t),&offset);
+	print->text = strdup(serialized+offset);
+	return print;
+}
+
+void destroy_print_text(print_text* self){
+	free(self->text);
+	free(self);
+}
+
+void destroy_print_var(print_var* self){
+	free(self);
+}
+
+char* serializar_imprimirVariable_consola(uint32_t valor){
+	char *serializedPackage = malloc(sizeof(uint32_t));
+	int offset = 0;
+	serializarDato(serializedPackage,&(valor),sizeof(uint32_t),&offset);
+	return serializedPackage;
+}
+
+uint32_t deserializar_imprimirVariable_consola(char* serialized){
+	int offset = 0;
+	uint32_t valor;
+	deserializarDato(&(valor),serialized,sizeof(uint32_t),&offset);
+	return valor;
+}
+
 
 
 //funciones interfaz CPU a Nucleo
@@ -466,6 +515,18 @@ void informarNucleoEjecutarOperacionIO(int socketNucleo, PCB* pcb, char* io_id, 
 	char* serialized = serializar_ejecutarOperacionIO(pcb,io_id,cant_operaciones);
 	uint32_t longitud = getLong_ejecutarOperacionIO(pcb,io_id,cant_operaciones);
 	enviarMensajeSocketConLongitud(socketNucleo,EXEC_IO_OPERATION,serialized,longitud);
+	free(serialized);
+}
+
+void informarNucleoImprimirVariable(int socketNucleo, uint32_t pid, t_valor_variable valor){
+	char* serialized = serializar_imprimirVariable(pid,valor);
+	enviarMensajeSocketConLongitud(socketNucleo,PRINT_VARIABLE,serialized,sizeof(uint32_t)*2);
+	free(serialized);
+}
+
+void informarNucleoImprimirTexto(int socketNucleo, uint32_t pid, char* texto){
+	char* serialized = serializar_imprimirTexto(pid,texto);
+	enviarMensajeSocketConLongitud(socketNucleo,PRINT_TEXT,serialized,sizeof(uint32_t)+strlen(texto)+sizeof(char));
 	free(serialized);
 }
 

@@ -128,6 +128,17 @@ void contextSwitch(arg_struct *args){
 void cargarContextoPCB(Package* package){
 	pcbActual = deserializar_PCB(package->message);
 	logTrace("Contexto de proceso cargado PID:%d...",pcbActual->processID);
+
+	printf("Instruccion inicio %d\n",pcbActual->codeIndex->instruccion_inicio);
+	printf("Instruccion size %d\n",pcbActual->codeIndex->instrucciones_size);
+	int i;
+	for(i=0; i<pcbActual->codeIndex->instrucciones_size; i++){
+		printf("Instruccion ini %d  offset %d\n",pcbActual->codeIndex->instrucciones_serializado[i].start, pcbActual->codeIndex->instrucciones_serializado[i].offset);
+	}
+	printf("cant etiquetas %d\n",pcbActual->codeIndex->cantidad_de_etiquetas);
+	printf("cant funciones %d\n",pcbActual->codeIndex->cantidad_de_funciones);
+	printf("etiquetas size %d\n",pcbActual->codeIndex->etiquetas_size);
+	printf("etiquetas %s\n",pcbActual->codeIndex->etiquetas);
 }
 
 void ejecutarProceso(arg_struct *args){
@@ -215,6 +226,7 @@ char* getInstruccion(char* codigo, int offset, int length){
 char* getSiguienteInstruccion(){
 	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
 	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
+	printf("getInstruccion offset %d, length %d",offset,length);
 	return getInstruccion(pcbActual->programa,offset,length);
 }
 

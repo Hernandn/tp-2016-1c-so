@@ -46,6 +46,18 @@ PCB* buildNewPCB(int consolaFD, char* programa){
 	new->executedQuantums = 0;
 	new->consolaActiva = true;
 	new->codeIndex = metadata_desde_literal(programa);
+
+	printf("Instruccion inicio %d\n",new->codeIndex->instruccion_inicio);
+	printf("Instruccion size %d\n",new->codeIndex->instrucciones_size);
+	int i;
+	for(i=0; i<new->codeIndex->instrucciones_size; i++){
+		printf("Instruccion ini %d  offset %d\n",new->codeIndex->instrucciones_serializado[i].start, new->codeIndex->instrucciones_serializado[i].offset);
+	}
+	printf("cant etiquetas %d\n",new->codeIndex->cantidad_de_etiquetas);
+	printf("cant funciones %d\n",new->codeIndex->cantidad_de_funciones);
+	printf("etiquetas size %d\n",new->codeIndex->etiquetas_size);
+	printf("etiquetas %s\n",new->codeIndex->etiquetas);
+
 	new->context_len = 0;
 	new->stackIndex = NULL;
 	crearNuevoContexto(new);//inicializo el contexto del "main"
@@ -311,6 +323,11 @@ void finalizarPrograma(Estados* estados, PCB* pcbActualizado, int socketCPU){
 
 void actualizarPCB(PCB* local, PCB* actualizado){
 	local->programCounter = actualizado->programCounter;
+	local->stackOffset = actualizado->stackOffset;
+	local->context_len = actualizado->context_len;
+	contexto* contexto_aux = local->stackIndex;
+	local->stackIndex = actualizado->stackIndex;
+	actualizado->stackIndex = contexto_aux;
 }
 
 void switchProcess(Estados* estados, int pid, int socketCPU){

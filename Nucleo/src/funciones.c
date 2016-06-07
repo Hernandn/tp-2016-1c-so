@@ -402,6 +402,18 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		logTrace("Solicitada operacion I/O");
 		solicitud_io* solicitud = deserializar_ejecutarOperacionIO(package->message);
 		atenderSolicitudDispositivoIO(args->estados,solicitud);
+	} else if(package->msgCode==PRINT_VARIABLE){
+		print_var* print = deserializar_imprimirVariable(package->message);
+		int socketConsola = getFromEXEC(args->estados,print->pid)->consolaFD;
+		char* serialized = serializar_imprimirVariable_consola(print->valor);
+		enviarMensajeSocketConLongitud(socketConsola,PRINT_VARIABLE,serialized,sizeof(uint32_t));
+		destroy_print_var(print);
+		free(serialized);
+	} else if(package->msgCode==PRINT_TEXT){
+		print_text* print = deserializar_imprimirTexto(package->message);
+		int socketConsola = getFromEXEC(args->estados,print->pid)->consolaFD;
+		enviarMensajeSocket(socketConsola,PRINT_TEXT,print->text);
+		destroy_print_text(print);
 	}
 }
 

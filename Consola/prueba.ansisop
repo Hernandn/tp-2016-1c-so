@@ -6,6 +6,8 @@ begin
 	a = b + 12
 	io Disco 5
 	a <- doble b
+	textPrint La variable a vale
+	print a
 end
 
 function doble
