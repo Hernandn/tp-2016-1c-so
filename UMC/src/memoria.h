@@ -17,9 +17,8 @@
 #include <mllibs/log/logger.h>
 #include "configuration.h"
 #include "funciones.h"
+#include "interfazSwap.h"
 
-
-typedef char* pagina;
 typedef char* memoria;
 
 typedef struct memoria_principal{

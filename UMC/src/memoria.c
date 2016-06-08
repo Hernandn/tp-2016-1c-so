@@ -72,8 +72,64 @@ uint32_t obtener_dir_fisisca_tabla(uint32_t dir_logica){
 	return 0;
 }
 
-void copiar_pagina_a_tlb(dir_logica){
+void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
 
+	t_tabla *tabla;
+	t_fila_tabla *fila;
+
+	bool tabla_valida(void* tabla){
+		return ((t_tabla*) tabla)->pid==obtener_pid();
+	}
+
+	bool fila_valida(void* fila){
+		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
+	}
+
+	tabla=list_find(tablas_de_paginas,fila_valida);	//La tabla a esta altura tiene que existir
+
+	if(!(fila=list_find(tabla->filas,tabla_valida)))	//La fila puede no existir, la tabla se crea vacia
+		fila=malloc(sizeof(t_fila_tabla));
+	fila->modificacion=0;
+	fila->numero_pagina=dir_logica;
+	fila->numero_marco=dir_fisica;
+	list_add(tabla->filas,(void*)fila);
+
+}
+
+uint32_t obtener_marco_libre(){
+
+	int i=0;
+	char bit_no_encontrado=1;
+
+	while(i < config->cantidad_paginas && bit_no_encontrado){
+		if(bitarray_test_bit(memoria_principal.bitmap,i)) bit_no_encontrado = 0;
+		else i++;
+	}
+
+	return bit_no_encontrado ? -1 : i;
+}
+
+void agregar_pagina_a_memoria(uint32_t pid, uint32_t dir_logica, char* pagina){
+
+	uint32_t dir_fisica = obtener_marco_libre();	//Todo No contemplo que no encuentre marco libre
+
+	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
+
+	cargar_dir_tabla(dir_logica, dir_fisica);
+}
+
+void copiar_pagina_a_tlb(uint32_t dir_logica){
+	//Todo copiar la pagina a la tlb para la proxima busqueda
+}
+
+void copiar_pagina_a_memoria(uint32_t dir_logica){
+
+	uint32_t pid = obtener_pid();
+	char* pagina = leerPaginaSwap(pid, dir_logica);
+
+	if(!pagina) return;	//Todo ver de poner un error copado
+
+	agregar_pagina_a_memoria(pid,dir_logica,pagina);
 }
 
 uint32_t obtener_dir_fisica(uint32_t dir_logica){
@@ -81,7 +137,8 @@ uint32_t obtener_dir_fisica(uint32_t dir_logica){
 
 	if((dir_fisica=obtener_dir_fisica_tlb(dir_logica)) == -1){
 		if((dir_fisica=obtener_dir_fisisca_tabla(dir_logica)) == -1){
-			//Todo aca tendria que traerme las paginas de swap
+			copiar_pagina_a_memoria(dir_logica);
+			dir_fisica=obtener_dir_fisisca_tabla(dir_logica);
 		}else copiar_pagina_a_tlb(dir_logica);
 	}
 

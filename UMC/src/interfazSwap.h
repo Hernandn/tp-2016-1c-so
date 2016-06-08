@@ -12,6 +12,8 @@
 #include "configuration.h"
 #include <commons/string.h>
 
+typedef char* pagina;
+
 char* serializar_NuevoPrograma(uint32_t, uint32_t);
 int getLong_NuevoPrograma();
 char* serializar_EscribirPagina(uint32_t pid, uint32_t numero_de_pagina, pagina pagina, int size_pagina);
