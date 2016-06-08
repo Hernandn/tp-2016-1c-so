@@ -25,7 +25,10 @@
 typedef struct Configuration{
 	int puerto_nucleo;
 	char* ip_nucleo;
+	char* log_level;
 	char* log_file;
+	char* log_program_name;
+	int log_print_console;
 } Configuration;
 
 //Estructura de los parametros de entrada del proceso Consola

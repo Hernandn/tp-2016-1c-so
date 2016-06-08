@@ -226,7 +226,6 @@ char* getInstruccion(char* codigo, int offset, int length){
 char* getSiguienteInstruccion(){
 	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
 	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
-	printf("getInstruccion offset %d, length %d",offset,length);
 	return getInstruccion(pcbActual->programa,offset,length);
 }
 

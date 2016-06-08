@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
 	//Si hay un archivo log por configuracion uso el nuevo
 	if(strlen(parametros->config->log_file) != 0 && !strcmp(parametros->config->log_file,DEFAULT_LOG_FILE)){
 		logDestroy();
-		initLogMutex(parametros->config->log_file,"ELESTAC",true,LOG_LEVEL_DEBUG);
+		initLogMutex(parametros->config->log_file,parametros->config->log_program_name,parametros->config->log_print_console,log_level_from_string(parametros->config->log_level));
 	}
 
 	logInfo("Consola iniciada");
@@ -46,6 +46,7 @@ int main(int argc, char* argv[]){
 	// diff
 	timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
 	logInfo("Fin programa - Tiempo: %ld.%3ld segundos\n", tvDiff.tv_sec, tvDiff.tv_usec);
+	printf("Fin programa - Tiempo: %ld.%3ld segundos\n", tvDiff.tv_sec, tvDiff.tv_usec);
 
 	//Libero la memoria
 	liberar_parametros(parametros);
