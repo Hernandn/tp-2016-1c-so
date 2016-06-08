@@ -15,6 +15,6 @@
 #include "configuration.h"
 #include "funciones.h"
 
-#define DEFAULT_LOG_FILE "consola.log"
+#define DEFAULT_LOG_FILE "consola_ini.log"
 
 #endif /* CONSOLA_H_ */
