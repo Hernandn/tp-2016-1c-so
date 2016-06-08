@@ -50,7 +50,7 @@ static int comunicar_con_swap(char accion, char* buffer, uint32_t longitud, Pack
 	return result;
 }
 
-char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags, char* contenido){
+char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags){
 	//mensaje: pid + cantPags
 	char *serializedPackage = malloc(sizeof(uint32_t)*2);
 
@@ -63,16 +63,12 @@ char* serializar_NuevoPrograma(uint32_t pid, uint32_t cantPags, char* contenido)
 
 	size_to_send = sizeof(uint32_t);
 	memcpy(serializedPackage + offset, &cantPags, size_to_send);
-	offset += size_to_send;
-
-	size_to_send = cantPags;
-	memcpy(serializedPackage + offset, contenido, size_to_send);
 
 	return serializedPackage;
 }
 
-int getLong_NuevoPrograma(uint32_t cantPags){
-	return sizeof(uint32_t)*2 + cantPags;
+int getLong_NuevoPrograma(){
+	return sizeof(uint32_t)*2;
 }
 
 
@@ -140,20 +136,20 @@ int getLong_EliminarPrograma(){
 	return sizeof(uint32_t);
 }
 
-int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas, char* pagina){
+int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas){
 
 	char* buffer;
 	int longitud,
 		result;
 	Package **respuesta=NULL;
 
-	buffer = serializar_NuevoPrograma(pid,cant_paginas,pagina);
-	longitud = getLong_NuevoPrograma(cant_paginas);
+	buffer = serializar_NuevoPrograma(pid,cant_paginas);
+	longitud = getLong_NuevoPrograma();
 
 	result = comunicar_con_swap(NUEVO_PROGRAMA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return (result == 0 ? atoi((*respuesta)->message) : -1); //-1 es error de comunicacion
+	return result == 0 ? atoi((*respuesta)->message) : -1; //-1 es error de comunicacion
 
 }
 
@@ -170,7 +166,7 @@ char* leerPaginaSwap(uint32_t pid, uint32_t nro_pagina){
 	result = comunicar_con_swap(ELIMINAR_PROGRAMA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return (result == 0 ? (*respuesta)->message : NULL);	//Todo averiguar como hago para saber si me mando una pagina o un error
+	return result == 0 ? (*respuesta)->message : NULL;	//Todo averiguar como hago para saber si me mando una pagina o un error
 }
 
 int escribirPaginaSwap(uint32_t pid, uint32_t nro_pagina, uint32_t tamanio, char* pagina){
@@ -186,7 +182,7 @@ int escribirPaginaSwap(uint32_t pid, uint32_t nro_pagina, uint32_t tamanio, char
 	result = comunicar_con_swap(ELIMINAR_PROGRAMA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return (result == 0 ? atoi((*respuesta)->message) : -1);
+	return result == 0 ? atoi((*respuesta)->message) : -1;
 
 }
 
@@ -203,7 +199,7 @@ int finalizarProgramaSwap(uint32_t pid){
 	result = comunicar_con_swap(ELIMINAR_PROGRAMA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return (result == 0 ? atoi((*respuesta)->message) : -1);
+	return result == 0 ? atoi((*respuesta)->message) : -1;
 
 }
 

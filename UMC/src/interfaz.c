@@ -39,14 +39,19 @@ static void deserializar_parametros(int cant_parametros, char* mensaje, ...){
 int inicializar_programa(char* mensaje_serializado){
 
 	uint32_t pid, cant_paginas;
-	char* contenido=NULL;
-	int resultado;
+	char *contenido=NULL;
+	int resultado, i;
 
-	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, (int)cant_paginas, (void*) contenido);
+	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, (int)(cant_paginas*config->size_pagina), (void*) contenido);
 
 	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
 
-	if(!(resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas,contenido))){
+	if((resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas)) == 0){
+
+		//Si hay espacio mando las paginas una por una y creo la tabla de paginas
+		for(i=0; i<cant_paginas; i++){
+			escribirPaginaSwap(pid,i,config->size_pagina,contenido + (i * config->size_pagina));
+		}
 		crear_tabla_de_paginas(pid,cant_paginas);
 	}
 

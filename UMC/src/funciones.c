@@ -118,11 +118,9 @@ void comunicarSWAP(int accion){
 			//esto es con datos de prueba
 			int pid = 300;
 			int cantidadPaginas = 2;
-			char* buffer = malloc(sizeof(cantidadPaginas));
 
-			char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas,buffer);
+			char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas);
 			int longitud = getLong_NuevoPrograma(cantidadPaginas);
-			free(buffer);
 
 			enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
 			free(serialized);
