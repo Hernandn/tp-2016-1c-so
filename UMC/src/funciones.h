@@ -54,6 +54,10 @@ typedef struct arg_thread_nucleo {
 
 pthread_mutex_t retardo_mutex;
 
+int socket_swap;						//Esto deberia ser privado de interfazSwap.c pero por
+pthread_mutex_t comunicacion_swap_mutex,//ahora hay funciones en funciones.c que lo necesitan
+				socket_swap_mutex;
+
 void handleClients();
 void comunicarSWAP(int);
 int conectarConSwap();

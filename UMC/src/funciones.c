@@ -10,12 +10,6 @@
 
 //----------------------------------PRIVADO---------------------------------------
 
-static int socket_swap = -1;
-
-static pthread_mutex_t
-	comunicacion_swap_mutex,
-	socket_swap_mutex;
-
 static pthread_key_t key_pid;
 
 //----------------------------------PUBLICO---------------------------------------
@@ -124,8 +118,11 @@ void comunicarSWAP(int accion){
 			//esto es con datos de prueba
 			int pid = 300;
 			int cantidadPaginas = 2;
-			char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas);
-			int longitud = getLong_NuevoPrograma();
+			char* buffer = malloc(sizeof(cantidadPaginas));
+
+			char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas,buffer);
+			int longitud = getLong_NuevoPrograma(cantidadPaginas);
+			free(buffer);
 
 			enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
 			free(serialized);
