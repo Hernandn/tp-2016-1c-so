@@ -80,6 +80,22 @@ variable* obtener_argumento(t_nombre_variable variable_nom){
 }
 
 
+t_puntero_instruccion obtenerIndiceInstruccion(char* serialized, char* label, t_size size){
+	int offset = 0;
+	t_puntero_instruccion pos = -1;
+
+	while(offset<size && strcmp(serialized+offset,label)!=0){
+		offset = strlen(serialized+offset) + 1 + sizeof(t_puntero_instruccion);
+	}
+
+	if(offset<size){
+		memcpy(&pos,serialized+strlen(serialized+offset)+1,sizeof(t_puntero_instruccion));
+
+	}
+	return pos;
+}
+
+
 //************************************************************
 //						PRIMITIVAS
 //************************************************************
