@@ -109,6 +109,7 @@ char* serializar_stack(contexto** contextos, uint32_t contextos_length);
 uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length);
 contexto* deserializar_stack(char* serialized,uint32_t contextos_length);
 void crearNuevoContexto(PCB* pcb);
+void destruirContextoActual(PCB* pcb);
 void destroy_stackIndex(contexto* contexto, uint32_t context_len);
 void destroy_dir_memoria(dir_memoria* dir);
 char* serializar_imprimirVariable(uint32_t pid, uint32_t valor);

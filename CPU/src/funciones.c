@@ -133,7 +133,7 @@ void cargarContextoPCB(Package* package){
 	printf("Instruccion size %d\n",pcbActual->codeIndex->instrucciones_size);
 	int i;
 	for(i=0; i<pcbActual->codeIndex->instrucciones_size; i++){
-		printf("Instruccion ini %d  offset %d\n",pcbActual->codeIndex->instrucciones_serializado[i].start, pcbActual->codeIndex->instrucciones_serializado[i].offset);
+		printf("Instruccion %d: ini %d  offset %d\n",i,pcbActual->codeIndex->instrucciones_serializado[i].start, pcbActual->codeIndex->instrucciones_serializado[i].offset);
 	}
 	printf("cant etiquetas %d\n",pcbActual->codeIndex->cantidad_de_etiquetas);
 	printf("cant funciones %d\n",pcbActual->codeIndex->cantidad_de_funciones);

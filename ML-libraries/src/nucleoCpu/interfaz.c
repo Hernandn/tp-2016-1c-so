@@ -410,6 +410,12 @@ void crearNuevoContexto(PCB* pcb){
 	pcb->context_len++;
 }
 
+void destruirContextoActual(PCB* pcb){
+	pcb->programCounter = pcb->stackIndex[pcb->context_len-1].retPos;
+	pcb->context_len--;
+	pcb->stackIndex = realloc(pcb->stackIndex,sizeof(contexto)*(pcb->context_len));
+}
+
 void destroy_stackIndex(contexto* contexto, uint32_t context_len){
 	int i;
 	for(i=0; i<context_len; i++){

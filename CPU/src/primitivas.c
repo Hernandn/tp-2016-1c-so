@@ -199,6 +199,12 @@ void ml_llamarSinRetorno(t_nombre_etiqueta etiqueta){
 
 void ml_llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
 	printf("\nEjecutando Llamar con retorno a funcion: %s, Retorno: %d\n",etiqueta,donde_retornar);
+	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, etiqueta, pcbActual->codeIndex->etiquetas_size);
+	printf("Indice de la funcion: %d\n",pos);
+	/*crearNuevoContexto(pcbActual);
+	contexto* contexto = getContextoActual();
+	contexto->retPos = pcbActual->programCounter;
+	pcbActual->programCounter = pos;*/
 }
 
 void ml_finalizar(void){
@@ -207,6 +213,7 @@ void ml_finalizar(void){
 
 void ml_retornar(t_valor_variable retorno){
 	printf("\nEjecutando Retornar, valor de retorno: %d\n",retorno);
+	/*destruirContextoActual(pcbActual);*/
 }
 
 void ml_entradaSalida(t_nombre_dispositivo dispositivo, int tiempo){
