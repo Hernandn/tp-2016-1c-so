@@ -74,7 +74,7 @@ int inicializar_programa(uint32_t pid, uint32_t paginas, char* contenido){
 	return resultado;
 }
 
-char* leer_pagina(uint32_t pagina, uint32_t tamanio){
+char* leer_pagina(uint32_t pagina, uint32_t offset, uint32_t tamanio){
 
 	char *buffer=NULL,
 		 *parametros_serializados;
@@ -82,7 +82,7 @@ char* leer_pagina(uint32_t pagina, uint32_t tamanio){
 	int tamanio_uint32=sizeof(uint32_t);
 
 	logDebug("Se solicito leer %d bytes de la pagina %d",tamanio,pagina);
-	parametros_serializados=serializar_parametros(2, tamanio_uint32, (void*)&pagina, tamanio_uint32, (void*)&tamanio);
+	parametros_serializados=serializar_parametros(3, tamanio_uint32, (void*)&pagina, tamanio_uint32, (void*) &offset, tamanio_uint32, (void*)&tamanio);
 
 	enviarMensajeSocketConLongitud(*socket_umc,LEER_PAGINA_UMC,parametros_serializados,tamanio_uint32*2);
 	if(recieve_and_deserialize(package,*socket_umc) > 0)
@@ -99,7 +99,7 @@ char* leer_pagina(uint32_t pagina, uint32_t tamanio){
 	return buffer;
 }
 
-int escribir_pagina(uint32_t pagina, uint32_t tamanio, char* buffer){
+int escribir_pagina(uint32_t pagina, uint32_t offset, uint32_t tamanio, char* buffer){
 
 	char* parametros_serializados;
 	Package* package;
@@ -107,7 +107,7 @@ int escribir_pagina(uint32_t pagina, uint32_t tamanio, char* buffer){
 	int tamanio_uint32=sizeof(uint32_t);
 
 	logDebug("Se solicito escribir %d bytes en la pagina %d. Contenido: %s",tamanio,pagina,buffer);
-	parametros_serializados=serializar_parametros(3, tamanio_uint32, (void*)&pagina, tamanio_uint32, (void*)&tamanio, tamanio, (void*)buffer);
+	parametros_serializados=serializar_parametros(4, tamanio_uint32, (void*)&pagina, tamanio_uint32, (void*)&offset, tamanio_uint32, (void*)&tamanio, tamanio, (void*)buffer);
 
 	enviarMensajeSocketConLongitud(*socket_umc,ESCRIBIR_PAGINA_UMC,parametros_serializados,tamanio_uint32*2);
 	if(recieve_and_deserialize(package,*socket_umc) > 0)
