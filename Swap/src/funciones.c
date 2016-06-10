@@ -140,7 +140,7 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 
 	} else if(package->msgCode==ELIMINAR_PROGRAMA_SWAP){
 
-		int pid = atoi(package->message);
+		int pid = getProcessID_EliminarPrograma(package->message);
 		eliminarPrograma(pid);
 		logDebug("Programa PID:%d ha sido eliminado",pid);
 		enviarMensajeSocket(socketUMC,ELIMINAR_PROGRAMA_SWAP,string_itoa(0));//retorna 0 si pudo eliminar el programa

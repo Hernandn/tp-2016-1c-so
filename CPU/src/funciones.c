@@ -234,7 +234,8 @@ char* getInstruccion(char* codigo, int offset, int length){
 char* getSiguienteInstruccion(){
 	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
 	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
-	return getInstruccion(pcbActual->programa,offset,length);//TODO cambiar por getInstruccionFromUMC cuando ya se pueda pedir a UMC
+	//return getInstruccion(pcbActual->programa,offset,length);//TODO cambiar por getInstruccionFromUMC cuando ya se pueda pedir a UMC
+	return getInstruccionFromUMC(offset,length);
 }
 
 char* getInstruccionFromUMC(int offset, int length){
@@ -263,12 +264,18 @@ char* getInstruccionFromUMC(int offset, int length){
 		char* pedido = pedirCodigoUMC(pagina_num,pagina_offset,restante);
 		memcpy(buffer+buffer_len,pedido,restante);
 		free(pedido);
+		buffer_len += restante;
 	}
+	buffer = realloc(buffer,buffer_len+1);
+	buffer[buffer_len]='\0';//lo convierto en string
 	return buffer;
 }
 
 char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size){
-	return NULL;//TODO llamar a leerpagina de la UMC
+	char* contenido = NULL;
+	int resultado = leer_pagina(pagina,offset,size,&contenido);
+	printf("\n****** RESULTADO LECTURA %d *******\n",resultado);
+	return contenido;//TODO llamar a leerpagina de la UMC
 }
 
 void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){

@@ -202,7 +202,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 	while(sigue){
 		package_receive = createPackage();
 		if(recieve_and_deserialize(package_receive,*socket_cpu) > 0){
-			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package_receive->msgCode, package_receive->message);
+			logDebug("CPU envía [message code]: %d", package_receive->msgCode);
 
 			switch(package_receive->msgCode){
 
@@ -211,7 +211,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 					//enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 
-					contenido_lectura=NULL;
+					contenido_lectura=NULL;//TODO esto no se esta liberando (me tira error aveces si le hago free)
 					result = leer_pagina(package_receive->message,&contenido_lectura);
 
 					//Si la operacion salio bien result es el tamanio de contenido leido
@@ -292,7 +292,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 	while(sigue){
 		package = malloc(sizeof(Package));
 		if(recieve_and_deserialize(package,*socket_nucleo) > 0){
-			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
+			logDebug("Nucleo envía [message code]: %d", package->msgCode);
 
 			switch(package->msgCode){
 

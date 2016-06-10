@@ -122,9 +122,12 @@ uint32_t obtener_marco_libre(){
 
 void agregar_pagina_a_memoria(uint32_t pid, uint32_t dir_logica, char* pagina){
 
-	uint32_t dir_fisica = obtener_marco_libre() * config->size_pagina;	//Todo No contemplo que no encuentre marco libre
+	int marco_libre = obtener_marco_libre();
+	uint32_t dir_fisica = marco_libre * config->size_pagina;	//Todo No contemplo que no encuentre marco libre
 
 	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
+
+	bitarray_set_bit(memoria_principal.bitmap,marco_libre);
 
 	cargar_dir_tabla(dir_logica, dir_fisica);
 }
@@ -141,6 +144,8 @@ void copiar_pagina_a_memoria(uint32_t dir_logica){
 	if(!pagina) return;	//Todo ver de poner un error copado
 
 	agregar_pagina_a_memoria(pid,dir_logica,pagina);
+
+	free(pagina);
 }
 
 uint32_t obtener_dir_fisica(uint32_t dir_logica){
@@ -247,10 +252,6 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 	if(dir_fisica<0) return dir_fisica;
 
 	memcpy(mem,contenido,tamanio);
-
-	for(i=0; i<cant_paginas; i++){
-		bitarray_set_bit(memoria_principal.bitmap,nro_de_marco_desde_dir_fisica(dir_fisica));
-	}
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
