@@ -374,12 +374,8 @@ uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length){
 	uint32_t total = 0;
 	int i;
 	for(i=0; i<contextos_length; i++){
-		total += sizeof(variable)*contextos[i].arg_len;
 		total += sizeof(uint32_t);
-		total += sizeof(variable)*contextos[i].var_len;
-		total += sizeof(uint32_t);
-		total += sizeof(t_puntero_instruccion);
-		total += sizeof(dir_memoria);
+		total += getLong_contexto(&(contextos[i]));
 	}
 	return total;
 }
@@ -406,21 +402,40 @@ contexto* deserializar_stack(char* serialized, uint32_t contextos_length){
 void crearNuevoContexto(PCB* pcb){
 	pcb->stackIndex = realloc(pcb->stackIndex,sizeof(contexto)*(pcb->context_len+1));
 	pcb->stackIndex[pcb->context_len].arg_len = 0;
+	pcb->stackIndex[pcb->context_len].argumentos = NULL;
 	pcb->stackIndex[pcb->context_len].var_len = 0;
+	pcb->stackIndex[pcb->context_len].variables = NULL;
 	pcb->context_len++;
 }
 
-void destruirContextoActual(PCB* pcb){
-	pcb->programCounter = pcb->stackIndex[pcb->context_len-1].retPos;
+void destruirContextoActual(PCB* pcb, int size_pagina){
 	pcb->context_len--;
+	contexto* contextoActual = &(pcb->stackIndex[pcb->context_len]);
+	//pongo el program counter en la direccion de retorno de la funcion
+	pcb->programCounter = contextoActual->retPos;
+	//libero variables y argumentos
+	if(contextoActual->variables!=NULL){
+		free(contextoActual->variables);
+	}
+	if(contextoActual->argumentos!=NULL){
+		free(contextoActual->argumentos);
+	}
+	//reestablezco el valor del stack offset para que se pueda volver a usar el espacio para crear variables
+	pcb->stackOffset -= (contextoActual->var_len*sizeof(uint32_t));
+	pcb->stackOffset -= (contextoActual->arg_len*sizeof(uint32_t));
+	//libero el ultimo contexto
 	pcb->stackIndex = realloc(pcb->stackIndex,sizeof(contexto)*(pcb->context_len));
 }
 
 void destroy_stackIndex(contexto* contexto, uint32_t context_len){
 	int i;
 	for(i=0; i<context_len; i++){
-		free(contexto[i].variables);
-		free(contexto[i].argumentos);
+		if(contexto[i].variables!=NULL){
+			free(contexto[i].variables);
+		}
+		if(contexto[i].argumentos!=NULL){
+			free(contexto[i].argumentos);
+		}
 	}
 	free(contexto);
 }
@@ -510,6 +525,13 @@ void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb){
 	char* serialized = serializarPCB(pcb);
 	uint32_t longitud = getLong_PCB(pcb);
 	enviarMensajeSocketConLongitud(socketNucleo,CONTEXT_SWITCH_FINISHED,serialized,longitud);
+	free(serialized);
+}
+
+void informarNucleoCPUdisconnectedBySignal(int socketNucleo, PCB* pcb){
+	char* serialized = serializarPCB(pcb);
+	uint32_t longitud = getLong_PCB(pcb);
+	enviarMensajeSocketConLongitud(socketNucleo,CPU_SIGNAL_DISCONNECTED,serialized,longitud);
 	free(serialized);
 }
 

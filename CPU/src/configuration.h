@@ -18,6 +18,7 @@
 #include <commons/config.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define CPU_CONFIG_PATH "../cpu.conf"
 #define CPU_CONFIG_PATH_ECLIPSE "cpu.conf"

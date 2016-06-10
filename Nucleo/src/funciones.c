@@ -414,6 +414,9 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		int socketConsola = getFromEXEC(args->estados,print->pid)->consolaFD;
 		enviarMensajeSocket(socketConsola,PRINT_TEXT,print->text);
 		destroy_print_text(print);
+	} else if(package->msgCode==CPU_SIGNAL_DISCONNECTED){
+		PCB* pcbActualizado = deserializar_PCB(package->message);
+		contextSwitchFinishedCallback(args->estados,pcbActualizado);
 	}
 }
 

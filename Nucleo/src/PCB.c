@@ -21,12 +21,16 @@
 #include "planificador.h"
 
 int pidActual = 1;
+t_list* consolas_desconectadas;
 
 //mutex de colas/listas de estados
 pthread_mutex_t executeMutex;
 pthread_mutex_t exitMutex;
 pthread_mutex_t newMutex;
 pthread_mutex_t readyMutex;
+
+//lista consolas desconectadas mutex
+pthread_mutex_t discConsoleMutex;
 
 //array de mutex para cada dispositivo de entrada/salida (para ejecutar la instruccion IO)
 pthread_mutex_t* io_mutex_array;
@@ -94,6 +98,11 @@ Estados* inicializarEstados(){
 	pthread_mutex_init(&exitMutex,NULL);
 	pthread_mutex_init(&newMutex,NULL);
 	pthread_mutex_init(&readyMutex,NULL);
+	pthread_mutex_init(&discConsoleMutex,NULL);
+
+	//inicializo lista de consolas (socket FD) que se desconectaron
+	//cuando el programa entro en bloqueo por solicitud IO
+	consolas_desconectadas = list_create();
 
 	return estados;
 }
@@ -397,7 +406,14 @@ void abortarPrograma(Estados* estados, int consolaFD){
 	bool encontrado = findAndExitPCBnotExecuting(estados,consolaFD);
 	//si no lo encuentra, lo busca en la lista de EXEC
 	if(!encontrado){
-		findAndExitPCBexecuting(estados,consolaFD);
+		encontrado = findAndExitPCBexecuting(estados,consolaFD);
+	}
+	if(!encontrado){//porque esta en el medio de una ejecucion de IO
+		pthread_mutex_lock(&readyMutex);
+		int* consola_p = malloc(sizeof(int));
+		*consola_p = consolaFD;
+		list_add(consolas_desconectadas,consola_p);
+		pthread_mutex_unlock(&readyMutex);
 	}
 }
 
@@ -453,8 +469,9 @@ bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD){
 	return encontrado;
 }
 
-void findAndExitPCBexecuting(Estados* estados, int consolaFD){
+bool findAndExitPCBexecuting(Estados* estados, int consolaFD){
 	int i;
+	bool encontrado = false;
 	PCB* pcb;
 	//busco en EXEC
 	pthread_mutex_lock(&executeMutex);
@@ -464,9 +481,13 @@ void findAndExitPCBexecuting(Estados* estados, int consolaFD){
 			pcb->consolaActiva = false;
 			//otro metodo se encarga de validar este flag
 			//para abortarlo cuando termine la ejecucion actual
+			encontrado = true;
+			break;
 		}
 	}
 	pthread_mutex_unlock(&executeMutex);
+
+	return encontrado;
 }
 
 void informarPlanificador(int accion, int pid){
@@ -601,8 +622,14 @@ void ejecutarIO(void* arguments){
 
 		pthread_mutex_unlock(&io_mutex_array[io_index]);
 
-		//mando el proceso a ready
-		notifyProcessREADY(estados, solicitud->pcb);
+
+		if(consola_desconectada(solicitud->pcb->consolaFD)){
+			sendToEXIT(solicitud->pcb,estados);
+			enviarMensajeSocket(socketPlanificador,ABORTAR_PROGRAMA,"");
+		} else {
+			//mando el proceso a ready
+			notifyProcessREADY(estados, solicitud->pcb);
+		}
 
 		//libero la solicitud
 		free_solicitud_io(solicitud);
@@ -643,4 +670,20 @@ void free_solicitud_io(solicitud_io* solicitud){
 	free(solicitud);
 }
 
+bool consola_desconectada(int consoleFD){
+	bool encontrado = false;
+	int i;
+	int* consola_aux;
+	pthread_mutex_lock(&discConsoleMutex);
+	for(i=0; i<consolas_desconectadas->elements_count; i++){
+		consola_aux = list_get(consolas_desconectadas,i);
+		if(*consola_aux==consoleFD){
+			list_remove(consolas_desconectadas,i);
+			encontrado = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&discConsoleMutex);
+	return encontrado;
+}
 
