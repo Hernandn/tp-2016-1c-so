@@ -39,21 +39,29 @@ static void deserializar_parametros(int cant_parametros, char* mensaje, ...){
 int inicializar_programa(char* mensaje_serializado){
 
 	uint32_t pid, cant_paginas;
-	char *contenido=NULL;
-	int resultado, i;
+	char *contenido=NULL,		//Puntero donde se deserializa el codigo del programa
+		 *tmp=NULL;				//Puntero a buffer multiplo de tamanio de pagina para compatibilizar el programa
+	int resultado, i, tamanio_pagina = config->size_pagina;
 
-	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, (int)(cant_paginas*config->size_pagina), (void*) contenido);
+	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, (int)(cant_paginas*tamanio_pagina), (void*) contenido);
 
 	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
 
 	if((resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas)) == 0){
 
+		//Guardo el codigo en un buffer de tamanio multipo de tamanio de pagina
+		tmp = malloc(tamanio_pagina * cant_paginas);
+		memcpy(tmp,contenido,strlen(contenido));
+
 		//Si hay espacio mando las paginas una por una y creo la tabla de paginas
 		for(i=0; i<cant_paginas; i++){
-			escribirPaginaSwap(pid,i,config->size_pagina,contenido + (i * config->size_pagina));
+			escribirPaginaSwap(pid,i,tamanio_pagina,tmp + (i * tamanio_pagina));
 		}
 		crear_tabla_de_paginas(pid,cant_paginas);
 	}
+
+	free(tmp);
+	free(contenido);
 
 	return resultado;
 }

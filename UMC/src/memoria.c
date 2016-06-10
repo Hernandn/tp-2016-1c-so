@@ -66,10 +66,11 @@ uint32_t obtener_dir_fisisca_tabla(uint32_t dir_logica){
 		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
 	}
 
-	if((tabla_buscada=list_find(tablas_de_paginas,tabla_valida))) return -1;
-	if((fila_buscada=list_find(tabla_buscada->filas,tabla_valida))) return -2; //Quiere entrar a una posicion que no le pertenece
+	if((tabla_buscada=list_find(tablas_de_paginas,tabla_valida))) return -3;	//No existe la tabla del proceso, estamos hasta las manos
+	if(dir_logica > tabla_buscada->tamanio) return -2; //Quiere entrar a una posicion que no le pertenece
+	if((fila_buscada=list_find(tabla_buscada->filas,tabla_valida))) return -1;	//No se encontro la fila, por lo que la pagina no esta en memoria
 
-	return 0;
+	return fila_buscada->numero_marco;
 }
 
 void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
@@ -111,7 +112,7 @@ uint32_t obtener_marco_libre(){
 
 void agregar_pagina_a_memoria(uint32_t pid, uint32_t dir_logica, char* pagina){
 
-	uint32_t dir_fisica = obtener_marco_libre();	//Todo No contemplo que no encuentre marco libre
+	uint32_t dir_fisica = obtener_marco_libre() * config->size_pagina;	//Todo No contemplo que no encuentre marco libre
 
 	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
 
@@ -219,7 +220,7 @@ int obtener_contenido_memoria(char** contenido, uint32_t dir_logica, uint32_t of
 
 	memcpy(*contenido,mem,tamanio);
 
-	return 0;
+	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que lei
 }
 
 int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t tamanio, char* contenido){
@@ -238,5 +239,5 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 		bitarray_set_bit(memoria_principal.bitmap,nro_de_pagina(dir_fisica+i));
 	}
 
-	return 0;
+	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
