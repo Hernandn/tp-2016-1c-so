@@ -2,7 +2,7 @@ CC=gcc
 TARGET=UMC
 HEADERS=$(wildcard *.h)
 OBJECTS=$(patsubst %.c, %.o, $(wildcard *.c))
-LIBS=-lmllibs -lcommons -lparser-ansisop
+LIBS=-lmllibs -lcommons -lpthread -lparser-ansisop
 TARGET_PATH=$(shell pwd)
 
 all: $(TARGET)
