@@ -10,6 +10,7 @@
 
 #include "configuration.h"
 #include <mllibs/nucleoCpu/interfaz.h>
+#include <mllibs/umc/interfaz.h>
 
 //codigos de operaciones de la UMC
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas

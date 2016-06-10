@@ -2,7 +2,7 @@
 begin
 variables f, i, t
 	i=0
-	f=20
+	f=5
 	:inicio
 	i=i+1
 	print i

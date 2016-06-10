@@ -107,6 +107,15 @@ t_puntero_instruccion obtenerIndiceInstruccion(char* serialized, char* label, t_
 	return pos;
 }
 
+int escribir_variable_en_umc(uint32_t variable, dir_memoria* dir){
+	char* buffer = malloc(sizeof(char)*sizeof(uint32_t));
+	memcpy(buffer,&variable,sizeof(uint32_t));
+	int resultado = escribir_pagina(dir->pagina,dir->offset,dir->size,buffer);
+	printf("\n****** RESULTADO ESCRITURA %d *******\n",resultado);
+	free(buffer);
+	return resultado;
+}
+
 
 //************************************************************
 //						PRIMITIVAS
@@ -130,7 +139,8 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 		dir = contexto->variables[contexto->var_len-1].direccion;
 	}
 
-
+	uint32_t variable;//variable sin inicializar para guardar el valor (basura) en la UMC
+	escribir_variable_en_umc(variable,&dir);//ignorar el warning
 
 	/*enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
 	printf("Enviando escritura de Bytes a UMC\n");
@@ -168,19 +178,27 @@ t_valor_variable ml_dereferenciar(t_puntero puntero) {
 
 	dir_memoria* dir = puntero_a_direccion_logica(puntero);
 	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+	char* contenido = NULL;
+	int resultado = leer_pagina(dir->pagina,dir->offset,dir->size,&contenido);
+	printf("\n****** RESULTADO LECTURA %d *******\n",resultado);
+
+	uint32_t valor = -1;
+	if(resultado>0){
+		memcpy(&valor,contenido,sizeof(uint32_t));
+	}
 	free(dir);
 
-	return CONTENIDO_VARIABLE;
+	return valor;
 }
 
 void ml_asignar(t_puntero puntero, t_valor_variable variable) {
 	printf("Asignando en %d el valor %d\n", puntero, variable);
-	/*printf("Enviando escritura de Bytes a UMC\n");
-	enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
-	analizarRespuestaUMC();*/
 
 	dir_memoria* dir = puntero_a_direccion_logica(puntero);
 	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+
+	escribir_variable_en_umc(variable,dir);
+
 	free(dir);
 }
 
@@ -237,8 +255,11 @@ void ml_finalizar(void){
 
 void ml_retornar(t_valor_variable retorno){
 	printf("\nEjecutando Retornar\n");
-	printf("Escribir en variable (%d,%d,%d) el valor de retorno: %d",getContextoActual()->retVar.pagina,getContextoActual()->retVar.offset,getContextoActual()->retVar.size,retorno);
-	//TODO: escribir en la posicion de la variable de retorno del contexto actual el valor "retorno"
+	dir_memoria* dir = &(getContextoActual()->retVar);
+	printf("Escribir en variable (%d,%d,%d) el valor de retorno: %d",dir->pagina,dir->offset,dir->size,retorno);
+
+	escribir_variable_en_umc(retorno,dir);
+
 	destruirContextoActual(pcbActual,size_pagina);
 }
 

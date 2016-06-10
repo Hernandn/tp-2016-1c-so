@@ -12,8 +12,8 @@
 #ifndef NUCLEO_H_
 #define NUCLEO_H_
 
-#define MAX_CPUS 10	//cantidad de CPUs que se pueden conectar
-#define MAX_CONSOLAS 10	//cantidad de Consolas que se pueden conectar
+#define MAX_CPUS 20	//cantidad de CPUs que se pueden conectar
+#define MAX_CONSOLAS 20	//cantidad de Consolas que se pueden conectar
 
 //codigos de operaciones de la Consola
 //esto tenemos que ver bien despues que decidimos hacer para codificarlas

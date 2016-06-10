@@ -130,15 +130,33 @@ void inicializarSockets(int* sockets){
 
 void finalizarProg(Estados* estados, Package* package){
 	PCB* pcb = removeNextFromEXIT(estados);
-	int consolaFD = pcb->consolaFD;
-	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
-	destroyPCB(pcb);
-	logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
-	enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");
+
+	while(pcb != NULL){
+		int consolaFD = pcb->consolaFD;
+
+		//finalizar en UMC y Swap
+		int resultado = finalizar_programa(pcb->processID);
+		logTrace("Solicitar UMC finalizar el programa PID:%d, resultado:%d",pcb->processID,resultado);
+
+		logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
+		destroyPCB(pcb);
+
+		if(pcb->consolaActiva){
+			logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
+			enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");
+		}
+		pcb = removeNextFromEXIT(estados);
+	}
+
 }
 
 void abortarProg(Estados* estados){
 	PCB* pcb = removeNextFromEXIT(estados);
-	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
-	destroyPCB(pcb);
+
+	while(pcb != NULL){
+		logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
+		destroyPCB(pcb);
+		pcb = removeNextFromEXIT(estados);
+	}
+
 }

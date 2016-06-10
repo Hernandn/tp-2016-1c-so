@@ -34,8 +34,8 @@ int cant_paginas_afectadas(uint32_t offset, uint32_t tamanio){
 	return (offset+tamanio)/config->size_pagina +1;
 }
 
-int nro_de_pagina(uint32_t dir_fisica){
-	return dir_fisica/config->size_pagina +1;
+int nro_de_marco_desde_dir_fisica(uint32_t dir_fisica){
+	return dir_fisica/config->size_pagina;
 }
 
 uint32_t obtener_dir_fisica_tlb(uint32_t dir_logica){
@@ -66,9 +66,17 @@ uint32_t obtener_dir_fisisca_tabla(uint32_t dir_logica){
 		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
 	}
 
-	if((tabla_buscada=list_find(tablas_de_paginas,tabla_valida))) return -3;	//No existe la tabla del proceso, estamos hasta las manos
-	if(dir_logica > tabla_buscada->tamanio) return -2; //Quiere entrar a una posicion que no le pertenece
-	if((fila_buscada=list_find(tabla_buscada->filas,tabla_valida))) return -1;	//No se encontro la fila, por lo que la pagina no esta en memoria
+	tabla_buscada=list_find(tablas_de_paginas,tabla_valida);
+	if(tabla_buscada==NULL){
+		return -3;	//No existe la tabla del proceso, estamos hasta las manos
+	}
+	if(dir_logica > tabla_buscada->tamanio){
+		return -2; //Quiere entrar a una posicion que no le pertenece
+	}
+	fila_buscada=list_find(tabla_buscada->filas,fila_valida);
+	if(fila_buscada==NULL){
+		return -1;	//No se encontro la fila, por lo que la pagina no esta en memoria
+	}
 
 	return fila_buscada->numero_marco;
 }
@@ -85,16 +93,18 @@ void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
 	bool fila_valida(void* fila){
 		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
 	}
-	crearListaDeTablas();
-	tabla=list_find(tablas_de_paginas,fila_valida);	//La tabla a esta altura tiene que existir
+	//crearListaDeTablas(); no se por que estaba esto aca pero lo comento porque se esta volviendo a crear la lista y se borra lo anterior
+	tabla=list_find(tablas_de_paginas,tabla_valida);	//La tabla a esta altura tiene que existir
 
-	if(!(fila=list_find(tabla->filas,tabla_valida)))	//La fila puede no existir, la tabla se crea vacia
+	if(!(fila=list_find(tabla->filas,fila_valida))){
+		//La fila puede no existir, la tabla se crea vacia
 		fila=malloc(sizeof(t_fila_tabla));
+		list_add(tabla->filas,(void*)fila);
+	}
+
 	fila->modificacion=0;
 	fila->numero_pagina=dir_logica;
 	fila->numero_marco=dir_fisica;
-	list_add(tabla->filas,(void*)fila);
-
 }
 
 uint32_t obtener_marco_libre(){
@@ -103,7 +113,7 @@ uint32_t obtener_marco_libre(){
 	char bit_no_encontrado=1;
 
 	while(i < config->cantidad_paginas && bit_no_encontrado){
-		if(bitarray_test_bit(memoria_principal.bitmap,i)) bit_no_encontrado = 0;
+		if(bitarray_test_bit(memoria_principal.bitmap,i)==0) bit_no_encontrado = 0;
 		else i++;
 	}
 
@@ -239,7 +249,7 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 	memcpy(mem,contenido,tamanio);
 
 	for(i=0; i<cant_paginas; i++){
-		bitarray_set_bit(memoria_principal.bitmap,nro_de_pagina(dir_fisica+i));
+		bitarray_set_bit(memoria_principal.bitmap,nro_de_marco_desde_dir_fisica(dir_fisica));
 	}
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi

@@ -112,7 +112,6 @@ void handleConsolas(void* arguments){
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
 		select (maximo + 1, &descriptoresLectura, NULL, NULL, NULL);
-		imprimirArraySockets(socketCliente,MAX_CONSOLAS);
 		/* Se comprueba si algún cliente ya conectado ha enviado algo */
 		for (i=0; i<numeroClientes; i++)
 		{
@@ -124,7 +123,6 @@ void handleConsolas(void* arguments){
 					logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					if(package->msgCode==NEW_ANSISOP_PROGRAM){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
-						comunicarCPU(args->cpuSockets);
 						iniciarPrograma(estados,socketCliente[i],package->message);
 					}
 					destroyPackage(package);

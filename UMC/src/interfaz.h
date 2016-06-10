@@ -16,7 +16,7 @@
 #include "memoria.h"
 
 int inicializar_programa(char*);
-int leer_pagina(char*, char*);
+int leer_pagina(char*, char**);
 int escribir_pagina(char*);
 int finalizar_programa(char*);
 void nuevo_pid(char*);

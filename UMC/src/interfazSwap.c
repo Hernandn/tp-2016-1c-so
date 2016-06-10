@@ -35,7 +35,7 @@ static int comunicar_con_swap(char accion, char* buffer, uint32_t longitud, Pack
 			 * se reestablece solo pedis el codigo en vez de volver a pedir memoria.
 			 */
 			comunicacion_no_exitosa = 0;
-
+			result = 0;
 		}else{
 			conectarConSwap();
 			destroyPackage(paquete_recibido);
@@ -141,7 +141,7 @@ int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas){
 	char* buffer;
 	int longitud,
 		result;
-	Package **respuesta=NULL;
+	Package **respuesta = malloc(sizeof(Package*));
 
 	buffer = serializar_NuevoPrograma(pid,cant_paginas);
 	longitud = getLong_NuevoPrograma();
@@ -158,15 +158,23 @@ char* leerPaginaSwap(uint32_t pid, uint32_t nro_pagina){
 	char* buffer;
 	int longitud,
 		result;
-	Package **respuesta=NULL;
+	Package **respuesta = malloc(sizeof(Package*));
 
 	buffer = serializar_SolicitarPagina(pid,nro_pagina);
 	longitud = getLong_SolicitarPagina();
 
-	result = comunicar_con_swap(ELIMINAR_PROGRAMA_SWAP,buffer,longitud,respuesta);
+	result = comunicar_con_swap(SOLICITAR_PAGINA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return result == 0 ? (*respuesta)->message : NULL;	//Todo averiguar como hago para saber si me mando una pagina o un error
+	char* respuesta_lectura = malloc(config->size_pagina);
+	memcpy(respuesta_lectura,(*respuesta)->message,config->size_pagina);
+
+	if(result==0){
+		destroyPackage(*respuesta);
+	}
+	free(respuesta);
+
+	return result == 0 ? respuesta_lectura : NULL;	//Todo averiguar como hago para saber si me mando una pagina o un error
 }
 
 int escribirPaginaSwap(uint32_t pid, uint32_t nro_pagina, uint32_t tamanio, char* pagina){
@@ -174,15 +182,22 @@ int escribirPaginaSwap(uint32_t pid, uint32_t nro_pagina, uint32_t tamanio, char
 	char* buffer;
 	int longitud,
 		result;
-	Package **respuesta=NULL;
+	Package **respuesta = malloc(sizeof(Package*));
 
 	buffer = serializar_EscribirPagina(pid,nro_pagina,pagina,tamanio);
-	longitud = getLong_EliminarPrograma();
+	longitud = getLong_EscribirPagina(tamanio);
 
-	result = comunicar_con_swap(ELIMINAR_PROGRAMA_SWAP,buffer,longitud,respuesta);
+	result = comunicar_con_swap(ALMACENAR_PAGINA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return result == 0 ? atoi((*respuesta)->message) : -1;
+	int resultado_escritura = atoi((*respuesta)->message);
+
+	if(result==0){
+		destroyPackage(*respuesta);
+	}
+	free(respuesta);
+
+	return result == 0 ? resultado_escritura : -1;
 
 }
 
@@ -191,7 +206,7 @@ int finalizarProgramaSwap(uint32_t pid){
 	char* buffer;
 	int longitud,
 		result;
-	Package **respuesta=NULL;
+	Package **respuesta = malloc(sizeof(Package*));
 
 	buffer = serializar_EliminarPrograma(pid);
 	longitud = getLong_EliminarPrograma();
@@ -199,7 +214,14 @@ int finalizarProgramaSwap(uint32_t pid){
 	result = comunicar_con_swap(ELIMINAR_PROGRAMA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return result == 0 ? atoi((*respuesta)->message) : -1;
+	int resultado_finalizar = atoi((*respuesta)->message);
+
+	if(result==0){
+		destroyPackage(*respuesta);
+	}
+	free(respuesta);
+
+	return result == 0 ? resultado_finalizar : -1;
 
 }
 

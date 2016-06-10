@@ -250,7 +250,9 @@ PCB* removeNextFromEXIT(Estados* estados){
 	pthread_mutex_lock(&exitMutex);
 	PCB* pcb = queue_pop(estados->exit);
 	pthread_mutex_unlock(&exitMutex);
-	logTrace("Plan: PCB:%d / EXIT -> fin",pcb->processID);
+	if(pcb!=NULL){
+		logTrace("Plan: PCB:%d / EXIT -> fin",pcb->processID);
+	}
 	return pcb;
 }
 
@@ -388,7 +390,7 @@ void iniciarPrograma(Estados* estados, int consolaFD, char* programa){
 	logDebug("Se necesitan %d paginas para almacenar el programa",pagsNecesarias);
 
 	int resultado = inicializar_programa(nuevo->processID,pagsNecesarias,programa);
-	logDebug("Enviado inicio de programa a UMC. Resultado: %d",resultado);
+	printf("Enviado inicio de programa a UMC. Resultado: %d",resultado);
 
 	//pagina* paginas = getPaginasFromPrograma(programa,size_pagina);
 	//destroyPaginas(paginas,pagsNecesarias-stack_size);

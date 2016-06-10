@@ -39,11 +39,15 @@ static void deserializar_parametros(int cant_parametros, char* mensaje, ...){
 int inicializar_programa(char* mensaje_serializado){
 
 	uint32_t pid, cant_paginas;
+	uint32_t size_programa;
 	char *contenido=NULL,		//Puntero donde se deserializa el codigo del programa
 		 *tmp=NULL;				//Puntero a buffer multiplo de tamanio de pagina para compatibilizar el programa
 	int resultado, i, tamanio_pagina = config->size_pagina;
 
-	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, (int)(cant_paginas*tamanio_pagina), (void*) contenido);
+	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, sizeof(uint32_t), (void*) &size_programa);
+	contenido = malloc(sizeof(char)*size_programa);
+	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,size_programa);
+
 
 	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
 
@@ -66,7 +70,7 @@ int inicializar_programa(char* mensaje_serializado){
 	return resultado;
 }
 
-int leer_pagina(char* mensaje_serializado, char* contenido){
+int leer_pagina(char* mensaje_serializado, char** contenido){
 
 	uint32_t dir, offset, tamanio;
 
@@ -74,7 +78,7 @@ int leer_pagina(char* mensaje_serializado, char* contenido){
 
 	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
 
-	return obtener_contenido_memoria(&contenido, dir, offset, tamanio);
+	return obtener_contenido_memoria(contenido, dir, offset, tamanio);
 }
 
 int escribir_pagina(char* mensaje_serializado){
@@ -82,7 +86,9 @@ int escribir_pagina(char* mensaje_serializado){
 	uint32_t dir, offset, tamanio;
 	char* contenido=NULL;
 
-	deserializar_parametros(4, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio, sizeof(char*), (void*) contenido);
+	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
+	contenido = malloc(sizeof(char)*tamanio);
+	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,tamanio);
 
 	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, contenido);
 

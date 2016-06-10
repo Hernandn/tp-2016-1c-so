@@ -61,6 +61,8 @@ void conectarConUMC(void* arguments){
 	//Le aviso a la UMC que soy un nucleo
 	enviarMensajeSocket(socket,HANDSHAKE_CPU,"");
 	logDebug("Handshake con UMC exitoso!!");
+
+	definir_socket_umc(&socketUMC);
 }
 
 void iniciarEjecucionCPU(void* arguments){
@@ -106,10 +108,7 @@ void iniciarEjecucionCPU(void* arguments){
 }
 
 void analizarMensaje(Package* package, arg_struct *args){
-	if(package->msgCode==NEW_ANSISOP_PROGRAM){
-		logDebug("El Nucleo me comunica que se creo un programa nuevo.");
-		enviarMensajeSocket(socketUMC,INIT_PROGRAM,"INITPROGRAM");//envio mensaje a la UMC
-	} else if(package->msgCode==EXEC_NEW_PROCESS){
+	if(package->msgCode==EXEC_NEW_PROCESS){
 		cargarContextoPCB(package);
 		ejecutarProceso(args);
 	} else if(package->msgCode==QUANTUM_SLEEP_CPU){
@@ -133,6 +132,8 @@ void contextSwitch(){
 void cargarContextoPCB(Package* package){
 	pcbActual = deserializar_PCB(package->message);
 	logTrace("Contexto de proceso cargado PID:%d...",pcbActual->processID);
+	nuevo_pid(pcbActual->processID);
+
 
 	printf("Instruccion inicio %d\n",pcbActual->codeIndex->instruccion_inicio);
 	printf("Instruccion size %d\n",pcbActual->codeIndex->instrucciones_size);

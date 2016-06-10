@@ -11,14 +11,14 @@ begin
 end
 
 function doble
-	variables f,g,h,i,j,k,l,m
+	variables f
     f = $0 + $0
     f <- doble2 f
     return f
 end
 
 function doble2
-	variables f,g,h,i,j,k,l,m
+	variables f
     f = $0 + $0
     return f
 end

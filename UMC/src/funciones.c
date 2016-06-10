@@ -206,23 +206,13 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 
 			switch(package_receive->msgCode){
 
-				case INIT_PROGRAM:
-
-					logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-					comunicarSWAP(NUEVO_PROGRAMA_SWAP);
-					/*
-					result = inicializar_programa(package_receive->message);
-					enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
-					break;
-
 				case SOLICITAR_BYTES_PAGINA:
 
 					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-					enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
-					/*
+					//enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
+
 					contenido_lectura=NULL;
-					result = leer_pagina(package_receive->message,contenido_lectura);
+					result = leer_pagina(package_receive->message,&contenido_lectura);
 
 					//Si la operacion salio bien result es el tamanio de contenido leido
 					if(result > 0){
@@ -232,22 +222,29 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 						memcpy(result_serializado,&result,sizeof(uint32_t));
 						memcpy(result_serializado+sizeof(uint32_t),contenido_lectura,result);
 
-						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,result_serializado,result);
+						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,result_serializado,sizeof(uint32_t)+result);
 						free(result_serializado);
 
 					}else
 						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
+
 					break;
 
 				case ALMACENAR_BYTES_PAGINA:
 
 					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-					enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
-					/*
+					//enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
+
 					result = escribir_pagina(package_receive->message);
 					enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
+
+					break;
+
+				case SWITCH_PROCESS:
+
+					logDebug("CPU ha solicitado el cambio de Proceso");
+					nuevo_pid(package_receive->message);
+
 			}
 
 		} else {
@@ -314,8 +311,8 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 
-					enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
-					/*
+					/*enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
+
 					contenido_lectura=NULL;
 					result = leer_pagina(package->message,contenido_lectura);
 
@@ -339,8 +336,8 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
 
-					enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
-					/*
+					/*enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
+
 					result = escribir_pagina(package->message);
 					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
 					*/
@@ -348,10 +345,10 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 				case END_PROGRAM:
 					logDebug("Se ha solicitado la finalizacion de un programa.");
-					/*
+
 					result = finalizar_programa(package->message);
 					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
+
 			}
 
 		} else {
