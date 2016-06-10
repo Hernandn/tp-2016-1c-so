@@ -24,7 +24,7 @@ typedef char* pagina;
 
 //Interfaz---------------------------------------------
 int inicializar_programa(uint32_t,uint32_t,char*);
-char* leer_pagina(uint32_t,uint32_t,uint32_t);
+int leer_pagina(uint32_t,uint32_t,uint32_t,char*);
 int escribir_pagina(uint32_t,uint32_t,uint32_t,char*);
 int finalizar_programa(uint32_t);
 void definir_socket_umc(int*);

@@ -29,6 +29,7 @@
 #define ALMACENAR_BYTES_PAGINA 3
 #define END_PROGRAM 4
 #define HANDSHAKE_UMC 5
+#define RESULTADO_OPERACION 5
 #define SWITCH_PROCESS 6
 //---------------------
 //operaciones SWAP

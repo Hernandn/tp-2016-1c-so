@@ -186,9 +186,11 @@ int conectarConSwap(){
 }
 
 void handle_cpu(t_arg_thread_cpu* argumentos){
-	int sigue = 1,	//Ya se, no es muy original que digamos
-		*socket_cpu = &argumentos->socket_cpu;	//Lo guardo en variables para que sea mas comodo de usar
-	Package* package;
+	int sigue = 1,								//Ya se, no es muy original que digamos
+		*socket_cpu = &argumentos->socket_cpu,	//Lo guardo en variables para que sea mas comodo de usar
+		result;
+	Package *package_receive;
+	char* contenido_lectura=NULL, *result_serializado=NULL;
 
 	crear_key_pid();
 
@@ -198,28 +200,62 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 	logDebug("Valor key seteado %d",obtener_pid());
 
 	while(sigue){
-		 package = createPackage();
-		if(recieve_and_deserialize(package,*socket_cpu) > 0){
-			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
-			if(package->msgCode==INIT_PROGRAM){
-				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-				//inicializar_programa(package->message);
-				comunicarSWAP(NUEVO_PROGRAMA_SWAP);
-			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
-				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-				//leer_pagina(package->message);
-				enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
-			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
-				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-				//escribir_pagina(package->message);
-				enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
+		package_receive = createPackage();
+		if(recieve_and_deserialize(package_receive,*socket_cpu) > 0){
+			logDebug("CPU envía [message code]: %d, [Mensaje]: %s\n", package_receive->msgCode, package_receive->message);
+
+			switch(package_receive->msgCode){
+
+				case INIT_PROGRAM:
+
+					logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
+					comunicarSWAP(NUEVO_PROGRAMA_SWAP);
+					/*
+					result = inicializar_programa(package_receive->message);
+					enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
+					break;
+
+				case SOLICITAR_BYTES_PAGINA:
+
+					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
+					enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
+					/*
+					contenido_lectura=NULL;
+					result = leer_pagina(package_receive->message,contenido_lectura);
+
+					//Si la operacion salio bien result es el tamanio de contenido leido
+					if(result > 0){
+
+						//Creo un buffer y serializo el resultado + el contenido leido
+						result_serializado=(char*)malloc(sizeof(uint32_t)+result);
+						memcpy(result_serializado,&result,sizeof(uint32_t));
+						memcpy(result_serializado+sizeof(uint32_t),contenido_lectura,result);
+
+						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,result_serializado,result);
+						free(result_serializado);
+
+					}else
+						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
+					break;
+
+				case ALMACENAR_BYTES_PAGINA:
+
+					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
+					enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
+					/*
+					result = escribir_pagina(package_receive->message);
+					enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
 			}
+
 		} else {
 			//Si el cliente cerro la conexion se termino el thread
 			sigue=0;
 			logInfo("CPU ha cerrado la conexión, cerrando thread");
 		}
-		destroyPackage(package);
+		destroyPackage(package_receive);
 	}
 	logInfo("Fin thread CPU pid %d",obtener_pid());
 	borrar_key_pid();
@@ -251,29 +287,73 @@ uint32_t obtener_pid(){
 
 void handleNucleo(t_arg_thread_nucleo* args){
 	int sigue = 1,
-		*socket_nucleo = &args->socket_nucleo;	//Lo guardo en variables para que sea mas comodo de usar
+		*socket_nucleo = &args->socket_nucleo,	//Lo guardo en variables para que sea mas comodo de usar
+		result;
 	Package* package;
+	char* contenido_lectura=NULL, *result_serializado=NULL;
 
 	while(sigue){
 		package = malloc(sizeof(Package));
 		if(recieve_and_deserialize(package,*socket_nucleo) > 0){
 			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s\n", package->msgCode, package->message);
-			if(package->msgCode==INIT_PROGRAM){
-				logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
-				//inicializar_programa(package->message);
-				comunicarSWAP(NUEVO_PROGRAMA_SWAP);
-			} else if(package->msgCode==SOLICITAR_BYTES_PAGINA){
-				logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-				//leer_pagina(package->message);
-				enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
-			} else if(package->msgCode==ALMACENAR_BYTES_PAGINA){
-				logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-				//escribir_pagina(package->message);
-				enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
-			} else if(package->msgCode==END_PROGRAM){
-				logDebug("Se ha solicitado la finalizacion de un programa.");
-				//finalizar_programa(package->message);
+
+			switch(package->msgCode){
+
+				case INIT_PROGRAM:
+
+					logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
+
+					comunicarSWAP(NUEVO_PROGRAMA_SWAP);
+					/*
+					result = inicializar_programa(package->message);
+					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
+					break;
+
+				case SOLICITAR_BYTES_PAGINA:
+
+					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
+
+					enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
+					/*
+					contenido_lectura=NULL;
+					result = leer_pagina(package->message,contenido_lectura);
+
+					//Si la operacion salio bien result es el tamanio de contenido leido
+					if(result > 0){
+
+						//Creo un buffer y serializo el resultado + el contenido leido
+						result_serializado=(char*)malloc(sizeof(uint32_t)+result);
+						memcpy(result_serializado,&result,sizeof(uint32_t));
+						memcpy(result_serializado+sizeof(uint32_t),contenido_lectura,result);
+
+						enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,result_serializado,result);
+						free(result_serializado);
+
+					}else
+						enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
+					break;
+
+				case ALMACENAR_BYTES_PAGINA:
+
+					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
+
+					enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
+					/*
+					result = escribir_pagina(package->message);
+					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
+					break;
+
+				case END_PROGRAM:
+					logDebug("Se ha solicitado la finalizacion de un programa.");
+					/*
+					result = finalizar_programa(package->message);
+					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					*/
 			}
+
 		} else {
 			//Si el cliente cerro la conexion se termino el thread
 			sigue=0;

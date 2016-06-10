@@ -74,12 +74,11 @@ int inicializar_programa(uint32_t pid, uint32_t paginas, char* contenido){
 	return resultado;
 }
 
-char* leer_pagina(uint32_t pagina, uint32_t offset, uint32_t tamanio){
+int leer_pagina(uint32_t pagina, uint32_t offset, uint32_t tamanio, char* contenido){
 
-	char *buffer=NULL,
-		 *parametros_serializados;
+	char *parametros_serializados;
 	Package* package;
-	int tamanio_uint32=sizeof(uint32_t);
+	int tamanio_uint32=sizeof(uint32_t), resultado;
 
 	logDebug("Se solicito leer %d bytes de la pagina %d",tamanio,pagina);
 	parametros_serializados=serializar_parametros(3, tamanio_uint32, (void*)&pagina, tamanio_uint32, (void*) &offset, tamanio_uint32, (void*)&tamanio);
@@ -88,15 +87,19 @@ char* leer_pagina(uint32_t pagina, uint32_t offset, uint32_t tamanio){
 	if(recieve_and_deserialize(package,*socket_umc) > 0)
 	{
 		if(package->msgCode==RESULTADO_OPERACION){
-			buffer=(char*)malloc(tamanio);
-			memcpy(buffer,package->message,tamanio);
+			memcpy(&resultado,package->message,tamanio_uint32);
+
+			if(resultado > 0){
+				if(!contenido) contenido=(char*)malloc(tamanio);
+				memcpy(contenido,package->message + tamanio_uint32,tamanio);
+			}
 		}
 	}
 
 	free(parametros_serializados);
 	destroyPackage(package);
 
-	return buffer;
+	return resultado;
 }
 
 int escribir_pagina(uint32_t pagina, uint32_t offset, uint32_t tamanio, char* buffer){
