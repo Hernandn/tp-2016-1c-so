@@ -31,6 +31,7 @@
 #define EXEC_IO_OPERATION 79
 #define PRINT_VARIABLE 80
 #define PRINT_TEXT 81
+#define CPU_SIGNAL_DISCONNECTED 82
 #define CPU_LIBRE 90
 //-------------------------------
 
@@ -109,7 +110,7 @@ char* serializar_stack(contexto** contextos, uint32_t contextos_length);
 uint32_t getLong_stack(contexto* contextos, uint32_t contextos_length);
 contexto* deserializar_stack(char* serialized,uint32_t contextos_length);
 void crearNuevoContexto(PCB* pcb);
-void destruirContextoActual(PCB* pcb);
+void destruirContextoActual(PCB* pcb, int size_pagina);
 void destroy_stackIndex(contexto* contexto, uint32_t context_len);
 void destroy_dir_memoria(dir_memoria* dir);
 char* serializar_imprimirVariable(uint32_t pid, uint32_t valor);
@@ -127,6 +128,7 @@ uint32_t deserializar_imprimirVariable_consola(char* serialized);
 void informarNucleoFinPrograma(int socketNucleo, PCB* pcb);
 void informarNucleoQuantumFinished(int socketNucleo, PCB* pcb);
 void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb);
+void informarNucleoCPUdisconnectedBySignal(int socketNucleo, PCB* pcb);
 void informarNucleoCPUlibre(int socketNucleo);
 void informarNucleoEjecutarOperacionIO(int socketNucleo, PCB* pcb, char* io_id, uint32_t cant_operaciones);
 void informarNucleoImprimirVariable(int socketNucleo, uint32_t pid, t_valor_variable valor);

@@ -63,12 +63,18 @@ void conectarConUMC(void* arguments){
 	logDebug("Handshake con UMC exitoso!!");
 }
 
-void conectarConNucleo(void* arguments){
+void iniciarEjecucionCPU(void* arguments){
 	arg_struct *args = arguments;
 	int buffer;		/* buffer de lectura de datos procedentes del servidor */
 	int error;		/* error de lectura por el socket */
 
+	conectarConUMC(args);
+
+	//inicializacion de flags
 	proceso_fue_bloqueado = 0;
+	programa_finalizado = 0;
+	end_signal_received = 0;
+	end_cpu = 0;
 
 	/* Se abre una conexión con el servidor */
 	socketNucleo = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
@@ -88,7 +94,7 @@ void conectarConNucleo(void* arguments){
 	logDebug("Soy el CPU %d", buffer);
 
 
-	while (1)
+	while (!end_cpu)
 	{
 		Package* package = malloc(sizeof(Package));
 		if(recieve_and_deserialize(package,socketNucleo) > 0){
@@ -113,11 +119,11 @@ void analizarMensaje(Package* package, arg_struct *args){
 	} else if(package->msgCode==ABORT_EXECUTION){
 		abortarProceso(args);
 	} else if(package->msgCode==CONTEXT_SWITCH){
-		contextSwitch(args);
+		contextSwitch();
 	}
 }
 
-void contextSwitch(arg_struct *args){
+void contextSwitch(){
 	logTrace("Cambiando contexto proceso PID:%d",pcbActual->processID);
 	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
@@ -160,11 +166,14 @@ void quantumSleep(arg_struct *args, int milisegundos){
 		logTrace("CPU se encuentra libre");
 		proceso_fue_bloqueado = 0;
 	} else {
-		if(programaFinalizado()){
-			//envia el PCB de nuevo al Nucleo
-			informarNucleoFinPrograma(socketNucleo,pcbActual);
+		if (end_signal_received){
+			logInfo("*** Se ha recibido la signal de desconexion de CPU ***");
+			informarNucleoCPUdisconnectedBySignal(socketNucleo,pcbActual);
 			destroyPCB(pcbActual);
-			logTrace("CPU se encuentra libre");
+			end_cpu = 1;
+		} else if(programa_finalizado){
+			programa_finalizado = 0;
+			finalizarPrograma();
 		} else {
 			informarNucleoQuantumFinished(socketNucleo,pcbActual);
 		}
@@ -234,4 +243,11 @@ void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){
 	informarNucleoEjecutarOperacionIO(socketNucleo, pcbActual, io_id, cant_operaciones);
 	destroyPCB(pcbActual);
 	proceso_fue_bloqueado = 1;
+}
+
+void finalizarPrograma(){
+	//envia el PCB de nuevo al Nucleo
+	informarNucleoFinPrograma(socketNucleo,pcbActual);
+	destroyPCB(pcbActual);
+	logTrace("CPU se encuentra libre");
 }

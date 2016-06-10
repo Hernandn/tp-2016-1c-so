@@ -10,7 +10,18 @@
 
 #include "CPU.h"
 
+void sig_handler(int signo)
+{
+    if (signo == SIGUSR1){
+    	end_signal_received = 1;
+    }
+}
+
 int main(void){
+
+	//inicio handler de SIGNAL SIGUSR1 para desconectar el CPU
+	if (signal(SIGUSR1, sig_handler) == SIG_ERR)
+	        printf("\ncan't catch SIGUSR1\n");
 
 	Configuration* config = configurar();
 
@@ -20,13 +31,7 @@ int main(void){
 	arg_struct args;
 	args.config=config;
 
-	pthread_t hilo1;
-	pthread_create(&hilo1,NULL,(void*)conectarConUMC,(void *)&args);
-	pthread_t hilo2;
-	pthread_create(&hilo2,NULL,(void*)conectarConNucleo,(void *)&args);
-
-	pthread_join(hilo1,NULL);
-	pthread_join(hilo2,NULL);
+	iniciarEjecucionCPU(&args);
 
 	return 0;
 }

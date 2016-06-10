@@ -46,19 +46,22 @@ int socketUMC;
 int socketNucleo;
 
 int proceso_fue_bloqueado;
+int programa_finalizado;
+int end_signal_received;
+int end_cpu;
 
 int size_pagina;
 
 PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
 //prototipos de funciones
-void conectarConUMC();
-void conectarConNucleo();
+void conectarConUMC(void*);
+void iniciarEjecucionCPU(void*);
 Configuration* configurar();
 void comunicarUMC(int socketUMC, int accion);
 void enviarMensaje(int socket, int accion, char* message);
 void analizarMensaje(Package* package, arg_struct *args);
-void contextSwitch(arg_struct *args);
+void contextSwitch();
 void cargarContextoPCB(Package* package);
 void ejecutarProceso(arg_struct *args);
 void quantumSleep(arg_struct *args, int milisegundos);
@@ -70,6 +73,7 @@ int getSocketUMC();
 char* getInstruccion(char* codigo, int offset, int length);
 char* getSiguienteInstruccion();
 void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones);
+void finalizarPrograma();
 
 
 #endif /* CPU_H_ */

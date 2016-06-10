@@ -18,11 +18,13 @@
 #define CPU_LIBRE 90
 #define PROGRAM_READY 91
 #define FINALIZAR_PROGRAMA 92
+#define ABORTAR_PROGRAMA 93
 
 void planificar(void* arguments);
 void atenderProcesos(Estados* estados, t_list* listaCPUs);
 CPU* getCPUlibre(t_list* listaCPUs);
 void inicializarSockets(int* sockets);
 void finalizarProg(Estados* estados, Package* package);
+void abortarProg(Estados* estados);
 
 #endif /* PLANIFICADOR_H_ */

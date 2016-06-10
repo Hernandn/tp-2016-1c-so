@@ -74,6 +74,8 @@ void planificar(void* arguments){
 						atenderProcesos(estados,listaCPUs);
 					} else if(package->msgCode==FINALIZAR_PROGRAMA){
 						finalizarProg(estados,package);
+					} else if(package->msgCode==ABORTAR_PROGRAMA){
+						abortarProg(estados);
 					}
 					destroyPackage(package);
 				}
@@ -133,4 +135,10 @@ void finalizarProg(Estados* estados, Package* package){
 	destroyPCB(pcb);
 	logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
 	enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");
+}
+
+void abortarProg(Estados* estados){
+	PCB* pcb = removeNextFromEXIT(estados);
+	logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
+	destroyPCB(pcb);
 }

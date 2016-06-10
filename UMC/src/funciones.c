@@ -290,4 +290,5 @@ void inicializarUMC(){
 
 	crear_tlb(32); //Todo agregar tamanio de la tlb a la estructura config
 	crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
+	crearListaDeTablas();
 }

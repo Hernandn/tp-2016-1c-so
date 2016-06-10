@@ -85,7 +85,7 @@ void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
 	bool fila_valida(void* fila){
 		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
 	}
-
+	crearListaDeTablas();
 	tabla=list_find(tablas_de_paginas,fila_valida);	//La tabla a esta altura tiene que existir
 
 	if(!(fila=list_find(tabla->filas,tabla_valida)))	//La fila puede no existir, la tabla se crea vacia
@@ -145,6 +145,9 @@ uint32_t obtener_dir_fisica(uint32_t dir_logica){
 
 	return dir_fisica;
 }
+
+
+
 
 //----------------------------------PUBLICO---------------------------------------
 
@@ -241,3 +244,43 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
+
+void flush_tlb()
+{
+	//Limpia el contenido de la TLB
+
+	void eliminarFila(void* fila)
+	{
+		free(fila);
+	}
+
+	list_clean_and_destroy_elements(tlb->filas, eliminarFila);
+
+}
+
+void flush_memory()
+{
+	//Marca todas las paginas como modificadas
+
+	void modifBit(void * fila)
+	{
+		logDebug("adentro de fila");
+		((t_fila_tabla*)fila)->modificacion = 1;
+	}
+	void modifTabla(void * tabla)
+	{
+		logDebug("adentro de tabla");
+		list_iterate(((t_tabla*) tabla)->filas, modifBit);
+	}
+	logDebug("HOLOOOOOOOOOOOOOOOOOOOOO");
+	list_iterate(tablas_de_paginas,modifTabla);
+
+}
+
+void crearListaDeTablas()
+{
+	tablas_de_paginas = list_create();
+
+}
+
+

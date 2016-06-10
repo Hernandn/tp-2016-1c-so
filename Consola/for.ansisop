@@ -1,0 +1,11 @@
+#!/bin/Consola
+begin
+variables f, i, t
+	i=0
+	f=20
+	:inicio
+	i=i+1
+	print i
+	t=f-i
+	jnz t inicio
+end

@@ -24,16 +24,6 @@ void print_retardo(){
 	pthread_mutex_unlock(&retardo_mutex);
 }
 
-void flush_tlb()
-{
-
-	printf("hola soy el flush tlb\n");
-}
-
-void flush_memory()
-{
-	printf("hola soy el flush memory\n");
-}
 
 void error_comando(char* comando)
 {

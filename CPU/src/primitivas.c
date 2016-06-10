@@ -20,6 +20,10 @@ void crearVariable(t_nombre_variable variable_nom){
 	contexto->variables[contexto->var_len].nombre = variable_nom;
 	contexto->variables[contexto->var_len].direccion.pagina = pcbActual->stackFirstPage;
 	contexto->variables[contexto->var_len].direccion.offset = pcbActual->stackOffset;
+	while(contexto->variables[contexto->var_len].direccion.offset + sizeof(uint32_t) > size_pagina){
+		contexto->variables[contexto->var_len].direccion.pagina++;
+		contexto->variables[contexto->var_len].direccion.offset -= size_pagina;
+	}
 	contexto->variables[contexto->var_len].direccion.size = sizeof(uint32_t);
 	contexto->var_len++;
 	pcbActual->stackOffset += sizeof(uint32_t);
@@ -31,6 +35,10 @@ void crearArgumento(t_nombre_variable variable_nom){
 	contexto->argumentos[contexto->arg_len].nombre = variable_nom;
 	contexto->argumentos[contexto->arg_len].direccion.pagina = pcbActual->stackFirstPage;
 	contexto->argumentos[contexto->arg_len].direccion.offset = pcbActual->stackOffset;
+	while(contexto->argumentos[contexto->arg_len].direccion.offset + sizeof(uint32_t) > size_pagina){
+		contexto->argumentos[contexto->arg_len].direccion.pagina++;
+		contexto->argumentos[contexto->arg_len].direccion.offset -= size_pagina;
+	}
 	contexto->argumentos[contexto->arg_len].direccion.size = sizeof(uint32_t);
 	contexto->arg_len++;
 	pcbActual->stackOffset += sizeof(uint32_t);
@@ -48,7 +56,7 @@ dir_memoria* puntero_a_direccion_logica(t_puntero puntero){
 
 t_puntero direccion_logica_a_puntero(dir_memoria* dir){
 	t_puntero puntero = 0;
-	puntero += (dir->pagina - pcbActual->stackFirstPage);
+	puntero += (dir->pagina - pcbActual->stackFirstPage)*size_pagina;
 	puntero += dir->offset;
 	return puntero;
 }
@@ -84,12 +92,16 @@ t_puntero_instruccion obtenerIndiceInstruccion(char* serialized, char* label, t_
 	int offset = 0;
 	t_puntero_instruccion pos = -1;
 
+	if(label[strlen(label)-1]=='\n'){
+		label[strlen(label)-1]='\0';//esto es porque las etiquetas vienen con el \n al final
+	}
+
 	while(offset<size && strcmp(serialized+offset,label)!=0){
 		offset = strlen(serialized+offset) + 1 + sizeof(t_puntero_instruccion);
 	}
 
 	if(offset<size){
-		memcpy(&pos,serialized+strlen(serialized+offset)+1,sizeof(t_puntero_instruccion));
+		memcpy(&pos,serialized+offset+strlen(serialized+offset)+1,sizeof(t_puntero_instruccion));
 
 	}
 	return pos;
@@ -104,12 +116,18 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 	printf("Definir la variable %c\n", variable_nom);
 
 	contexto* contexto = getContextoActual();
+	t_puntero puntero;
+	dir_memoria dir;
 	if(isdigit(variable_nom)){
 		crearArgumento(variable_nom);
 		printf("Argumento definido: Nom: %c\n",contexto->argumentos[contexto->arg_len-1].nombre);
+		puntero = direccion_logica_a_puntero(&(contexto->argumentos[contexto->arg_len-1].direccion));
+		dir = contexto->argumentos[contexto->arg_len-1].direccion;
 	} else {
 		crearVariable(variable_nom);
 		printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);
+		puntero = direccion_logica_a_puntero(&(contexto->variables[contexto->var_len-1].direccion));
+		dir = contexto->variables[contexto->var_len-1].direccion;
 	}
 
 
@@ -117,9 +135,6 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 	/*enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
 	printf("Enviando escritura de Bytes a UMC\n");
 	analizarRespuestaUMC();*/
-
-	t_puntero puntero = direccion_logica_a_puntero(&(contexto->variables[contexto->var_len-1].direccion));
-	dir_memoria dir = contexto->variables[contexto->var_len-1].direccion;
 	printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir.pagina,dir.offset,dir.size,puntero);
 
 	return puntero;
@@ -189,8 +204,11 @@ t_valor_variable ml_asignarValorCompartida(t_nombre_compartida variable, t_valor
 	return valor;
 }
 
-void ml_irAlLabel(t_nombre_etiqueta t_nombre_etiqueta){
-	printf("\nEjecutando Ir a Label: %s\n",t_nombre_etiqueta);
+void ml_irAlLabel(t_nombre_etiqueta nombre_etiqueta){
+	printf("\nEjecutando Ir a Label: %s\n",nombre_etiqueta);
+	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, nombre_etiqueta, pcbActual->codeIndex->etiquetas_size);
+	printf("Ir a direccion: %d\n",pos);
+	pcbActual->programCounter = pos;
 }
 
 void ml_llamarSinRetorno(t_nombre_etiqueta etiqueta){
@@ -201,19 +219,27 @@ void ml_llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
 	printf("\nEjecutando Llamar con retorno a funcion: %s, Retorno: %d\n",etiqueta,donde_retornar);
 	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, etiqueta, pcbActual->codeIndex->etiquetas_size);
 	printf("Indice de la funcion: %d\n",pos);
-	/*crearNuevoContexto(pcbActual);
+	crearNuevoContexto(pcbActual);
 	contexto* contexto = getContextoActual();
 	contexto->retPos = pcbActual->programCounter;
-	pcbActual->programCounter = pos;*/
+	pcbActual->programCounter = pos;
+	dir_memoria* dir = puntero_a_direccion_logica(donde_retornar);
+	contexto->retVar.pagina = dir->pagina;
+	contexto->retVar.offset = dir->offset;
+	contexto->retVar.size = dir->size;
+	free(dir);
 }
 
 void ml_finalizar(void){
 	printf("\nEjecutando Finalizar\n");
+	programa_finalizado = 1;
 }
 
 void ml_retornar(t_valor_variable retorno){
-	printf("\nEjecutando Retornar, valor de retorno: %d\n",retorno);
-	/*destruirContextoActual(pcbActual);*/
+	printf("\nEjecutando Retornar\n");
+	printf("Escribir en variable (%d,%d,%d) el valor de retorno: %d",getContextoActual()->retVar.pagina,getContextoActual()->retVar.offset,getContextoActual()->retVar.size,retorno);
+	//TODO: escribir en la posicion de la variable de retorno del contexto actual el valor "retorno"
+	destruirContextoActual(pcbActual,size_pagina);
 }
 
 void ml_entradaSalida(t_nombre_dispositivo dispositivo, int tiempo){

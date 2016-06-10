@@ -47,7 +47,6 @@ typedef struct CPU {
 int socketUMC;
 int socketPlanificador;
 
-
 //prototipos de funciones
 void handleClients(Configuration* config);
 void handleConsolas();

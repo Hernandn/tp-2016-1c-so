@@ -70,7 +70,7 @@ void informarCPU(int socketCPU, int accion, int pid);
 void iniciarPrograma(Estados* estados, int consolaFD, char* programa);
 void abortarPrograma(Estados* estados, int consolaFD);
 bool findAndExitPCBnotExecuting(Estados* estados, int consolaFD);
-void findAndExitPCBexecuting(Estados* estados, int consolaFD);
+bool findAndExitPCBexecuting(Estados* estados, int consolaFD);
 void informarPlanificador(int accion, int pid);
 void getCodeIndex(PCB* pcb, char* programa);
 int esInstruccionValida(char* str, int offset, int length);
@@ -84,5 +84,6 @@ void atenderSolicitudDispositivoIO(Estados* estados, solicitud_io* solicitud);
 void destroy_io_arg_struct(io_arg_struct *args);
 int getPosicionDispositivo(char** lista_ids, int len, char* io_id);
 void free_solicitud_io(solicitud_io* solicitud);
+bool consola_desconectada(int consoleFD);
 
 #endif /* PCB_H_ */
