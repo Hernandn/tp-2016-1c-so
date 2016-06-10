@@ -72,6 +72,8 @@ void analizarRespuestaUMC();
 int getSocketUMC();
 char* getInstruccion(char* codigo, int offset, int length);
 char* getSiguienteInstruccion();
+char* getInstruccionFromUMC(int offset, int length);
+char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size);
 void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones);
 void finalizarPrograma();
 

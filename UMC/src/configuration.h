@@ -12,6 +12,7 @@
 #include <mllibs/log/logger.h>
 
 #define UMC_CONFIG_PATH "../umc.conf"
+#define UMC_CONFIG_PATH_ECLIPSE "umc.conf"
 
 #define PUERTO_SWAP "PUERTO_SWAP"
 #define IP_SWAP "IP_SWAP"

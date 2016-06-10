@@ -13,8 +13,12 @@ void configurar(){
 
 	t_config* nConfig = config_create(UMC_CONFIG_PATH);
 	if(nConfig==NULL){
-		printf("No se encontro el archivo de configuracion.");
-		exit (1);
+		//para debuggear desde eclipse
+		nConfig = config_create(UMC_CONFIG_PATH_ECLIPSE);
+		if(nConfig==NULL){
+			printf("No se encontro el archivo de configuracion.");
+			exit (1);
+		}
 	}
 	config->puerto_swap=config_get_int_value(nConfig,PUERTO_SWAP);
 	config->ip_swap = config_get_string_value(nConfig,IP_SWAP);

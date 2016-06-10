@@ -304,6 +304,10 @@ int conectarConUMC(Configuration* config){
 	//Le aviso a la UMC que soy un nucleo
 	enviarMensajeSocket(socket,HANDSHAKE_NUCLEO,"");
 
+	int* socket_umc = malloc(sizeof(int));
+	*socket_umc = socket;
+	definir_socket_umc(socket_umc);
+
 	return socket;
 }
 

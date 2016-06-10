@@ -125,7 +125,6 @@ void analizarMensaje(Package* package, arg_struct *args){
 
 void contextSwitch(){
 	logTrace("Cambiando contexto proceso PID:%d",pcbActual->processID);
-	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
 	informarNucleoContextSwitchFinished(socketNucleo,pcbActual);
 	destroyPCB(pcbActual);
@@ -188,7 +187,6 @@ bool programaFinalizado(){
 
 void abortarProceso(arg_struct *args){
 	logTrace("Abortando proceso PID:%d",pcbActual->processID);
-	//TODO: aca se debe ejecutar el context switch (actualizar registros, guardar el proceso en UMC)
 	logTrace("Informando al Nucleo que el CPU se encuentra libre");
 	informarNucleoCPUlibre(socketNucleo);
 	destroyPCB(pcbActual);
@@ -235,7 +233,41 @@ char* getInstruccion(char* codigo, int offset, int length){
 char* getSiguienteInstruccion(){
 	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
 	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
-	return getInstruccion(pcbActual->programa,offset,length);
+	return getInstruccion(pcbActual->programa,offset,length);//TODO cambiar por getInstruccionFromUMC cuando ya se pueda pedir a UMC
+}
+
+char* getInstruccionFromUMC(int offset, int length){
+	char* buffer = NULL;
+	int buffer_len = 0;
+	int pagina_num = offset/size_pagina;
+	int pagina_offset = offset%size_pagina;
+	int restante = length;
+	int size_pedido;
+	while(pagina_offset + restante > size_pagina){
+		size_pedido = size_pagina - pagina_offset;
+		buffer = realloc(buffer,buffer_len+size_pedido);
+		char* pedido = pedirCodigoUMC(pagina_num,pagina_offset,size_pedido);
+		memcpy(buffer+buffer_len,pedido,size_pedido);
+		buffer_len += size_pedido;
+		restante -= size_pedido;
+		pagina_offset += size_pedido;
+		if(pagina_offset>=size_pagina){
+			pagina_num++;
+			pagina_offset -= size_pagina;
+		}
+		free(pedido);
+	}
+	if(restante>0){
+		buffer = realloc(buffer,buffer_len+restante);
+		char* pedido = pedirCodigoUMC(pagina_num,pagina_offset,restante);
+		memcpy(buffer+buffer_len,pedido,restante);
+		free(pedido);
+	}
+	return buffer;
+}
+
+char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size){
+	return NULL;//TODO llamar a leerpagina de la UMC
 }
 
 void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){

@@ -384,11 +384,11 @@ void iniciarPrograma(Estados* estados, int consolaFD, char* programa){
 	int size_pagina = getConfiguration()->size_pagina;
 	int stack_size = getConfiguration()->stack_size;
 	int pagsNecesarias = getCantidadPaginasNecesarias(programa,size_pagina,stack_size);
-	nuevo-> stackFirstPage = pagsNecesarias;
+	nuevo-> stackFirstPage = (pagsNecesarias-stack_size);
 	logDebug("Se necesitan %d paginas para almacenar el programa",pagsNecesarias);
 
-	/*int resultado = inicializar_programa(nuevo->processID,pagsNecesarias,programa);
-	logDebug("Enviado inicio de programa a UMC. Resultado: %d",resultado);*/
+	int resultado = inicializar_programa(nuevo->processID,pagsNecesarias,programa);
+	logDebug("Enviado inicio de programa a UMC. Resultado: %d",resultado);
 
 	//pagina* paginas = getPaginasFromPrograma(programa,size_pagina);
 	//destroyPaginas(paginas,pagsNecesarias-stack_size);

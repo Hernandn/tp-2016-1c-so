@@ -303,11 +303,11 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 					logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
 
-					comunicarSWAP(NUEVO_PROGRAMA_SWAP);
-					/*
+					//comunicarSWAP(NUEVO_PROGRAMA_SWAP);
+
 					result = inicializar_programa(package->message);
 					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
+
 					break;
 
 				case SOLICITAR_BYTES_PAGINA:
