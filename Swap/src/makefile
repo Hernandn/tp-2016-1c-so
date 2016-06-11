@@ -1,21 +1,24 @@
 CC=gcc
-TARGET=Swap
+TARGET_PATH="../"
+TARGET="$(TARGET_PATH)Swap"
 HEADERS=$(wildcard *.h)
-OBJECTS=$(patsubst %.c, %.o, $(wildcard *.c))
+OBJECTS=$(patsubst %.c, build/%.o, $(wildcard *.c))
 LIBS=-lmllibs -lcommons -lparser-ansisop
-TARGET_PATH=$(shell pwd)
 
 all: $(TARGET)
 default: all
 
-%.o: %.c $(HEADERS)
+create-dirs:
+	mkdir -p build
+
+build/%.o: %.c $(HEADERS)
 	$(CC) -c $< -o $@
 
-$(TARGET): $(OBJECTS)
+$(TARGET): create-dirs $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
 
 clean:
-	rm -f $(OBJECTS)
+	rm -rf build
 	rm -f $(TARGET)
 
 .PHONY: default all clean
