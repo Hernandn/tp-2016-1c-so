@@ -23,13 +23,14 @@ typedef char* memoria;
 
 typedef struct memoria_principal{
 	memoria memoria;
-	t_bitarray* bitmap;
+	t_bitarray *bitmap;
+	t_bitarray *modificacion;
+	t_bitarray *activo;
 } t_memoria_principal;
 
 typedef struct fila_tabla{
 	uint16_t numero_pagina;
 	uint16_t numero_marco;
-	char modificacion;
 } t_fila_tabla;
 
 typedef struct tabla{
@@ -56,7 +57,7 @@ void eliminar_tabla_de_paginas(uint32_t);
 void eliminar_tabla(t_tabla*, t_tabla**, int);
 int obtener_contenido_memoria(char**, uint32_t, uint32_t, uint32_t);
 int escribir_contenido_memoria(uint32_t, uint32_t, uint32_t, char*);
-void liberar_memoria(pid);
+void liberar_memoria(uint32_t);
 void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();

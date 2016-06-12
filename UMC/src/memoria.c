@@ -90,7 +90,6 @@ void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
 		list_add(tabla->filas,(void*)fila);
 	}
 
-	fila->modificacion=0;
 	fila->numero_pagina=dir_logica;
 	fila->numero_marco=dir_fisica;
 }
@@ -149,24 +148,27 @@ uint32_t obtener_dir_fisica(uint32_t dir_logica){
 	return dir_fisica;
 }
 
-
-
-
 //----------------------------------PUBLICO---------------------------------------
 
 void crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
 
-	char* bits = malloc(sizeof(char)*cantidad_paginas);
+	char *bits_bitMap = malloc(sizeof(char)*cantidad_paginas),
+		 *bits_modificacion = malloc(sizeof(char)*cantidad_paginas),
+		 *bits_activo = malloc(sizeof(char)*cantidad_paginas);
 	int i;
 
 	logDebug("Creando memoria principal de tamanio %d\n", cantidad_paginas*size_pagina);
 
 	for(i=0;i<cantidad_paginas;i++){
-		bits[i]=0;
+		bits_bitMap[i]=0;
+		bits_modificacion[i]=0;
+		bits_activo[i]=0;
 	}
 
 	memoria_principal.memoria = malloc(cantidad_paginas*size_pagina);
-	memoria_principal.bitmap = bitarray_create(bits,cantidad_paginas);
+	memoria_principal.bitmap = bitarray_create(bits_bitMap,cantidad_paginas);
+	memoria_principal.modificacion = bitarray_create(bits_modificacion,cantidad_paginas);
+	memoria_principal.activo = bitarray_create(bits_activo,cantidad_paginas);
 
 }
 
@@ -225,6 +227,7 @@ int obtener_contenido_memoria(char** contenido, uint32_t dir_logica, uint32_t of
 	if(*contenido==NULL) *contenido=malloc(tamanio);
 
 	memcpy(*contenido,mem,tamanio);
+	bitarray_set_bit(memoria_principal.activo,dir_fisica/config->size_pagina);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que lei
 }
@@ -238,11 +241,13 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 	if(dir_fisica<0) return dir_fisica;
 
 	memcpy(mem,contenido,tamanio);
+	bitarray_set_bit(memoria_principal.modificacion,dir_fisica/config->size_pagina);
+	bitarray_set_bit(memoria_principal.activo,dir_fisica/config->size_pagina);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
 
-void liberar_memoria(pid){
+void liberar_memoria(uint32_t pid){
 
 	t_tabla *tabla_buscada;
 
@@ -258,8 +263,7 @@ void liberar_memoria(pid){
 	list_iterate(tabla_buscada->filas,liberar_memoria_con_fila);
 }
 
-void flush_tlb()
-{
+void flush_tlb(){
 	//Limpia el contenido de la TLB
 
 	void eliminarFila(void* fila)
@@ -271,29 +275,21 @@ void flush_tlb()
 
 }
 
-void flush_memory()
-{
+void flush_memory(){
 	//Marca todas las paginas como modificadas
+	int i, tamanio;
+	t_bitarray *bitMap_Modificacion = memoria_principal.modificacion;
 
-	void modifBit(void * fila)
-	{
-		logDebug("adentro de fila");
-		((t_fila_tabla*)fila)->modificacion = 1;
-	}
-	void modifTabla(void * tabla)
-	{
-		logDebug("adentro de tabla");
-		list_iterate(((t_tabla*) tabla)->filas, modifBit);
-	}
-	logDebug("HOLOOOOOOOOOOOOOOOOOOOOO");
-	list_iterate(tablas_de_paginas,modifTabla);
+	tamanio = bitarray_get_max_bit(bitMap_Modificacion);
 
+	for(i=0; i<tamanio; i++){
+		bitarray_clean_bit(bitMap_Modificacion,i);
+	}
 }
 
-void crearListaDeTablas()
-{
-	tablas_de_paginas = list_create();
+void crearListaDeTablas(){
 
+	tablas_de_paginas = list_create();
 }
 
 
