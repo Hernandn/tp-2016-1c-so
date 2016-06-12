@@ -104,6 +104,7 @@ int finalizar_programa(char* mensaje_serializado){
 
 	logDebug("Finalizando programa %d", pid);
 
+	liberar_memoria(pid);
 	eliminar_tabla_de_paginas(pid);
 	finalizarProgramaSwap(pid);
 

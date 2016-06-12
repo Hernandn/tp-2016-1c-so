@@ -72,7 +72,7 @@ void handleClients(){
 				case HANDSHAKE_CPU:
 					logDebug("Cliente %d es un CPU",socket_cliente);
 
-					//TODO No estoy liberando esto en ningun momento.
+					//Se borra al final del handleCPU.
 					//Argumentos para el thread de la CPU. Mando una estructura porque es mas facil de modificar en un futuro.
 					arg_thread_cpu = malloc(sizeof(t_arg_thread_cpu));
 					arg_thread_cpu->socket_cpu=socket_cliente;
@@ -85,7 +85,7 @@ void handleClients(){
 
 				case HANDSHAKE_NUCLEO:
 					logDebug("Cliente %d es un Nucleo",socket_cliente);
-					//TODO No estoy liberando esto en ningun momento.
+					//Se borra al final del handleNucleo.
 					arg_thread_nucleo = malloc(sizeof(t_arg_thread_nucleo));
 					arg_thread_nucleo->socket_nucleo=socket_cliente;
 					pthread_create(&thread_tmp,NULL,(void*) handleNucleo,(void*) arg_thread_nucleo);
@@ -211,7 +211,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 					//enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 
-					contenido_lectura=NULL;//TODO esto no se esta liberando (me tira error aveces si le hago free)
+					contenido_lectura=NULL;
 					result = leer_pagina(package_receive->message,&contenido_lectura);
 
 					//Si la operacion salio bien result es el tamanio de contenido leido
@@ -227,6 +227,8 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 
 					}else
 						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+
+						free(contenido_lectura);
 
 					break;
 
@@ -255,6 +257,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 		destroyPackage(package_receive);
 	}
 	logInfo("Fin thread CPU pid %d",obtener_pid());
+	free(argumentos);
 	borrar_key_pid();
 }
 
@@ -359,6 +362,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 		destroyPackage(package);
 	}
 	logInfo("Fin thread Nucleo");
+	free(args);
 }
 
 void inicializarUMC(){

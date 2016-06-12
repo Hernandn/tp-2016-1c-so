@@ -24,18 +24,14 @@ void destructor_tabla(void* tabla){
 	}
 }
 
-int cant_paginas_afectadas(uint32_t offset, uint32_t tamanio){
+t_tabla* obtener_tabla(pid){
+	t_tabla *tabla_buscada;
 
-	/* Haciendo el calculo (offset+tamanio)/tamanioPagina +1
-	 * obtengo la cantidad de paginas afectadas por la
-	 * operacion.
-	 */
+	bool tabla_valida(void* tabla){
+		return ((t_tabla*) tabla)->pid==pid;
+	}
 
-	return (offset+tamanio)/config->size_pagina +1;
-}
-
-int nro_de_marco_desde_dir_fisica(uint32_t dir_fisica){
-	return dir_fisica/config->size_pagina;
+	return tabla_buscada=list_find(tablas_de_paginas,tabla_valida);
 }
 
 uint32_t obtener_dir_fisica_tlb(uint32_t dir_logica){
@@ -58,15 +54,11 @@ uint32_t obtener_dir_fisisca_tabla(uint32_t dir_logica){
 	t_tabla *tabla_buscada;
 	t_fila_tabla *fila_buscada;
 
-	bool tabla_valida(void* tabla){
-		return ((t_tabla*) tabla)->pid==obtener_pid();
-	}
-
 	bool fila_valida(void* fila){
 		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
 	}
 
-	tabla_buscada=list_find(tablas_de_paginas,tabla_valida);
+	tabla_buscada=obtener_tabla(obtener_pid());
 	if(tabla_buscada==NULL){
 		return -3;	//No existe la tabla del proceso, estamos hasta las manos
 	}
@@ -86,15 +78,11 @@ void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
 	t_tabla *tabla;
 	t_fila_tabla *fila;
 
-	bool tabla_valida(void* tabla){
-		return ((t_tabla*) tabla)->pid==obtener_pid();
-	}
-
 	bool fila_valida(void* fila){
 		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
 	}
 	//crearListaDeTablas(); no se por que estaba esto aca pero lo comento porque se esta volviendo a crear la lista y se borra lo anterior
-	tabla=list_find(tablas_de_paginas,tabla_valida);	//La tabla a esta altura tiene que existir
+	tabla=obtener_tabla(obtener_pid());	//La tabla a esta altura tiene que existir
 
 	if(!(fila=list_find(tabla->filas,fila_valida))){
 		//La fila puede no existir, la tabla se crea vacia
@@ -234,7 +222,7 @@ int obtener_contenido_memoria(char** contenido, uint32_t dir_logica, uint32_t of
 	if(dir_fisica<0) return dir_fisica;
 
 	//Pueden mandarme un puntero a NULL o un puntero a espacio ya reservado (actualmente solo pasa la primera)
-	if(*contenido==NULL) *contenido=malloc(sizeof(tamanio));
+	if(*contenido==NULL) *contenido=malloc(tamanio);
 
 	memcpy(*contenido,mem,tamanio);
 
@@ -245,8 +233,6 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 
 	uint32_t dir_fisica=obtener_dir_fisica(dir_logica);
 	memoria mem=memoria_principal.memoria+offset+dir_fisica;
-	int cant_paginas=cant_paginas_afectadas(offset,tamanio),
-		i;
 
 	//Si no se pudo encontrar la direccion fisica devuelvo el codigo de error
 	if(dir_fisica<0) return dir_fisica;
@@ -254,6 +240,22 @@ int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t ta
 	memcpy(mem,contenido,tamanio);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
+}
+
+void liberar_memoria(pid){
+
+	t_tabla *tabla_buscada;
+
+	tabla_buscada=obtener_tabla(pid);
+
+	void liberar_memoria_con_fila(void* fila){
+		int nro_marco;
+
+		nro_marco=((t_fila_tabla *) fila)->numero_marco / config->size_pagina;
+		bitarray_clean_bit(memoria_principal.bitmap,nro_marco);
+	}
+
+	list_iterate(tabla_buscada->filas,liberar_memoria_con_fila);
 }
 
 void flush_tlb()
