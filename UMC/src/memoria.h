@@ -40,8 +40,8 @@ typedef struct tabla{
 } t_tabla;
 
 typedef struct fila_tlb{
-	uint32_t dir_logica;
-	uint32_t dir_fisica;
+	uint32_t numero_pagina;
+	uint32_t numero_marco;
 	uint32_t pid;
 } t_fila_tlb;
 

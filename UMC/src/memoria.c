@@ -34,35 +34,35 @@ t_tabla* obtener_tabla(pid){
 	return tabla_buscada=list_find(tablas_de_paginas,tabla_valida);
 }
 
-uint32_t obtener_dir_fisica_tlb(uint32_t dir_logica){
+uint32_t obtener_numero_marco_tlb(uint32_t numero_pagina){
 	t_fila_tlb *fila_buscada;
 
 	bool fila_valida(void* fila){
 		t_fila_tlb *tmp=(t_fila_tlb*) fila;
 
-		return 	tmp->dir_logica==dir_logica &&
+		return 	tmp->numero_pagina==numero_pagina &&
 				tmp->pid==obtener_pid();
 	}
 
 	fila_buscada=list_find(tlb->filas,fila_valida);
 
-	return fila_buscada ? fila_buscada->dir_fisica : -1;
+	return fila_buscada ? fila_buscada->numero_marco : -1;
 }
 
-uint32_t obtener_dir_fisisca_tabla(uint32_t dir_logica){
+uint32_t obtener_numero_marco_tabla(uint32_t numero_pagina){
 
 	t_tabla *tabla_buscada;
 	t_fila_tabla *fila_buscada;
 
 	bool fila_valida(void* fila){
-		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
+		return ((t_fila_tabla*) fila)->numero_pagina==numero_pagina;
 	}
 
 	tabla_buscada=obtener_tabla(obtener_pid());
 	if(tabla_buscada==NULL){
 		return -3;	//No existe la tabla del proceso, estamos hasta las manos
 	}
-	if(dir_logica > tabla_buscada->tamanio){
+	if(numero_pagina > tabla_buscada->tamanio){
 		return -2; //Quiere entrar a una posicion que no le pertenece
 	}
 	fila_buscada=list_find(tabla_buscada->filas,fila_valida);
@@ -73,15 +73,15 @@ uint32_t obtener_dir_fisisca_tabla(uint32_t dir_logica){
 	return fila_buscada->numero_marco;
 }
 
-void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
+void cargar_dir_tabla(uint32_t numero_pagina, uint32_t numero_marco){
 
 	t_tabla *tabla;
 	t_fila_tabla *fila;
 
 	bool fila_valida(void* fila){
-		return ((t_fila_tabla*) fila)->numero_pagina==dir_logica;
+		return ((t_fila_tabla*) fila)->numero_pagina==numero_pagina;
 	}
-	//crearListaDeTablas(); no se por que estaba esto aca pero lo comento porque se esta volviendo a crear la lista y se borra lo anterior
+
 	tabla=obtener_tabla(obtener_pid());	//La tabla a esta altura tiene que existir
 
 	if(!(fila=list_find(tabla->filas,fila_valida))){
@@ -90,8 +90,8 @@ void cargar_dir_tabla(uint32_t dir_logica, uint32_t dir_fisica){
 		list_add(tabla->filas,(void*)fila);
 	}
 
-	fila->numero_pagina=dir_logica;
-	fila->numero_marco=dir_fisica;
+	fila->numero_pagina=numero_pagina;
+	fila->numero_marco=numero_marco;
 }
 
 uint32_t obtener_marco_libre(){
@@ -107,7 +107,7 @@ uint32_t obtener_marco_libre(){
 	return bit_no_encontrado ? -1 : i;
 }
 
-void agregar_pagina_a_memoria(uint32_t pid, uint32_t dir_logica, char* pagina){
+void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina){
 
 	int marco_libre = obtener_marco_libre();
 	uint32_t dir_fisica = marco_libre * config->size_pagina;	//Todo No contemplo que no encuentre marco libre
@@ -116,36 +116,36 @@ void agregar_pagina_a_memoria(uint32_t pid, uint32_t dir_logica, char* pagina){
 
 	bitarray_set_bit(memoria_principal.bitmap,marco_libre);
 
-	cargar_dir_tabla(dir_logica, dir_fisica);
+	cargar_dir_tabla(numero_pagina, marco_libre);
 }
 
-void copiar_pagina_a_tlb(uint32_t dir_logica){
+void copiar_pagina_a_tlb(uint32_t numero_pagina){
 	//Todo copiar la pagina a la tlb para la proxima busqueda
 }
 
-void copiar_pagina_a_memoria(uint32_t dir_logica){
+void copiar_pagina_a_memoria(uint32_t numero_pagina){
 
 	uint32_t pid = obtener_pid();
-	char* pagina = leerPaginaSwap(pid, dir_logica);
+	char* pagina = leerPaginaSwap(pid, numero_pagina);
 
 	if(!pagina) return;	//Todo ver de poner un error copado
 
-	agregar_pagina_a_memoria(pid,dir_logica,pagina);
+	agregar_pagina_a_memoria(pid,numero_pagina,pagina);
 
 	free(pagina);
 }
 
-uint32_t obtener_dir_fisica(uint32_t dir_logica){
-	uint32_t dir_fisica;
+uint32_t obtener_numero_marco(uint32_t numero_pagina){
+	uint32_t nro_marco;
 
-	if((dir_fisica=obtener_dir_fisica_tlb(dir_logica)) == -1){
-		if((dir_fisica=obtener_dir_fisisca_tabla(dir_logica)) == -1){
-			copiar_pagina_a_memoria(dir_logica);
-			dir_fisica=obtener_dir_fisisca_tabla(dir_logica);
-		}else copiar_pagina_a_tlb(dir_logica);
+	if((nro_marco=obtener_numero_marco_tlb(numero_pagina)) == -1){
+		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1){
+			copiar_pagina_a_memoria(numero_pagina);
+			nro_marco=obtener_numero_marco_tabla(numero_pagina);
+		}else copiar_pagina_a_tlb(numero_pagina);
 	}
 
-	return dir_fisica;
+	return nro_marco;
 }
 
 //----------------------------------PUBLICO---------------------------------------
@@ -215,9 +215,10 @@ void elimina_tlb(t_tabla_tlb *tabla){
 	list_destroy_and_destroy_elements(tabla->filas, eliminar_fila);
 }
 
-int obtener_contenido_memoria(char** contenido, uint32_t dir_logica, uint32_t offset, uint32_t tamanio){
+int obtener_contenido_memoria(char** contenido, uint32_t numero_pagina, uint32_t offset, uint32_t tamanio){
 
-	uint32_t dir_fisica=obtener_dir_fisica(dir_logica);
+	uint32_t numero_marco=obtener_numero_marco(numero_pagina),
+			 dir_fisica=numero_marco*config->size_pagina;
 	memoria mem=memoria_principal.memoria+offset+dir_fisica;
 
 	//Si no se pudo encontrar la direccion fisica devuelvo el codigo de error
@@ -227,22 +228,23 @@ int obtener_contenido_memoria(char** contenido, uint32_t dir_logica, uint32_t of
 	if(*contenido==NULL) *contenido=malloc(tamanio);
 
 	memcpy(*contenido,mem,tamanio);
-	bitarray_set_bit(memoria_principal.activo,dir_fisica/config->size_pagina);
+	bitarray_set_bit(memoria_principal.activo,numero_marco);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que lei
 }
 
-int escribir_contenido_memoria(uint32_t dir_logica, uint32_t offset, uint32_t tamanio, char* contenido){
+int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t tamanio, char* contenido){
 
-	uint32_t dir_fisica=obtener_dir_fisica(dir_logica);
+	uint32_t numero_marco=obtener_numero_marco(numero_pagina),
+			 dir_fisica=numero_marco * config->size_pagina;
 	memoria mem=memoria_principal.memoria+offset+dir_fisica;
 
 	//Si no se pudo encontrar la direccion fisica devuelvo el codigo de error
 	if(dir_fisica<0) return dir_fisica;
 
 	memcpy(mem,contenido,tamanio);
-	bitarray_set_bit(memoria_principal.modificacion,dir_fisica/config->size_pagina);
-	bitarray_set_bit(memoria_principal.activo,dir_fisica/config->size_pagina);
+	bitarray_set_bit(memoria_principal.modificacion,numero_marco);
+	bitarray_set_bit(memoria_principal.activo,numero_marco);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
