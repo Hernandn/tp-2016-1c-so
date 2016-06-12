@@ -310,7 +310,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 					break;
 
-				case SOLICITAR_BYTES_PAGINA:
+				case SOLICITAR_BYTES_PAGINA:	//Todo el nucleo no deberia poder hacer esot
 
 					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
 
@@ -335,7 +335,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 					*/
 					break;
 
-				case ALMACENAR_BYTES_PAGINA:
+				case ALMACENAR_BYTES_PAGINA:	//Todo el nucleo no deberia poder hacer esto
 
 					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
 
@@ -369,7 +369,7 @@ void inicializarUMC(){
 
 	logDebug("Inicializando la UMC");
 
-	crear_tlb(32); //Todo agregar tamanio de la tlb a la estructura config
+	crear_tlb(config->tamanio_tlb);
 	crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 	crearListaDeTablas();
 }

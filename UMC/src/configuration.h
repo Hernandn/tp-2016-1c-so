@@ -8,6 +8,7 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+#include <string.h>
 #include <commons/config.h>
 #include <mllibs/log/logger.h>
 
@@ -20,6 +21,7 @@
 #define IP_UMC "IP_UMC"
 #define CANTIDAD_PAGINAS "CANTIDAD_PAGINAS"
 #define TAMANIO_PAGINA "TAMANIO_PAGINA"
+#define TAMANIO_TLB "TAMANIO_TLB"
 #define RETRASO "RETRASO"
 
 typedef struct Configuration {
@@ -35,6 +37,7 @@ typedef struct Configuration {
 	char* log_program_name;
 	int log_print_console;
 	int retraso;
+	int tamanio_tlb;
 } Configuration;
 
 
