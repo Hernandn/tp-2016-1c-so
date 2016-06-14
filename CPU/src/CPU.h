@@ -21,18 +21,6 @@
 #define HANDSHAKE_CPU 5
 #define SWITCH_PROCESS 6
 //---------------------
-//codigos de operaciones entre CPU/Nucleo
-#define CONTINUE_EXECUTION 70
-#define ABORT_EXECUTION 71
-#define EXEC_NEW_PROCESS 72
-#define EXECUTION_FINISHED 73
-#define QUANTUM_SLEEP_CPU 74
-#define QUANTUM_FINISHED 75
-#define PROGRAM_FINISHED 76
-#define CONTEXT_SWITCH 77
-#define CONTEXT_SWITCH_FINISHED 78
-#define CPU_LIBRE 90
-//----------------------
 //codigos de operaciones con UMC
 #define HANDSHAKE_UMC 5
 //----------------------
@@ -63,6 +51,7 @@ void comunicarUMC(int socketUMC, int accion);
 void enviarMensaje(int socket, int accion, char* message);
 void analizarMensaje(Package* package, arg_struct *args);
 void contextSwitch();
+void contextSwitch_semBlocked();
 void cargarContextoPCB(Package* package);
 void ejecutarProceso(arg_struct *args);
 void quantumSleep(arg_struct *args, int milisegundos);
@@ -77,6 +66,8 @@ char* getInstruccionFromUMC(int offset, int length);
 char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size);
 void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones);
 void finalizarPrograma();
+void execute_wait(char* sem_id);
+void execute_signal(char* sem_id);
 
 
 #endif /* CPU_H_ */

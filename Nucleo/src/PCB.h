@@ -87,9 +87,13 @@ void free_solicitud_io(solicitud_io* solicitud);
 bool consola_desconectada(int consoleFD);
 void inicializarSemaforos();
 int getPosicionSemaforo(char* sem_id);
-void bloquearEnSemaforo(PCB* pcb, int sem_pos);
+void bloquearEnSemaforo(PCB* pcb, char* sem_id);
 PCB* getNextFromSemaforo(int sem_pos);
 int execute_wait(char* sem_id);
 void execute_signal(char* sem_id);
+void inicializarVariablesCompartidas();
+int getPosicionVariableCompartida(char* var_id);
+int getValorVariableCompartida(char* var_id);
+void setValorVariableCompartida(char* var_id, int valor);
 
 #endif /* PCB_H_ */

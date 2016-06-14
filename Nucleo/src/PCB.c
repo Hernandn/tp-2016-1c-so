@@ -48,6 +48,10 @@ int* sem_values;
 //array de colas de procesos bloqueados en semaforos
 t_queue** sem_blocked;
 
+
+//array de valores de variables compartidas
+int* shared_vars_values;
+
 //probando
 PCB* buildNewPCB(int consolaFD, char* programa){
 	PCB *new = malloc(sizeof(PCB));
@@ -331,10 +335,12 @@ void finalizarPrograma(PCB* pcbActualizado, int socketCPU){
 void actualizarPCB(PCB* local, PCB* actualizado){
 	local->programCounter = actualizado->programCounter;
 	local->stackOffset = actualizado->stackOffset;
-	local->context_len = actualizado->context_len;
 	contexto* contexto_aux = local->stackIndex;
+	uint32_t context_len_aux = local->context_len;
+	local->context_len = actualizado->context_len;
 	local->stackIndex = actualizado->stackIndex;
 	actualizado->stackIndex = contexto_aux;
+	actualizado->context_len = context_len_aux;
 }
 
 void switchProcess(int pid, int socketCPU){
@@ -386,7 +392,7 @@ void iniciarPrograma(int consolaFD, char* programa){
 	logDebug("Se necesitan %d paginas para almacenar el programa",pagsNecesarias);
 
 	int resultado = inicializar_programa(nuevo->processID,pagsNecesarias,programa);
-	printf("Enviado inicio de programa a UMC. Resultado: %d",resultado);
+	logDebug("Enviado inicio de programa a UMC. Resultado: %d",resultado);
 
 	//pagina* paginas = getPaginasFromPrograma(programa,size_pagina);
 	//destroyPaginas(paginas,pagsNecesarias-stack_size);
@@ -652,7 +658,8 @@ int getPosicionSemaforo(char* sem_id){
 	return i;
 }
 
-void bloquearEnSemaforo(PCB* pcb, int sem_pos){
+void bloquearEnSemaforo(PCB* pcb, char* sem_id){
+	int sem_pos = getPosicionSemaforo(sem_id);
 	queue_push(sem_blocked[sem_pos],pcb);
 }
 
@@ -678,8 +685,37 @@ void execute_signal(char* sem_id){
 	logTrace("[SIGNAL] Semaforo %s. Valor actual: %d",sem_id,sem_values[pos]);
 	if(sem_values[pos]>=0){
 		PCB* pcb = getNextFromSemaforo(pos);
-		sendToREADY(pcb);
+		if(pcb!=NULL){
+			sendToREADY(pcb);
+		}
 	}
 }
 
 
+void inicializarVariablesCompartidas(){
+	shared_vars_values = malloc(sizeof(int)*config->shared_vars_length);
+	int i;
+	for(i=0; i<config->shared_vars_length; i++){
+		shared_vars_values[i] = 0;//inicializadas en cero
+	}
+}
+
+int getPosicionVariableCompartida(char* var_id){
+	int i=0;
+	while(i<config->shared_vars_length && !string_equals_ignore_case(config->shared_vars[i],var_id)){
+		i++;
+	}
+	return i;
+}
+
+int getValorVariableCompartida(char* var_id){
+	int pos = getPosicionVariableCompartida(var_id);
+	logTrace("[GET] Variable compartida %s. Valor: %d",var_id,shared_vars_values[pos]);
+	return shared_vars_values[pos];
+}
+
+void setValorVariableCompartida(char* var_id, int valor){
+	int pos = getPosicionVariableCompartida(var_id);
+	logTrace("[SET] Variable compartida %s. Valor: %d",var_id,valor);
+	shared_vars_values[pos] = valor;
+}

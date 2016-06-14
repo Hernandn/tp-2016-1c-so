@@ -142,9 +142,6 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 	uint32_t variable;//variable sin inicializar para guardar el valor (basura) en la UMC
 	escribir_variable_en_umc(variable,&dir);//ignorar el warning
 
-	/*enviarMensajeSocket(getSocketUMC(),ALMACENAR_BYTES_PAGINA,"");
-	printf("Enviando escritura de Bytes a UMC\n");
-	analizarRespuestaUMC();*/
 	printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir.pagina,dir.offset,dir.size,puntero);
 
 	return puntero;
@@ -152,9 +149,6 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 
 t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable_nom) {
 	printf("Obtener posicion de %c\n", variable_nom);
-	/*printf("Enviando lectura de Bytes a UMC\n");
-	enviarMensajeSocket(getSocketUMC(),SOLICITAR_BYTES_PAGINA,"");
-	analizarRespuestaUMC();*/
 
 	variable* variable = NULL;
 	if(isdigit(variable_nom)){
@@ -171,11 +165,6 @@ t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable_nom) {
 }
 
 t_valor_variable ml_dereferenciar(t_puntero puntero) {
-	printf("Dereferenciar %d y su valor es: %d\n", puntero, CONTENIDO_VARIABLE);
-	/*printf("Enviando lectura de Bytes a UMC\n");
-	enviarMensajeSocket(getSocketUMC(),SOLICITAR_BYTES_PAGINA,"");
-	analizarRespuestaUMC();*/
-
 	dir_memoria* dir = puntero_a_direccion_logica(puntero);
 	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
 	char* contenido = NULL;
@@ -185,8 +174,11 @@ t_valor_variable ml_dereferenciar(t_puntero puntero) {
 	uint32_t valor = -1;
 	if(resultado>0){
 		memcpy(&valor,contenido,sizeof(uint32_t));
+		free(contenido);
 	}
 	free(dir);
+
+	printf("Dereferenciar %d y su valor es: %d\n", puntero, valor);
 
 	return valor;
 }
@@ -214,11 +206,13 @@ void ml_imprimirTexto(char* texto) {
 
 t_valor_variable ml_obtenerValorCompartida(t_nombre_compartida variable){
 	printf("\nObteniendo Valor Variable compartida: %s\n",variable);
-	return CONTENIDO_VARIABLE;
+	t_valor_variable valor = getValorCompartida(socketNucleo,variable);
+	return valor;
 }
 
 t_valor_variable ml_asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
 	printf("\nAsignando Valor Variable compartida: %s, valor: %d\n",variable,valor);
+	setValorCompartida(socketNucleo,variable,valor);
 	return valor;
 }
 
@@ -270,8 +264,10 @@ void ml_entradaSalida(t_nombre_dispositivo dispositivo, int tiempo){
 
 void ml_wait(t_nombre_semaforo identificador_semaforo){
 	printf("\nEjecutando Wait de semaforo: %s\n",identificador_semaforo);
+	execute_wait(identificador_semaforo);
 }
 
 void ml_signal(t_nombre_semaforo identificador_semaforo){
 	printf("\nEjecutando Signal de semaforo: %s\n",identificador_semaforo);
+	execute_signal(identificador_semaforo);
 }

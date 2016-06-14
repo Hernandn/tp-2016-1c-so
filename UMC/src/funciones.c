@@ -290,7 +290,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 		*socket_nucleo = &args->socket_nucleo,	//Lo guardo en variables para que sea mas comodo de usar
 		result;
 	Package* package;
-	char* contenido_lectura=NULL, *result_serializado=NULL;
+	//char* contenido_lectura=NULL, *result_serializado=NULL;
 
 	while(sigue){
 		package = malloc(sizeof(Package));

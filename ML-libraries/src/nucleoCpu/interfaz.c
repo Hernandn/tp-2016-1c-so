@@ -430,10 +430,10 @@ void destruirContextoActual(PCB* pcb, int size_pagina){
 void destroy_stackIndex(contexto* contexto, uint32_t context_len){
 	int i;
 	for(i=0; i<context_len; i++){
-		if(contexto[i].variables!=NULL){
+		if(contexto[i].variables!=NULL && contexto[i].var_len>0){
 			free(contexto[i].variables);
 		}
-		if(contexto[i].argumentos!=NULL){
+		if(contexto[i].argumentos!=NULL && contexto[i].arg_len>0){
 			free(contexto[i].argumentos);
 		}
 	}
@@ -515,11 +515,45 @@ char* serializar_semaforo(uint32_t pid, char* sem_id){
 }
 
 sem_action* deserializar_semaforo(char* serialized){
-	sem_action* sem = malloc(sizeof(print_text));
+	sem_action* sem = malloc(sizeof(sem_action));
 	int offset = 0;
 	deserializarDato(&(sem->pid),serialized,sizeof(uint32_t),&offset);
 	sem->sem_id = strdup(serialized+offset);
 	return sem;
+}
+
+uint32_t getLong_semaforo(char* sem_id){
+	return sizeof(uint32_t)+strlen(sem_id)+sizeof(char);
+}
+
+void destroy_sem_action(sem_action* self){
+	free(self->sem_id);
+	free(self);
+}
+
+char* serializar_shared_var(uint32_t valor, char* var_id){
+	char *serializedPackage = malloc(sizeof(uint32_t)+strlen(var_id)+sizeof(char));
+	int offset = 0;
+	serializarDato(serializedPackage,&(valor),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,var_id,strlen(var_id)+sizeof(char),&offset);
+	return serializedPackage;
+}
+
+shared_var* deserializar_shared_var(char* serialized){
+	shared_var* var = malloc(sizeof(shared_var));
+	int offset = 0;
+	deserializarDato(&(var->value),serialized,sizeof(uint32_t),&offset);
+	var->var_id = strdup(serialized+offset);
+	return var;
+}
+
+uint32_t getLong_shared_var(char* var_id){
+	return sizeof(uint32_t)+strlen(var_id)+sizeof(char);
+}
+
+void destroy_shared_var(shared_var* self){
+	free(self->var_id);
+	free(self);
 }
 
 
@@ -577,6 +611,32 @@ void informarNucleoImprimirTexto(int socketNucleo, uint32_t pid, char* texto){
 	free(serialized);
 }
 
+uint32_t getValorCompartida(int socketNucleo, char* var_id){
+	if(var_id[strlen(var_id)-1]=='\n'){
+		var_id[strlen(var_id)-1]='\0';
+	}
+	Package* package = createPackage();
+	uint32_t valor;
+	enviarMensajeSocket(socketNucleo,GET_SHARED_VAR,var_id);
+	if(recieve_and_deserialize(package,socketNucleo) > 0)
+	{
+		if(package->msgCode==GET_SHARED_VAR){
+			memcpy(&valor,package->message,sizeof(uint32_t));
+		}
+	}
+	destroyPackage(package);
+	return valor;
+}
+
+void setValorCompartida(int socketNucleo, char* var_id, uint32_t valor){
+	if(var_id[strlen(var_id)-1]=='\n'){
+		var_id[strlen(var_id)-1]='\0';
+	}
+	char* serialized = serializar_shared_var(valor,var_id);
+	uint32_t length = getLong_shared_var(var_id);
+	enviarMensajeSocketConLongitud(socketNucleo,SET_SHARED_VAR,serialized,length);
+}
+
 
 //funciones interfaz Nucleo a CPU
 
@@ -589,4 +649,26 @@ void ejecutarNuevoProcesoCPU(int socketCPU, PCB* pcb){
 
 void continuarEjecucionProcesoCPU(int socketCPU){
 	enviarMensajeSocket(socketCPU,CONTINUE_EXECUTION,"");
+}
+
+PCB* informarCPUbloqueoSemaforo(int socketCPU){
+	Package* package = createPackage();
+	PCB* pcb = NULL;
+
+	enviarMensajeSocket(socketCPU,CONTEXT_SWITCH_SEM_BLOCKED,"");
+
+	if(recieve_and_deserialize(package,socketCPU) > 0)
+	{
+		if(package->msgCode==CONTEXT_SWITCH_FINISHED){
+			pcb = deserializar_PCB(package->message);
+		}
+	}
+	destroyPackage(package);
+	return pcb;
+}
+
+void informarValorVariableCompartida(int socketCPU, uint32_t valor){
+	char* serialized = malloc(sizeof(uint32_t));
+	memcpy(serialized,&valor,sizeof(uint32_t));
+	enviarMensajeSocketConLongitud(socketCPU,GET_SHARED_VAR,serialized,sizeof(uint32_t));
 }

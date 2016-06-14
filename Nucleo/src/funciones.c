@@ -20,6 +20,7 @@ void handleClients(Configuration* config){
 
 	inicializarArraySockets(&args);
 	inicializarSemaforos();
+	inicializarVariablesCompartidas();
 
 	inicializarEstados();
 
@@ -396,6 +397,7 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
 		contextSwitchFinishedCallback(pcbActualizado);
+		destroyPCB(pcbActualizado);
 	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);
@@ -418,22 +420,30 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	} else if(package->msgCode==CPU_SIGNAL_DISCONNECTED){
 		PCB* pcbActualizado = deserializar_PCB(package->message);
 		contextSwitchFinishedCallback(pcbActualizado);
+		destroyPCB(pcbActualizado);
 	} else if(package->msgCode==GET_SHARED_VAR){
-		//TODO
+		int valor = getValorVariableCompartida(package->message);
+		informarValorVariableCompartida(socketCPU,valor);
 	} else if(package->msgCode==SET_SHARED_VAR){
-		//TODO
+		shared_var* var = deserializar_shared_var(package->message);
+		setValorVariableCompartida(var->var_id,var->value);
+		destroy_shared_var(var);
 	} else if(package->msgCode==SEM_WAIT){
-		/* TODO
-		deserializar mensaje wait
-		if(execute_wait(sem_id)){
-			enviar context switch al cpu y recibir el pcb
+		sem_action* action = deserializar_semaforo(package->message);
+		if(execute_wait(action->sem_id)){
+			PCB* pcbActualizado = informarCPUbloqueoSemaforo(socketCPU);
+			PCB* pcbLocal = removeFromEXEC(action->pid);
+			actualizarPCB(pcbLocal,pcbActualizado);
+			bloquearEnSemaforo(pcbLocal,action->sem_id);
+			destroyPCB(pcbActualizado);
+		} else {
+			continuarEjecucionProcesoCPU(socketCPU);
 		}
-		*/
+		destroy_sem_action(action);
 	} else if(package->msgCode==SEM_SIGNAL){
-		/* TODO
-		deserializar mensaje signal
-		execute_wait(sem_id);
-		*/
+		sem_action* action = deserializar_semaforo(package->message);
+		execute_signal(action->sem_id);
+		destroy_sem_action(action);
 	}
 }
 

@@ -36,6 +36,7 @@
 #define SET_SHARED_VAR 84
 #define SEM_WAIT 85
 #define SEM_SIGNAL 86
+#define CONTEXT_SWITCH_SEM_BLOCKED 87
 #define CPU_LIBRE 90
 //-------------------------------
 
@@ -96,6 +97,11 @@ typedef struct sem_action {
 	char* sem_id;
 } sem_action;
 
+typedef struct shared_var {
+	char* var_id;
+	uint32_t value;
+} shared_var;
+
 //serializacion PCB
 
 void destroyPCB(PCB* self);
@@ -132,6 +138,12 @@ char* serializar_imprimirVariable_consola(uint32_t valor);
 uint32_t deserializar_imprimirVariable_consola(char* serialized);
 char* serializar_semaforo(uint32_t pid, char* sem_id);
 sem_action* deserializar_semaforo(char* serialized);
+uint32_t getLong_semaforo(char* sem_id);
+void destroy_sem_action(sem_action* self);
+char* serializar_shared_var(uint32_t valor, char* var_id);
+shared_var* deserializar_shared_var(char* serialized);
+uint32_t getLong_shared_var(char* var_id);
+void destroy_shared_var(shared_var* self);
 
 
 //funciones interfaz CPU a Nucleo
@@ -144,10 +156,14 @@ void informarNucleoCPUlibre(int socketNucleo);
 void informarNucleoEjecutarOperacionIO(int socketNucleo, PCB* pcb, char* io_id, uint32_t cant_operaciones);
 void informarNucleoImprimirVariable(int socketNucleo, uint32_t pid, t_valor_variable valor);
 void informarNucleoImprimirTexto(int socketNucleo, uint32_t pid, char* texto);
+uint32_t getValorCompartida(int socketNucleo, char* var_id);
+void setValorCompartida(int socketNucleo, char* var_id, uint32_t valor);
 
 //funciones interfaz Nucleo a CPU
 
 void ejecutarNuevoProcesoCPU(int socketCPU, PCB* pcb);
 void continuarEjecucionProcesoCPU(int socketCPU);
+PCB* informarCPUbloqueoSemaforo(int socketCPU);
+void informarValorVariableCompartida(int socketCPU, uint32_t valor);
 
 #endif /* NUCLEOCPU_INTERFAZ_H_ */

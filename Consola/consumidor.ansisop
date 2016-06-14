@@ -1,0 +1,12 @@
+#!/bin/Consola
+begin	
+	:etiqueta
+	
+	wait sem_a
+		print !colas
+	signal sem_b
+	
+	#Ciclar indefinidamente
+	goto etiqueta
+
+end

@@ -129,6 +129,13 @@ void contextSwitch(){
 	destroyPCB(pcbActual);
 }
 
+void contextSwitch_semBlocked(){
+	logTrace("El proceso PID:%d fue bloqueado por un semaforo",pcbActual->processID);
+	informarNucleoContextSwitchFinished(socketNucleo,pcbActual);
+	destroyPCB(pcbActual);
+	proceso_fue_bloqueado = 1;
+}
+
 void cargarContextoPCB(Package* package){
 	pcbActual = deserializar_PCB(package->message);
 	logTrace("Contexto de proceso cargado PID:%d...",pcbActual->processID);
@@ -290,4 +297,34 @@ void finalizarPrograma(){
 	informarNucleoFinPrograma(socketNucleo,pcbActual);
 	destroyPCB(pcbActual);
 	logTrace("CPU se encuentra libre");
+}
+
+void execute_wait(char* sem_id){
+	if(sem_id[strlen(sem_id)-1]=='\n'){
+		sem_id[strlen(sem_id)-1]='\0';
+	}
+	char* serialized = serializar_semaforo(pcbActual->processID,sem_id);
+	uint32_t length = getLong_semaforo(sem_id);
+
+	Package* package = createPackage();
+
+	enviarMensajeSocketConLongitud(socketNucleo,SEM_WAIT,serialized,length);
+
+	if(recieve_and_deserialize(package,socketNucleo) > 0)
+	{
+		if(package->msgCode==CONTEXT_SWITCH_SEM_BLOCKED){
+			contextSwitch_semBlocked();
+		}
+	}
+	destroyPackage(package);
+	free(serialized);
+}
+
+void execute_signal(char* sem_id){
+	if(sem_id[strlen(sem_id)-1]=='\n'){
+		sem_id[strlen(sem_id)-1]='\0';
+	}
+	char* serialized = serializar_semaforo(pcbActual->processID,sem_id);
+	uint32_t length = getLong_semaforo(sem_id);
+	enviarMensajeSocketConLongitud(socketNucleo,SEM_SIGNAL,serialized,length);
 }
