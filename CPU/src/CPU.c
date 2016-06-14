@@ -14,6 +14,12 @@ void sig_handler(int signo)
 {
     if (signo == SIGUSR1){
     	end_signal_received = 1;
+    	if(esperando_mensaje){
+    		/* si esta clavado en el socket esperando a que
+    		 * le llegue un mensaje, finalizo el proceso*/
+    		logInfo("*** Se ha recibido la signal de desconexion de CPU ***");
+    		exit(0);
+    	}
     }
 }
 

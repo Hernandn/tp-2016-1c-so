@@ -38,6 +38,7 @@ int proceso_fue_bloqueado;
 int programa_finalizado;
 int end_signal_received;
 int end_cpu;
+int esperando_mensaje;
 
 int size_pagina;
 

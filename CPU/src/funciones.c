@@ -77,6 +77,7 @@ void iniciarEjecucionCPU(void* arguments){
 	programa_finalizado = 0;
 	end_signal_received = 0;
 	end_cpu = 0;
+	esperando_mensaje = 0;
 
 	/* Se abre una conexión con el servidor */
 	socketNucleo = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
@@ -99,8 +100,10 @@ void iniciarEjecucionCPU(void* arguments){
 	while (!end_cpu)
 	{
 		Package* package = malloc(sizeof(Package));
+		esperando_mensaje = 1;
 		if(recieve_and_deserialize(package,socketNucleo) > 0){
 			//logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+			esperando_mensaje = 0;
 			analizarMensaje(package,args);
 		}
 		destroyPackage(package);
@@ -157,9 +160,14 @@ void quantumSleep(arg_struct *args, int milisegundos){
 	usleep(milisegundos*1000);//convierto micro en milisegundos
 
 	if(proceso_fue_bloqueado){
-		informarNucleoCPUlibre(socketNucleo);
-		logTrace("CPU se encuentra libre");
-		proceso_fue_bloqueado = 0;
+		if (end_signal_received){
+			logInfo("*** Se ha recibido la signal de desconexion de CPU ***");
+			end_cpu = 1;
+		} else {
+			informarNucleoCPUlibre(socketNucleo);
+			logTrace("CPU se encuentra libre");
+			proceso_fue_bloqueado = 0;
+		}
 	} else {
 		if (end_signal_received){
 			logInfo("*** Se ha recibido la signal de desconexion de CPU ***");
