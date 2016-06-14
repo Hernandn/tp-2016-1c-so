@@ -3,6 +3,7 @@ begin
 	:etiqueta
 	
 	wait sem_a
+		!colas = !colas - 1
 		print !colas
 	signal sem_b
 	

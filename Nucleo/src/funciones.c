@@ -120,7 +120,7 @@ void handleConsolas(void* arguments){
 				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
-					logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
+					//logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					if(package->msgCode==NEW_ANSISOP_PROGRAM){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
 						iniciarPrograma(socketCliente[i],package->message);
@@ -204,7 +204,7 @@ void handleCPUs(void* arguments){
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
-					logDebug("CPU %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
+					//logDebug("CPU %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					analizarMensajeCPU(socketCliente[i],package,args);
 					destroyPackage(package);
 				}

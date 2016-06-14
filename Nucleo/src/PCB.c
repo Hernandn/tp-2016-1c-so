@@ -412,7 +412,7 @@ void abortarPrograma(int consolaFD){
 	if(!encontrado){
 		encontrado = findAndExitPCBexecuting(consolaFD);
 	}
-	if(!encontrado){//porque esta en el medio de una ejecucion de IO
+	if(!encontrado){//porque esta en el medio de una ejecucion de IO o bloqueado en un semaforo
 		pthread_mutex_lock(&readyMutex);
 		int* consola_p = malloc(sizeof(int));
 		*consola_p = consolaFD;
@@ -425,6 +425,7 @@ bool findAndExitPCBnotExecuting(int consolaFD){
 	int i;
 	PCB* pcb;
 	bool encontrado = false;
+
 	//busco en ready
 	pthread_mutex_lock(&readyMutex);
 	for(i=0; i<estados->ready->elements->elements_count; i++){
@@ -686,7 +687,12 @@ void execute_signal(char* sem_id){
 	if(sem_values[pos]>=0){
 		PCB* pcb = getNextFromSemaforo(pos);
 		if(pcb!=NULL){
-			sendToREADY(pcb);
+			if(consola_desconectada(pcb->consolaFD)){
+				sendToEXIT(pcb);
+				enviarMensajeSocket(socketPlanificador,ABORTAR_PROGRAMA,"");
+			} else {
+				sendToREADY(pcb);
+			}
 		}
 	}
 }

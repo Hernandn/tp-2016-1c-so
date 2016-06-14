@@ -3,7 +3,7 @@ begin
 	:etiqueta
 	
 	wait sem_b
-		!colas = !colas +1
+		!colas = !colas + 1
 	signal sem_a
 	
 	#Ciclar indefinidamente

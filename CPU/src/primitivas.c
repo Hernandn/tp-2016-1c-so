@@ -169,7 +169,7 @@ t_valor_variable ml_dereferenciar(t_puntero puntero) {
 	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
 	char* contenido = NULL;
 	int resultado = leer_pagina(dir->pagina,dir->offset,dir->size,&contenido);
-	printf("\n****** RESULTADO LECTURA %d *******\n",resultado);
+	printf("****** RESULTADO LECTURA %d *******\n",resultado);
 
 	uint32_t valor = -1;
 	if(resultado>0){
@@ -205,19 +205,19 @@ void ml_imprimirTexto(char* texto) {
 }
 
 t_valor_variable ml_obtenerValorCompartida(t_nombre_compartida variable){
-	printf("\nObteniendo Valor Variable compartida: %s\n",variable);
+	printf("Obteniendo Valor Variable compartida: %s\n",variable);
 	t_valor_variable valor = getValorCompartida(socketNucleo,variable);
 	return valor;
 }
 
 t_valor_variable ml_asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
-	printf("\nAsignando Valor Variable compartida: %s, valor: %d\n",variable,valor);
+	printf("Asignando Valor Variable compartida: %s, valor: %d\n",variable,valor);
 	setValorCompartida(socketNucleo,variable,valor);
 	return valor;
 }
 
 void ml_irAlLabel(t_nombre_etiqueta nombre_etiqueta){
-	printf("\nEjecutando Ir a Label: %s\n",nombre_etiqueta);
+	printf("Ejecutando Ir a Label: %s",nombre_etiqueta);
 	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, nombre_etiqueta, pcbActual->codeIndex->etiquetas_size);
 	printf("Ir a direccion: %d\n",pos);
 	pcbActual->programCounter = pos;
@@ -228,7 +228,7 @@ void ml_llamarSinRetorno(t_nombre_etiqueta etiqueta){
 }
 
 void ml_llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
-	printf("\nEjecutando Llamar con retorno a funcion: %s, Retorno: %d\n",etiqueta,donde_retornar);
+	printf("Ejecutando Llamar con retorno a funcion: %s, Retorno: %d\n",etiqueta,donde_retornar);
 	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, etiqueta, pcbActual->codeIndex->etiquetas_size);
 	printf("Indice de la funcion: %d\n",pos);
 	crearNuevoContexto(pcbActual);
@@ -243,12 +243,12 @@ void ml_llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
 }
 
 void ml_finalizar(void){
-	printf("\nEjecutando Finalizar\n");
+	printf("Ejecutando Finalizar\n");
 	programa_finalizado = 1;
 }
 
 void ml_retornar(t_valor_variable retorno){
-	printf("\nEjecutando Retornar\n");
+	printf("Ejecutando Retornar\n");
 	dir_memoria* dir = &(getContextoActual()->retVar);
 	printf("Escribir en variable (%d,%d,%d) el valor de retorno: %d",dir->pagina,dir->offset,dir->size,retorno);
 
@@ -258,16 +258,16 @@ void ml_retornar(t_valor_variable retorno){
 }
 
 void ml_entradaSalida(t_nombre_dispositivo dispositivo, int tiempo){
-	printf("\nEjecutando Entrada-Salida [Dispositivo: %s, Tiempo: %d]\n",dispositivo,tiempo);
+	printf("Ejecutando Entrada-Salida [Dispositivo: %s, Tiempo: %d]\n",dispositivo,tiempo);
 	ejecutarOperacionIO(dispositivo,tiempo);
 }
 
 void ml_wait(t_nombre_semaforo identificador_semaforo){
-	printf("\nEjecutando Wait de semaforo: %s\n",identificador_semaforo);
+	printf("Ejecutando Wait de semaforo: %s\n",identificador_semaforo);
 	execute_wait(identificador_semaforo);
 }
 
 void ml_signal(t_nombre_semaforo identificador_semaforo){
-	printf("\nEjecutando Signal de semaforo: %s\n",identificador_semaforo);
+	printf("Ejecutando Signal de semaforo: %s\n",identificador_semaforo);
 	execute_signal(identificador_semaforo);
 }

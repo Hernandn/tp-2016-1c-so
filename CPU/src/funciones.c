@@ -100,7 +100,7 @@ void iniciarEjecucionCPU(void* arguments){
 	{
 		Package* package = malloc(sizeof(Package));
 		if(recieve_and_deserialize(package,socketNucleo) > 0){
-			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
+			//logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
 			analizarMensaje(package,args);
 		}
 		destroyPackage(package);
@@ -140,18 +140,6 @@ void cargarContextoPCB(Package* package){
 	pcbActual = deserializar_PCB(package->message);
 	logTrace("Contexto de proceso cargado PID:%d...",pcbActual->processID);
 	nuevo_pid(pcbActual->processID);
-
-
-	printf("Instruccion inicio %d\n",pcbActual->codeIndex->instruccion_inicio);
-	printf("Instruccion size %d\n",pcbActual->codeIndex->instrucciones_size);
-	int i;
-	for(i=0; i<pcbActual->codeIndex->instrucciones_size; i++){
-		printf("Instruccion %d: ini %d  offset %d\n",i,pcbActual->codeIndex->instrucciones_serializado[i].start, pcbActual->codeIndex->instrucciones_serializado[i].offset);
-	}
-	printf("cant etiquetas %d\n",pcbActual->codeIndex->cantidad_de_etiquetas);
-	printf("cant funciones %d\n",pcbActual->codeIndex->cantidad_de_funciones);
-	printf("etiquetas size %d\n",pcbActual->codeIndex->etiquetas_size);
-	printf("etiquetas %s\n",pcbActual->codeIndex->etiquetas);
 }
 
 void ejecutarProceso(arg_struct *args){
@@ -281,7 +269,7 @@ char* getInstruccionFromUMC(int offset, int length){
 char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size){
 	char* contenido = NULL;
 	int resultado = leer_pagina(pagina,offset,size,&contenido);
-	printf("\n****** RESULTADO LECTURA %d *******\n",resultado);
+	printf("****** RESULTADO LECTURA %d *******\n",resultado);
 	return contenido;//TODO llamar a leerpagina de la UMC
 }
 

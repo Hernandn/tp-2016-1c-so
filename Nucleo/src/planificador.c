@@ -68,7 +68,7 @@ void planificar(void* arguments){
 				Package* package = malloc(sizeof(Package));
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
-					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
+					//logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					if(package->msgCode==CPU_LIBRE || package->msgCode==PROGRAM_READY){
 						atenderProcesos(listaCPUs);
 					} else if(package->msgCode==FINALIZAR_PROGRAMA){
