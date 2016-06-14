@@ -13,7 +13,6 @@
 void planificar(void* arguments){
 	arg_struct *args = arguments;
 	t_list* listaCPUs = args->listaCPUs;
-	Estados* estados = args->estados;
 	int socketServidor;				/* Descriptor del socket servidor */
 	int socketCliente[MAX_CONEXIONES];/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -71,11 +70,11 @@ void planificar(void* arguments){
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
 					logDebug("Thread %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					if(package->msgCode==CPU_LIBRE || package->msgCode==PROGRAM_READY){
-						atenderProcesos(estados,listaCPUs);
+						atenderProcesos(listaCPUs);
 					} else if(package->msgCode==FINALIZAR_PROGRAMA){
-						finalizarProg(estados,package);
+						finalizarProg(package);
 					} else if(package->msgCode==ABORTAR_PROGRAMA){
-						abortarProg(estados);
+						abortarProg();
 					}
 					destroyPackage(package);
 				}
@@ -100,10 +99,10 @@ void planificar(void* arguments){
 }
 
 
-void atenderProcesos(Estados* estados, t_list* listaCPUs){
+void atenderProcesos(t_list* listaCPUs){
 	CPU* cpu = getCPUlibre(listaCPUs);
-	while(cpu!=NULL && hayProcesosEnREADY(estados)){
-		startExec(estados,cpu->cpuFD);
+	while(cpu!=NULL && hayProcesosEnREADY()){
+		startExec(cpu->cpuFD);
 		cpu->libre = 0;
 
 		cpu = getCPUlibre(listaCPUs);
@@ -128,8 +127,8 @@ void inicializarSockets(int* sockets){
 	}
 }
 
-void finalizarProg(Estados* estados, Package* package){
-	PCB* pcb = removeNextFromEXIT(estados);
+void finalizarProg(Package* package){
+	PCB* pcb = removeNextFromEXIT();
 
 	while(pcb != NULL){
 		int consolaFD = pcb->consolaFD;
@@ -145,18 +144,18 @@ void finalizarProg(Estados* estados, Package* package){
 			logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
 			enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");
 		}
-		pcb = removeNextFromEXIT(estados);
+		pcb = removeNextFromEXIT();
 	}
 
 }
 
-void abortarProg(Estados* estados){
-	PCB* pcb = removeNextFromEXIT(estados);
+void abortarProg(){
+	PCB* pcb = removeNextFromEXIT();
 
 	while(pcb != NULL){
 		logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
 		destroyPCB(pcb);
-		pcb = removeNextFromEXIT(estados);
+		pcb = removeNextFromEXIT();
 	}
 
 }

@@ -506,6 +506,25 @@ uint32_t deserializar_imprimirVariable_consola(char* serialized){
 	return valor;
 }
 
+char* serializar_semaforo(uint32_t pid, char* sem_id){
+	char *serializedPackage = malloc(sizeof(uint32_t)+strlen(sem_id)+sizeof(char));
+	int offset = 0;
+	serializarDato(serializedPackage,&(pid),sizeof(uint32_t),&offset);
+	serializarDato(serializedPackage,sem_id,strlen(sem_id)+sizeof(char),&offset);
+	return serializedPackage;
+}
+
+sem_action* deserializar_semaforo(char* serialized){
+	sem_action* sem = malloc(sizeof(print_text));
+	int offset = 0;
+	deserializarDato(&(sem->pid),serialized,sizeof(uint32_t),&offset);
+	sem->sem_id = strdup(serialized+offset);
+	return sem;
+}
+
+
+
+
 
 
 //funciones interfaz CPU a Nucleo

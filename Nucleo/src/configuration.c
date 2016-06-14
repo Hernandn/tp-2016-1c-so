@@ -53,6 +53,29 @@ void configurar(){
 		free(io_sleep_aux[i]);
 	}
 	free(io_sleep_aux);
+
+	//levanto los semaforos
+	config->sem_ids = config_get_array_value(nConfig,SEM_IDS);
+	len=0;
+	while(config->sem_ids[len]!=NULL){
+		len++;
+	}
+	config->sem_length = len;
+	char** sem_init_aux = config_get_array_value(nConfig,SEM_INIT);
+	config->sem_init = malloc(sizeof(int)*len);
+	for(i=0; i<len; i++){
+		config->sem_init[i] = atoi(sem_init_aux[i]);
+		free(sem_init_aux[i]);
+	}
+	free(sem_init_aux);
+
+	//levanto variables compartidas
+	config->shared_vars = config_get_array_value(nConfig,SHARED_VARS);
+	len=0;
+	while(config->shared_vars[len]!=NULL){
+		len++;
+	}
+	config->shared_vars_length = len;
 }
 
 Configuration* getConfiguration(){

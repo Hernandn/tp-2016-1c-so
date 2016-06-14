@@ -44,8 +44,6 @@
 #define IO_SLEEP "IO_SLEEP"
 #define SHARED_VARS "SHARED_VARS"
 #define STACK_SIZE "STACK_SIZE"
-#define IO_IDS "IO_IDS"
-#define IO_SLEEP "IO_SLEEP"
 
 typedef struct Configuration {
 	int puerto_nucleo_cpu;
@@ -64,6 +62,11 @@ typedef struct Configuration {
 	int io_length;
 	char** io_ids;
 	int* io_sleep;
+	int sem_length;
+	char** sem_ids;
+	int* sem_init;
+	int shared_vars_length;
+	char** shared_vars;
 } Configuration;
 
 Configuration* config;

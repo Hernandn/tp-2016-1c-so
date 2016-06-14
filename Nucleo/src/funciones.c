@@ -19,9 +19,9 @@ void handleClients(Configuration* config){
 	socketPlanificador = -1;
 
 	inicializarArraySockets(&args);
+	inicializarSemaforos();
 
-	Estados* estados = inicializarEstados();
-	args.estados = estados;
+	inicializarEstados();
 
 	//abrir server para escuchar CPUs
 	args.socketServerCPU = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_cpu);
@@ -59,7 +59,6 @@ void handleClients(Configuration* config){
 
 void handleConsolas(void* arguments){
 	arg_struct *args = arguments;
-	Estados* estados = args->estados;
 	int socketServidor;				/* Descriptor del socket servidor */
 	int *socketCliente = args->consolaSockets;/* Descriptores de sockets con clientes */
 	int numeroClientes = 0;			/* Número clientes conectados */
@@ -81,7 +80,7 @@ void handleConsolas(void* arguments){
 		if(socketPlanificador==-1){
 			socketPlanificador = conectarConPlanificador(PLANIFICADOR_IP,PLANIFICADOR_PORT);
 			if(socketPlanificador!=-1){
-				launch_IO_threads(estados);
+				launch_IO_threads();
 			}
 		}
 		/* Cuando un cliente cierre la conexión, se pondrá un -1 en su descriptor
@@ -123,7 +122,7 @@ void handleConsolas(void* arguments){
 					logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					if(package->msgCode==NEW_ANSISOP_PROGRAM){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
-						iniciarPrograma(estados,socketCliente[i],package->message);
+						iniciarPrograma(socketCliente[i],package->message);
 					}
 					destroyPackage(package);
 				}
@@ -133,7 +132,7 @@ void handleConsolas(void* arguments){
 					 * marca con -1 el descriptor para que compactaClaves() lo
 					 * elimine */
 					logInfo("Consola %d ha cerrado la conexión.", i+1);
-					abortarPrograma(estados,socketCliente[i]);
+					abortarPrograma(socketCliente[i]);
 					socketCliente[i] = -1;
 				}
 			}
@@ -325,7 +324,7 @@ void destroyCPU(CPU* self){
 void liberarCPU(CPU* cpu){
 	cpu->libre = 1;	//true
 	logTrace("Informando Planificador(%d) [CPU LIBRE]",socketPlanificador);
-	informarPlanificador(CPU_LIBRE,0);
+	informarPlanificador(CPU_LIBRE,cpu->cpuFD);
 }
 
 //si solo se tiene el socket del CPU
@@ -386,39 +385,55 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
 	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
-		quantumFinishedCallback(args->estados,atoi(package->message),args->config->quantum,socketCPU);
+		quantumFinishedCallback(atoi(package->message),args->config->quantum,socketCPU);
 	} else if(package->msgCode==PROGRAM_FINISHED){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
-		int socketConsola = getFromEXEC(args->estados,pcbActualizado->processID)->consolaFD;
-		finalizarPrograma(args->estados,pcbActualizado,socketCPU);
+		int socketConsola = getFromEXEC(pcbActualizado->processID)->consolaFD;
+		finalizarPrograma(pcbActualizado,socketCPU);
 		borrarSocketConsola(args,socketConsola);
 	} else if(package->msgCode==CONTEXT_SWITCH_FINISHED){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
-		contextSwitchFinishedCallback(args->estados,pcbActualizado);
+		contextSwitchFinishedCallback(pcbActualizado);
 	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);
 	} else if(package->msgCode==EXEC_IO_OPERATION){
 		logTrace("Solicitada operacion I/O");
 		solicitud_io* solicitud = deserializar_ejecutarOperacionIO(package->message);
-		atenderSolicitudDispositivoIO(args->estados,solicitud);
+		atenderSolicitudDispositivoIO(solicitud);
 	} else if(package->msgCode==PRINT_VARIABLE){
 		print_var* print = deserializar_imprimirVariable(package->message);
-		int socketConsola = getFromEXEC(args->estados,print->pid)->consolaFD;
+		int socketConsola = getFromEXEC(print->pid)->consolaFD;
 		char* serialized = serializar_imprimirVariable_consola(print->valor);
 		enviarMensajeSocketConLongitud(socketConsola,PRINT_VARIABLE,serialized,sizeof(uint32_t));
 		destroy_print_var(print);
 		free(serialized);
 	} else if(package->msgCode==PRINT_TEXT){
 		print_text* print = deserializar_imprimirTexto(package->message);
-		int socketConsola = getFromEXEC(args->estados,print->pid)->consolaFD;
+		int socketConsola = getFromEXEC(print->pid)->consolaFD;
 		enviarMensajeSocket(socketConsola,PRINT_TEXT,print->text);
 		destroy_print_text(print);
 	} else if(package->msgCode==CPU_SIGNAL_DISCONNECTED){
 		PCB* pcbActualizado = deserializar_PCB(package->message);
-		contextSwitchFinishedCallback(args->estados,pcbActualizado);
+		contextSwitchFinishedCallback(pcbActualizado);
+	} else if(package->msgCode==GET_SHARED_VAR){
+		//TODO
+	} else if(package->msgCode==SET_SHARED_VAR){
+		//TODO
+	} else if(package->msgCode==SEM_WAIT){
+		/* TODO
+		deserializar mensaje wait
+		if(execute_wait(sem_id)){
+			enviar context switch al cpu y recibir el pcb
+		}
+		*/
+	} else if(package->msgCode==SEM_SIGNAL){
+		/* TODO
+		deserializar mensaje signal
+		execute_wait(sem_id);
+		*/
 	}
 }
 

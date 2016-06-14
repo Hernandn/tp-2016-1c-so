@@ -21,10 +21,10 @@
 #define ABORTAR_PROGRAMA 93
 
 void planificar(void* arguments);
-void atenderProcesos(Estados* estados, t_list* listaCPUs);
+void atenderProcesos(t_list* listaCPUs);
 CPU* getCPUlibre(t_list* listaCPUs);
 void inicializarSockets(int* sockets);
-void finalizarProg(Estados* estados, Package* package);
-void abortarProg(Estados* estados);
+void finalizarProg(Package* package);
+void abortarProg();
 
 #endif /* PLANIFICADOR_H_ */

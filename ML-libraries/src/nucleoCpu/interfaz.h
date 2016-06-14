@@ -32,6 +32,10 @@
 #define PRINT_VARIABLE 80
 #define PRINT_TEXT 81
 #define CPU_SIGNAL_DISCONNECTED 82
+#define GET_SHARED_VAR 83
+#define SET_SHARED_VAR 84
+#define SEM_WAIT 85
+#define SEM_SIGNAL 86
 #define CPU_LIBRE 90
 //-------------------------------
 
@@ -87,6 +91,11 @@ typedef struct print_text {
 	char* text;
 } print_text;
 
+typedef struct sem_action {
+	uint32_t pid;
+	char* sem_id;
+} sem_action;
+
 //serializacion PCB
 
 void destroyPCB(PCB* self);
@@ -121,6 +130,8 @@ void destroy_print_text(print_text* self);
 void destroy_print_var(print_var* self);
 char* serializar_imprimirVariable_consola(uint32_t valor);
 uint32_t deserializar_imprimirVariable_consola(char* serialized);
+char* serializar_semaforo(uint32_t pid, char* sem_id);
+sem_action* deserializar_semaforo(char* serialized);
 
 
 //funciones interfaz CPU a Nucleo

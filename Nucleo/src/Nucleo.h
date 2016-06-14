@@ -35,7 +35,6 @@ typedef struct arg_struct {
     int socketServerPlanificador;
     t_list* listaCPUs;
     Configuration* config;
-    Estados* estados;
 } arg_struct;
 
 //contiene el estado de un CPU conectado al Nucleo
