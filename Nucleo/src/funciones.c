@@ -528,8 +528,7 @@ void handleInotify(void* arguments){
 								nConfig = config_create(NUCLEO_CONFIG_PATH_ECLIPSE);
 							}
 							if(nConfig!=NULL){
-								//TODO
-								//setQuantum(config_get_int_value(nConfig,QUANTUM));
+								setQuantum(config_get_int_value(nConfig,QUANTUM));
 							}
 						}
 					}

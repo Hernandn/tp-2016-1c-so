@@ -22,7 +22,7 @@ void configurar(){
 			config_dir = strdup(".");
 		}
 	} else {
-		config_dir = strdup("../");
+		config_dir = strdup(".");
 	}
 	config->puerto_nucleo_cpu = config_get_int_value(nConfig,PUERTO_CPU);
 	config->puerto_nucleo_prog = config_get_int_value(nConfig,PUERTO_PROG);
