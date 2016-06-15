@@ -21,8 +21,10 @@ void handleClients(Configuration* config){
 	inicializarArraySockets(&args);
 	inicializarSemaforos();
 	inicializarVariablesCompartidas();
-
 	inicializarEstados();
+
+	pthread_mutex_init(&quantum_mutex,NULL);
+	setQuantum(config->quantum);
 
 	//abrir server para escuchar CPUs
 	args.socketServerCPU = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_cpu);
@@ -52,10 +54,13 @@ void handleClients(Configuration* config){
 	pthread_create(&hilo2,NULL,(void*)handleCPUs,(void *)&args);
 	pthread_t hilo3;
 	pthread_create(&hilo3,NULL,(void*)planificar,(void *)&args);
+	pthread_t hilo4;
+	pthread_create(&hilo4,NULL,(void*)handleInotify,NULL);
 
 	pthread_join(hilo1,NULL);
 	pthread_join(hilo2,NULL);
 	pthread_join(hilo3,NULL);
+	pthread_join(hilo4,NULL);
 }
 
 void handleConsolas(void* arguments){
@@ -386,7 +391,7 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
 	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
-		quantumFinishedCallback(atoi(package->message),args->config->quantum,socketCPU);
+		quantumFinishedCallback(atoi(package->message),getQuantum(),socketCPU);
 	} else if(package->msgCode==PROGRAM_FINISHED){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcbActualizado = deserializar_PCB(package->message);
@@ -460,4 +465,83 @@ void borrarSocketConsola(arg_struct *args, int socketConsola){
 	}
 }
 
+void setQuantum(int valor){
+	pthread_mutex_lock(&quantum_mutex);
+	quantum = valor;
+	logInfo("Modificado Quantum: %d",valor);
+	pthread_mutex_unlock(&quantum_mutex);
+}
+
+int getQuantum(){
+	int valor;
+	pthread_mutex_lock(&quantum_mutex);
+	valor = quantum;
+	pthread_mutex_unlock(&quantum_mutex);
+	return valor;
+}
+
+void handleInotify(void* arguments){
+
+	char buffer[BUF_LEN];
+
+	// Al inicializar inotify este nos devuelve un descriptor de archivo
+	int file_descriptor = inotify_init();
+	if (file_descriptor < 0) {
+		perror("inotify_init");
+	}
+
+	// Creamos un monitor sobre un path indicando que eventos queremos escuchar
+	int watch_descriptor = inotify_add_watch(file_descriptor, config_dir, IN_MODIFY);
+
+	// El file descriptor creado por inotify, es el que recibe la información sobre los eventos ocurridos
+	// para leer esta información el descriptor se lee como si fuera un archivo comun y corriente pero
+	// la diferencia esta en que lo que leemos no es el contenido de un archivo sino la información
+	// referente a los eventos ocurridos
+	while(1){
+		int length = read(file_descriptor, buffer, BUF_LEN);
+		if (length < 0) {
+			perror("read");
+		}
+
+		int offset = 0;
+
+		// Luego del read buffer es un array de n posiciones donde cada posición contiene
+		// un eventos ( inotify_event ) junto con el nombre de este.
+		while (offset < length) {
+
+			// El buffer es de tipo array de char, o array de bytes. Esto es porque como los
+			// nombres pueden tener nombres mas cortos que 24 caracteres el tamaño va a ser menor
+			// a sizeof( struct inotify_event ) + 24.
+			struct inotify_event *event = (struct inotify_event *) &buffer[offset];
+
+			// El campo "len" nos indica la longitud del tamaño del nombre
+			if (event->len) {
+				// Dentro de "mask" tenemos el evento que ocurrio y sobre donde ocurrio
+				// sea un archivo o un directorio
+				if (event->mask & IN_MODIFY) {
+					if (event->mask & IN_ISDIR) {
+						//printf("The directory %s was modified.\n", event->name);
+					} else {
+						if(string_equals_ignore_case(event->name,NUCLEO_CONFIG_PATH_ECLIPSE)){
+							t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
+							if(nConfig==NULL){
+								nConfig = config_create(NUCLEO_CONFIG_PATH_ECLIPSE);
+							}
+							if(nConfig!=NULL){
+								//TODO
+								//setQuantum(config_get_int_value(nConfig,QUANTUM));
+							}
+						}
+					}
+				}
+			}
+			offset += sizeof (struct inotify_event) + event->len;
+		}
+	}
+
+
+	inotify_rm_watch(file_descriptor, watch_descriptor);
+	close(file_descriptor);
+
+}
 

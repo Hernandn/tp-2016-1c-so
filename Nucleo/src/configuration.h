@@ -28,6 +28,8 @@
 #include <netdb.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/inotify.h>
 
 #define NUCLEO_CONFIG_PATH "../nucleo.conf"
 #define NUCLEO_CONFIG_PATH_ECLIPSE "nucleo.conf"
@@ -44,6 +46,10 @@
 #define IO_SLEEP "IO_SLEEP"
 #define SHARED_VARS "SHARED_VARS"
 #define STACK_SIZE "STACK_SIZE"
+
+//para inotify
+#define EVENT_SIZE  ( sizeof (struct inotify_event) + 24 )
+#define BUF_LEN     ( 1024 * EVENT_SIZE )
 
 typedef struct Configuration {
 	int puerto_nucleo_cpu;
@@ -70,6 +76,7 @@ typedef struct Configuration {
 } Configuration;
 
 Configuration* config;
+char* config_dir;
 
 void configurar();
 Configuration* getConfiguration();

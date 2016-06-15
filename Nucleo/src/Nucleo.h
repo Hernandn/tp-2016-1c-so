@@ -46,6 +46,9 @@ typedef struct CPU {
 int socketUMC;
 int socketPlanificador;
 
+int quantum;
+pthread_mutex_t quantum_mutex;
+
 //prototipos de funciones
 void handleClients(Configuration* config);
 void handleConsolas();
@@ -66,5 +69,8 @@ int conectarConPlanificador(char* ip, int puerto);
 void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args);
 int getSocketUMC();
 void borrarSocketConsola(arg_struct *args, int socketConsola);
+void setQuantum(int valor);
+int getQuantum();
+void handleInotify(void* arguments);
 
 #endif /* NUCLEO_H_ */
