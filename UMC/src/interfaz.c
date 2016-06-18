@@ -44,10 +44,11 @@ int inicializar_programa(char* mensaje_serializado){
 		 *tmp=NULL;				//Puntero a buffer multiplo de tamanio de pagina para compatibilizar el programa
 	int resultado, i, tamanio_pagina = config->size_pagina;
 
+	logDebug("----------------------Comienza inicializacion de programa----------------------\n");
+
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, sizeof(uint32_t), (void*) &size_programa);
 	contenido = malloc(sizeof(char)*size_programa);
 	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,size_programa);
-
 
 	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
 
@@ -67,6 +68,8 @@ int inicializar_programa(char* mensaje_serializado){
 	free(tmp);
 	free(contenido);
 
+	logDebug("----------------------Finaliza inicializacion de programa----------------------\n");
+
 	return resultado;
 }
 
@@ -74,9 +77,13 @@ int leer_pagina(char* mensaje_serializado, char** contenido){
 
 	uint32_t dir, offset, tamanio;
 
+	logDebug("----------------------Comienza lectura de pagina----------------------\n");
+
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 
 	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
+
+	logDebug("----------------------Finaliza lectura de pagina----------------------\n");
 
 	return obtener_contenido_memoria(contenido, dir, offset, tamanio);
 }
@@ -86,12 +93,15 @@ int escribir_pagina(char* mensaje_serializado){
 	uint32_t dir, offset, tamanio;
 	char* contenido=NULL;
 
+	logDebug("----------------------Comienza escritura de pagina----------------------\n");
+
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 	contenido = malloc(sizeof(char)*tamanio);
 	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,tamanio);
 
 	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, contenido);
 
+	logDebug("----------------------Finaliza escritura de pagina----------------------\n");
 	return escribir_contenido_memoria(dir, offset, tamanio, contenido);
 
 }
@@ -100,6 +110,8 @@ int finalizar_programa(char* mensaje_serializado){
 
 	uint32_t pid;
 
+	logDebug("----------------------Comienza finalizacion de programa----------------------\n");
+
 	deserializar_parametros(1, mensaje_serializado, sizeof(uint32_t), (void*) &pid);
 
 	logDebug("Finalizando programa %d", pid);
@@ -107,6 +119,8 @@ int finalizar_programa(char* mensaje_serializado){
 	liberar_memoria(pid);
 	eliminar_tabla_de_paginas(pid);
 	finalizarProgramaSwap(pid);
+
+	logDebug("----------------------Finaliza finalizacion de programa----------------------\n");
 
 	return 0;
 }
