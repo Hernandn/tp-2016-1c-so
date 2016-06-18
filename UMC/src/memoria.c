@@ -60,16 +60,20 @@ uint32_t obtener_numero_marco_tabla(uint32_t numero_pagina){
 
 	tabla_buscada=obtener_tabla(obtener_pid());
 	if(tabla_buscada==NULL){
+		logDebug("No se encontro la tabla");
 		return -3;	//No existe la tabla del proceso, estamos hasta las manos
 	}
 	if(numero_pagina > tabla_buscada->tamanio){
+		logDebug("Quiere entrar a una posicion que no le pertenece");
 		return -2; //Quiere entrar a una posicion que no le pertenece
 	}
 	fila_buscada=list_find(tabla_buscada->filas,fila_valida);
 	if(fila_buscada==NULL){
+		logDebug("No se encontro la fila por lo que la pagina no esta en memoria");
 		return -1;	//No se encontro la fila, por lo que la pagina no esta en memoria
 	}
 
+	logDebug("Numero de marco encontrado: %d", fila_buscada->numero_marco);
 	return fila_buscada->numero_marco;
 }
 
@@ -116,6 +120,7 @@ void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina
 	int marco_libre = obtener_marco_libre();
 	uint32_t dir_fisica = marco_libre * config->size_pagina;	//Todo No contemplo que no encuentre marco libre
 
+	logDebug("Marco libre encontrado: %d",marco_libre);
 	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
 
 	pthread_mutex_lock(&bitMap_mutex);
@@ -191,8 +196,6 @@ void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
 }
 
 void eliminar_tabla_de_paginas(uint32_t pid){
-
-	logDebug("Eliminando tabla con pid %d", pid);
 
 	bool tiene_igual_pid (void* elemento){
 		return ((t_tabla*) elemento)->pid==pid;
@@ -273,7 +276,7 @@ void liberar_memoria(uint32_t pid){
 	void liberar_memoria_con_fila(void* fila){
 		int nro_marco;
 
-		nro_marco=((t_fila_tabla *) fila)->numero_marco / config->size_pagina;
+		nro_marco=((t_fila_tabla *) fila)->numero_marco;
 		bitarray_clean_bit(memoria_principal.bitmap,nro_marco);
 	}
 
