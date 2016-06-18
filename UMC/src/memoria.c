@@ -100,8 +100,12 @@ uint32_t obtener_marco_libre(){
 	char bit_no_encontrado=1;
 
 	while(i < config->cantidad_paginas && bit_no_encontrado){
+		pthread_mutex_lock(&bitMap_mutex);
+
 		if(bitarray_test_bit(memoria_principal.bitmap,i)==0) bit_no_encontrado = 0;
 		else i++;
+
+		pthread_mutex_unlock(&bitMap_mutex);
 	}
 
 	return bit_no_encontrado ? -1 : i;
@@ -114,7 +118,9 @@ void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina
 
 	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
 
+	pthread_mutex_lock(&bitMap_mutex);
 	bitarray_set_bit(memoria_principal.bitmap,marco_libre);
+	pthread_mutex_unlock(&bitMap_mutex);
 
 	cargar_dir_tabla(numero_pagina, marco_libre);
 }
@@ -228,7 +234,10 @@ int obtener_contenido_memoria(char** contenido, uint32_t numero_pagina, uint32_t
 	if(*contenido==NULL) *contenido=malloc(tamanio);
 
 	memcpy(*contenido,mem,tamanio);
+
+	pthread_mutex_lock(&activo_mutex);
 	bitarray_set_bit(memoria_principal.activo,numero_marco);
+	pthread_mutex_unlock(&activo_mutex);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que lei
 }
@@ -243,8 +252,14 @@ int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t
 	if(dir_fisica<0) return dir_fisica;
 
 	memcpy(mem,contenido,tamanio);
+
+	pthread_mutex_lock(&modificacion_mutex);
 	bitarray_set_bit(memoria_principal.modificacion,numero_marco);
+	pthread_mutex_unlock(&modificacion_mutex);
+
+	pthread_mutex_lock(&activo_mutex);
 	bitarray_set_bit(memoria_principal.activo,numero_marco);
+	pthread_mutex_unlock(&activo_mutex);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
@@ -284,9 +299,12 @@ void flush_memory(){
 
 	tamanio = bitarray_get_max_bit(bitMap_Modificacion);
 
+	pthread_mutex_lock(&modificacion_mutex);
 	for(i=0; i<tamanio; i++){
+
 		bitarray_clean_bit(bitMap_Modificacion,i);
 	}
+	pthread_mutex_unlock(&modificacion_mutex);
 }
 
 void crearListaDeTablas(){

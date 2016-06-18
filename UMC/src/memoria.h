@@ -50,6 +50,10 @@ typedef struct tabla_tlb{
 	t_list* filas;
 } t_tabla_tlb;
 
+pthread_mutex_t bitMap_mutex,
+				modificacion_mutex,
+				activo_mutex;
+
 void crearMemoriaPrincipal(int, int);
 void crear_tabla_de_paginas(uint32_t,uint32_t);
 void crear_tlb(uint32_t tamanio);

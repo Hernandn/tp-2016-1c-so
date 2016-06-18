@@ -31,6 +31,11 @@ void handleClients(){
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
 	pthread_mutex_init(&socket_swap_mutex,NULL);
 
+	//Mutex para bitmaps de memoria
+	pthread_mutex_init(&bitMap_mutex,NULL);
+	pthread_mutex_init(&activo_mutex,NULL);
+	pthread_mutex_init(&modificacion_mutex,NULL);
+
 	//Completo los atributos de thread para que sea detached. Se va a usar para los thread de CPU
 	pthread_attr_init(&thread_detached_attr);
 	pthread_attr_setdetachstate(&thread_detached_attr,PTHREAD_CREATE_DETACHED);
