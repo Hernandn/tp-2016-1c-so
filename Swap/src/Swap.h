@@ -27,5 +27,8 @@ pagina getPagina_EscribirPagina(char* str, int size);
 uint32_t getProcessID_SolicitarPagina(char* str);
 uint32_t getNumeroPagina_SolicitarPagina(char* str);
 uint32_t getProcessID_EliminarPrograma(char* str);
+void compactacion ();
+int obtener_primer_disp();
+int ultimo_disponible(primer_frame_disponible);
 
 #endif /* SWAP_H_ */
