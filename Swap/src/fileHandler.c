@@ -162,3 +162,57 @@ void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
 	}
 }
 
+void compactacion (Configuration* config)
+{
+	int i;
+	//primer bloque disponible para empezar a compactar
+	int primer_frame_disponible = obtener_primer_disp();
+	//busco ultimo disponible empezando desde el primero disponible
+	int ultimo_frame_disponible = ultimo_disponible(primer_frame_disponible);
+	int j=0;
+	i=primer_frame_disponible;
+	//Voy acomodando desde el primero disponible hasta el ultimo de ese bloque todos los ocupados que
+	//encuentro a partir de ahi
+	while(i<= ultimo_frame_disponible)
+	{
+		if(bitarray_test_bit(bitMap,ultimo_frame_disponible+j))
+		{
+			//mover_frame(ultimo_frame_disponible+j, i);
+			i++;
+		}
+		j++;
+
+	}
+
+}
+
+int obtener_primer_disp()
+{
+		//contado de espacio contiguo
+		int  i;
+
+		for(i=0; i<bitMap->size; i++){
+			//a partir del primer 0 espacio disponible
+			if(!bitarray_test_bit(bitMap,i)){
+				return i;
+			}
+			else{
+				return -1;
+			}
+		}
+}
+
+int ultimo_disponible(int primero)
+{
+	//contado de espacio contiguo
+	int  i;
+	int cont = 0;
+
+	for(i=(primero); i<bitMap->size; i++){
+		//a partir del primer 0 espacio disponible
+		if(!bitarray_test_bit(bitMap,i)){
+			cont++;
+		}
+	}
+	return cont;
+}
