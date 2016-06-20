@@ -57,7 +57,8 @@ void handleClients(){
 
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
-	 * por los clientes ya conectados */
+	 * por los clientes ya conectados
+	 */
 	while (1)
 	{
 
@@ -107,63 +108,6 @@ void handleClients(){
 	pthread_attr_destroy(&thread_detached_attr);
 }
 
-void comunicarSWAP(int accion){
-
-	//Bloqueo la comunicacion con swap
-	pthread_mutex_lock(&comunicacion_swap_mutex);
-	pthread_mutex_lock(&socket_swap_mutex);
-
-	int comunicacion_no_exitosa = 1;				//Si la comunicacion no es exitosa intenta de nuevo
-	Package* package = malloc(sizeof(Package));	//Paquete para guardar la respuesta
-
-	//Me quedo en un loop hasta lograr comincar el mensaje
-	while(comunicacion_no_exitosa){
-		if(accion==NUEVO_PROGRAMA_SWAP){
-
-			//esto es con datos de prueba
-			int pid = 300;
-			int cantidadPaginas = 2;
-
-			char* serialized = serializar_NuevoPrograma(pid,cantidadPaginas);
-			int longitud = getLong_NuevoPrograma(cantidadPaginas);
-
-			enviarMensajeSocketConLongitud(socket_swap,accion,serialized,longitud);
-			free(serialized);
-
-			//esperar respuesta del Swap si pudo reservar espacio para el nuevo programa
-			if(recieve_and_deserialize(package,socket_swap) > 0){
-
-				logDebug("Swap envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
-
-				if(atoi(package->message)){//por ahora solo logeo la respuesta
-					logDebug("Swap me avisa que pudo reservar correctamente %d paginas para el Programa PID:%d",cantidadPaginas,pid);
-				} else {
-					logDebug("Swap me avisa que no pudo reservar %d paginas para el Programa PID:%d",cantidadPaginas,pid);
-				}
-
-				/* En un programa posta esto traeria muchos problemas porque si se
-				 * corta la comunicacion entre el send y el receive voy a mandar
-				 * otro send y reservar el doble de memoria para el mismo programa.
-				 *
-				 * La forma de solucionarlo seria que el Swap devuelva un codigo
-				 * que represente el pedido y el resultado se guarde en el Swap.
-				 * Despues la UMC tiene que, con el codigo, pedir el resultado de
-				 * la operacion, de esta manera si se corta la comunicacion y luego
-				 * se reestablece solo pedis el codigo en vez de volver a pedir memoria.
-				 */
-				comunicacion_no_exitosa = 0;
-			}else
-				conectarConSwap();
-
-			destroyPackage(package);
-		}
-	}
-
-	//Libero la comunicacion con swap
-	pthread_mutex_unlock(&socket_swap_mutex);
-	pthread_mutex_unlock(&comunicacion_swap_mutex);
-}
-
 int conectarConSwap(){
 
 	int socket;		/* descriptor de conexión con el servidor */
@@ -191,18 +135,13 @@ int conectarConSwap(){
 }
 
 void handle_cpu(t_arg_thread_cpu* argumentos){
-	int sigue = 1,								//Ya se, no es muy original que digamos
+	int sigue = 1,								//Flag para el while, cuando muere el socket se pasa a 0
 		*socket_cpu = &argumentos->socket_cpu,	//Lo guardo en variables para que sea mas comodo de usar
 		result;
 	Package *package_receive;
 	char* contenido_lectura=NULL, *result_serializado=NULL;
 
 	crear_key_pid();
-
-	//Prueba de key_pid borrar cuando haya pid posta
-	logDebug("Valor antes de setear un pid %d",obtener_pid());
-	setear_pid(rand() % 20);
-	logDebug("Valor key seteado %d",obtener_pid());
 
 	while(sigue){
 		package_receive = createPackage();
@@ -214,7 +153,6 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 				case SOLICITAR_BYTES_PAGINA:
 
 					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-					//enviarMensajeSocket(*socket_cpu,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
 
 					contenido_lectura=NULL;
 					result = leer_pagina(package_receive->message,&contenido_lectura);
@@ -240,7 +178,6 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 				case ALMACENAR_BYTES_PAGINA:
 
 					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-					//enviarMensajeSocket(*socket_cpu,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
 
 					result = escribir_pagina(package_receive->message);
 					enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
@@ -295,7 +232,6 @@ void handleNucleo(t_arg_thread_nucleo* args){
 		*socket_nucleo = &args->socket_nucleo,	//Lo guardo en variables para que sea mas comodo de usar
 		result;
 	Package* package;
-	//char* contenido_lectura=NULL, *result_serializado=NULL;
 
 	while(sigue){
 		package = malloc(sizeof(Package));
@@ -308,47 +244,9 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 					logDebug("Se ha solicitado la inicializacion de un nuevo programa.");
 
-					//comunicarSWAP(NUEVO_PROGRAMA_SWAP);
-
 					result = inicializar_programa(package->message);
 					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
 
-					break;
-
-				case SOLICITAR_BYTES_PAGINA:	//Todo el nucleo no deberia poder hacer esot
-
-					logDebug("Se ha solicitado la lectura de Bytes en pagina.");
-
-					/*enviarMensajeSocket(*socket_nucleo,SOLICITAR_BYTES_PAGINA,"Bytes leidos");//de prueba
-
-					contenido_lectura=NULL;
-					result = leer_pagina(package->message,contenido_lectura);
-
-					//Si la operacion salio bien result es el tamanio de contenido leido
-					if(result > 0){
-
-						//Creo un buffer y serializo el resultado + el contenido leido
-						result_serializado=(char*)malloc(sizeof(uint32_t)+result);
-						memcpy(result_serializado,&result,sizeof(uint32_t));
-						memcpy(result_serializado+sizeof(uint32_t),contenido_lectura,result);
-
-						enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,result_serializado,result);
-						free(result_serializado);
-
-					}else
-						enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
-					break;
-
-				case ALMACENAR_BYTES_PAGINA:	//Todo el nucleo no deberia poder hacer esto
-
-					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
-
-					/*enviarMensajeSocket(*socket_nucleo,ALMACENAR_BYTES_PAGINA,"Bytes escritos");//de prueba
-
-					result = escribir_pagina(package->message);
-					enviarMensajeSocketConLongitud(*socket_nucleo,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
-					*/
 					break;
 
 				case END_PROGRAM:
