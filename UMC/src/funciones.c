@@ -19,13 +19,14 @@ void handleClients(){
 
 	int socketServidor,							//Descriptor del socket servidor
 		socket_cliente;							//Se usa para recivir al conexion y se envia al thread que la va a manejar
+	char *tmp_str;
 
 	pthread_t thread_tmp;						//Variable Temporal para crear threads;
 	t_arg_thread_cpu* arg_thread_cpu;			//Arguemntos para el thread del nuevo cpu
 	t_arg_thread_nucleo* arg_thread_nucleo;		//Argumentos para el thread del nuevo Nucleo
 	pthread_attr_t thread_detached_attr;		//Atributos para crear socket detached
 
-	Package* package=malloc(sizeof(Package));
+	Package* package;
 
 	//Mutex para comunicacion con swap
 	pthread_mutex_init(&comunicacion_swap_mutex,NULL);
@@ -59,15 +60,17 @@ void handleClients(){
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
 	 * por los clientes ya conectados
 	 */
-	while (1)
-	{
+	while (1){
 
 		//Acepto las conexiones y las mando a diferentes threads
 		socket_cliente = aceptarConexionCliente(socketServidor);
 
 		//Comienzo el handshake, enviando el tamanio de pagina
-		enviarMensajeSocket(socket_cliente,HANDSHAKE_UMC,string_itoa(config->size_pagina));
+		tmp_str = string_itoa(config->size_pagina);
+		enviarMensajeSocket(socket_cliente,HANDSHAKE_UMC, tmp_str);
+		free(tmp_str);
 
+		package = createPackage();
 		//Espero respuesta y creo thread correspondiente
 		if(recieve_and_deserialize(package,socket_cliente) > 0){
 			logDebug("Mensaje recibido de %d",socket_cliente);
@@ -102,6 +105,7 @@ void handleClients(){
 					close(socket_cliente);
 			}
 		}
+		destroyPackage(package);
 	}
 
 	pthread_key_delete(key_pid);
@@ -240,7 +244,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 	Package* package;
 
 	while(sigue){
-		package = malloc(sizeof(Package));
+		package = createPackage();
 		if(recieve_and_deserialize(package,*socket_nucleo) > 0){
 			logDebug("Nucleo envía [message code]: %d", package->msgCode);
 

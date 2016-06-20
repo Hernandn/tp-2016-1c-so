@@ -10,7 +10,8 @@
 static int comunicar_con_swap(char accion, char* buffer, uint32_t longitud, Package** respuesta){
 
 	int result=-1;
-	char comunicacion_no_exitosa=1;
+	char comunicacion_no_exitosa=1,
+		 *tmp_buf;
 	Package *paquete_recibido=malloc(sizeof(Package));	//recieve_and_deserialize espera un puntero a Package con espacio suficiente
 
 	pthread_mutex_lock(&comunicacion_swap_mutex);
@@ -22,7 +23,9 @@ static int comunicar_con_swap(char accion, char* buffer, uint32_t longitud, Pack
 
 		if(recieve_and_deserialize(paquete_recibido,socket_swap) > 0){
 
-			logDebug("Swap envía [message code]: %d, [Mensaje]: %s", paquete_recibido->msgCode, paquete_recibido->message);
+			tmp_buf = stream_a_string(paquete_recibido->message,paquete_recibido->message_long);
+			logDebug("Swap envía [message code]: %d, [Mensaje]: %s", paquete_recibido->msgCode, tmp_buf);
+			free(tmp_buf);
 
 			/* En un programa posta esto traeria muchos problemas porque si se
 			 * corta la comunicacion entre el send y el receive voy a mandar
@@ -140,8 +143,9 @@ int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas){
 
 	char* buffer;
 	int longitud,
-		result;
-	Package **respuesta = malloc(sizeof(Package*));
+		result,
+		int_respuesta;
+	Package **respuesta = malloc(sizeof(Package**));
 
 	buffer = serializar_NuevoPrograma(pid,cant_paginas);
 	longitud = getLong_NuevoPrograma();
@@ -149,7 +153,12 @@ int comunicarSWAPNuevoPrograma(uint32_t pid, uint32_t cant_paginas){
 	result = comunicar_con_swap(NUEVO_PROGRAMA_SWAP,buffer,longitud,respuesta);
 	free(buffer);
 
-	return result == 0 ? atoi((*respuesta)->message) : -1; //-1 es error de comunicacion
+	int_respuesta = atoi((*respuesta)->message);
+
+	destroyPackage(*respuesta);
+	free(respuesta);
+
+	return result == 0 ? int_respuesta : -1; //-1 es error de comunicacion
 
 }
 

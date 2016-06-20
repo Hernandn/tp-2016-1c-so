@@ -16,12 +16,15 @@ static t_tabla_tlb *tlb;
 void destructor_tabla(void* tabla){
 	t_tabla *tmp;
 
+	void eliminar_fila(void *fila){
+		free(fila);
+	}
+
 	tmp=(t_tabla*) tabla;
 
-	if(tmp!=NULL){
-		free(tmp->filas);
-		free(tmp);
-	}
+	list_destroy_and_destroy_elements(tmp->filas,eliminar_fila);
+
+	free(tmp);
 }
 
 t_tabla* obtener_tabla(uint32_t pid){

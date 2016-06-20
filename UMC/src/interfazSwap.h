@@ -8,9 +8,10 @@
 #ifndef INTERFAZSWAP_H_
 #define INTERFAZSWAP_H_
 
+#include <commons/string.h>
+#include <mllibs/string/convertir.h>
 #include "funciones.h"
 #include "configuration.h"
-#include <commons/string.h>
 
 typedef char* pagina;
 

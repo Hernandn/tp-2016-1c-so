@@ -162,7 +162,7 @@ int escribirSocketClient(int fd, char *datos, int longitud)
 
 char* serializarMensaje(Package *package){
 
-	char *serializedPackage = malloc(getLongitudPackage(package));
+	char *serializedPackage = calloc(1,getLongitudPackage(package));
 
 	int offset = 0;
 	int size_to_send;
@@ -220,6 +220,8 @@ int enviarMensajeSocketConLongitud(int socket, uint32_t accion, char* mensaje, u
 	int resultado;
 
 	resultado = escribirSocketClient(socket, (char *)serializedPkg, getLongitudPackage(package));
+
+	free(serializedPkg);
 	destroyPackage(package);
 	return resultado;
 }

@@ -26,6 +26,8 @@ void logInfo(const char* message_template, ...){
 	va_start(arguments, message_template);
 	char* message = string_from_vformat(message_template, arguments);
 	log_info(logger,message);
+	free(message);
+	va_end(arguments);
 	pthread_mutex_unlock(&logMutex);
 }
 
@@ -35,6 +37,8 @@ void logDebug(const char* message_template, ...){
 	va_start(arguments, message_template);
 	char* message = string_from_vformat(message_template, arguments);
 	log_debug(logger,message);
+	free(message);
+	va_end(arguments);
 	pthread_mutex_unlock(&logMutex);
 }
 
@@ -44,6 +48,8 @@ void logTrace(const char* message_template, ...){
 	va_start(arguments, message_template);
 	char* message = string_from_vformat(message_template, arguments);
 	log_trace(logger,message);
+	free(message);
+	va_end(arguments);
 	pthread_mutex_unlock(&logMutex);
 }
 
@@ -53,6 +59,8 @@ void logWarning(const char* message_template, ...){
 	va_start(arguments, message_template);
 	char* message = string_from_vformat(message_template, arguments);
 	log_warning(logger,message);
+	free(message);
+	va_end(arguments);
 	pthread_mutex_unlock(&logMutex);
 }
 
@@ -62,5 +70,7 @@ void logError(const char* message_template, ...){
 	va_start(arguments, message_template);
 	char* message = string_from_vformat(message_template, arguments);
 	log_error(logger,message);
+	free(message);
+	va_end(arguments);
 	pthread_mutex_unlock(&logMutex);
 }

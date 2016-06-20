@@ -27,6 +27,7 @@ void configurar(){
 	config->cantidad_paginas = config_get_int_value(nConfig,CANTIDAD_PAGINAS);
 	config->tamanio_tlb = config_get_int_value(nConfig,TAMANIO_TLB);
 	config->size_pagina = config_get_int_value(nConfig,TAMANIO_PAGINA);
+	config->retraso = config_get_int_value(nConfig,RETRASO);
 	//configuracion de log
 	config->log_level = strdup(config_get_string_value(nConfig,LOG_LEVEL));
 	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));

@@ -93,7 +93,7 @@ int leer_pagina(char* mensaje_serializado, char** contenido){
 int escribir_pagina(char* mensaje_serializado){
 
 	uint32_t dir, offset, tamanio, resultado;
-	char* contenido=NULL;
+	char *contenido=NULL, *tmp_buf;
 
 	logDebug("----------------------Comienza escritura de pagina----------------------\n");
 
@@ -101,12 +101,15 @@ int escribir_pagina(char* mensaje_serializado){
 	contenido = malloc(sizeof(char)*tamanio);
 	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,tamanio);
 
-	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, contenido);
+	tmp_buf = stream_a_string(contenido,tamanio);
+	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, tmp_buf);
+	free(tmp_buf);
 
 	resultado = escribir_contenido_memoria(dir, offset, tamanio, contenido);
 
 	logDebug("----------------------Finaliza escritura de pagina----------------------\n");
 
+	free(contenido);
 	return resultado;
 
 }
