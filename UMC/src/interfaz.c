@@ -75,7 +75,7 @@ int inicializar_programa(char* mensaje_serializado){
 
 int leer_pagina(char* mensaje_serializado, char** contenido){
 
-	uint32_t dir, offset, tamanio;
+	uint32_t dir, offset, tamanio, resultado;
 
 	logDebug("----------------------Comienza lectura de pagina----------------------\n");
 
@@ -83,14 +83,16 @@ int leer_pagina(char* mensaje_serializado, char** contenido){
 
 	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
 
+	resultado = obtener_contenido_memoria(contenido, dir, offset, tamanio);
+
 	logDebug("----------------------Finaliza lectura de pagina----------------------\n");
 
-	return obtener_contenido_memoria(contenido, dir, offset, tamanio);
+	return resultado;
 }
 
 int escribir_pagina(char* mensaje_serializado){
 
-	uint32_t dir, offset, tamanio;
+	uint32_t dir, offset, tamanio, resultado;
 	char* contenido=NULL;
 
 	logDebug("----------------------Comienza escritura de pagina----------------------\n");
@@ -101,8 +103,11 @@ int escribir_pagina(char* mensaje_serializado){
 
 	logDebug("Escribiendo pagina %d, tamanio %d, contenido %s", dir, tamanio, contenido);
 
+	resultado = escribir_contenido_memoria(dir, offset, tamanio, contenido);
+
 	logDebug("----------------------Finaliza escritura de pagina----------------------\n");
-	return escribir_contenido_memoria(dir, offset, tamanio, contenido);
+
+	return resultado;
 
 }
 

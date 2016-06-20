@@ -24,7 +24,7 @@ void destructor_tabla(void* tabla){
 	}
 }
 
-t_tabla* obtener_tabla(pid){
+t_tabla* obtener_tabla(uint32_t pid){
 	t_tabla *tabla_buscada;
 
 	bool tabla_valida(void* tabla){
@@ -98,6 +98,69 @@ void cargar_dir_tabla(uint32_t numero_pagina, uint32_t numero_marco){
 	fila->numero_marco=numero_marco;
 }
 
+void borrar_dir_tablas(uint32_t numero_marco){
+
+	void eliminar(void* fila){
+		free(fila);
+	}
+
+	bool fila_valida(void* fila){
+		return ((t_fila_tabla*)fila)->numero_marco == numero_marco;
+	}
+
+	void eliminar_fila(void* tabla){
+		list_remove_and_destroy_by_condition(((t_tabla*)tabla)->filas, fila_valida, eliminar);
+	}
+
+	/* Itero todas las tablas porque no encuentro una forma copada de parar en la que tiene el marco.
+	 * De todas formas no deberia traer problemas ya que un numero de marco solo puede pertenecer a un
+	 * programa.
+	 */
+	list_iterate(tablas_de_paginas,eliminar_fila);
+
+}
+
+uint32_t obtener_marco_para_swap(){
+	int i=0, marco_no_encontrado=1;
+
+	while(marco_no_encontrado){
+		pthread_mutex_lock(&activo_mutex);
+
+		if(bitarray_test_bit(memoria_principal.activo,i))
+			bitarray_clean_bit(memoria_principal.activo,i);
+		else
+			marco_no_encontrado=0;
+
+		pthread_mutex_unlock(&activo_mutex);
+
+		if(i == bitarray_get_max_bit(memoria_principal.activo)) i=0;
+		else i++;
+	}
+
+	return i;
+}
+
+uint32_t swap_marco(uint32_t numero_pagina){
+	int tamanio_pagina = config->size_pagina,
+		pid = obtener_pid();
+	uint32_t marco_elegido = obtener_marco_para_swap(),
+			 dir_fisica = marco_elegido * tamanio_pagina;
+	bool result;
+
+	logDebug("Se realiza swap sobre marco %d para programa %d", marco_elegido, pid);
+
+	pthread_mutex_lock(&modificacion_mutex);
+	result = !bitarray_test_bit(memoria_principal.modificacion,marco_elegido);
+	pthread_mutex_unlock(&modificacion_mutex);
+
+	if(result)
+		escribirPaginaSwap(pid, numero_pagina, tamanio_pagina,memoria_principal.memoria + dir_fisica);
+
+	borrar_dir_tablas(marco_elegido);
+
+	return marco_elegido;
+}
+
 uint32_t obtener_marco_libre(){
 
 	int i=0;
@@ -118,9 +181,12 @@ uint32_t obtener_marco_libre(){
 void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina){
 
 	int marco_libre = obtener_marco_libre();
-	uint32_t dir_fisica = marco_libre * config->size_pagina;	//Todo No contemplo que no encuentre marco libre
+	uint32_t dir_fisica;
 
-	logDebug("Marco libre encontrado: %d",marco_libre);
+	if(marco_libre < 0) marco_libre = swap_marco(numero_pagina);	//Si es -1 hago swap, swap no deberia fallar nunca
+	dir_fisica = marco_libre * config->size_pagina;
+
+	logDebug("Se agrega pagina %d en marco %d",numero_pagina, marco_libre);
 	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
 
 	pthread_mutex_lock(&bitMap_mutex);
