@@ -161,8 +161,6 @@ pagina leerPaginaDeProceso(int pid, int paginaNro){
 	}
 }
 
-
-
 int obtener_primer_disponible(int offset){
 	//contado de espacio contiguo
 	int i;
