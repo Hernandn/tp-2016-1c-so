@@ -78,7 +78,6 @@ void handleUMCRequests(Configuration* config){
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(package,socketUMC[0]) > 0){
-					logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
 					analizarMensaje(package,socketUMC[0],config);
 					destroyPackage(package);
 				}
@@ -136,6 +135,11 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(-1));//retorna 0 si NO PUDO reservar el espacio
 		} else if(frame==-2){
 			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d (%d pags), pero se puede realizar una Compactacion",pid,cantidadPaginas);
+			compactarSwap();
+			frame = getFirstAvailableBlock(cantidadPaginas);
+			nuevoPrograma(frame,pid,cantidadPaginas);
+			logDebug("Se han reservado %d paginas para el Programa PID:%d",cantidadPaginas,pid);
+			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(0));//retorna 1 si PUDO reservar el espacio
 		}
 
 	} else if(package->msgCode==ELIMINAR_PROGRAMA_SWAP){

@@ -36,9 +36,10 @@ void eliminarPrograma(int pid);
 int buscarFramePorPagina(int pid, int pagina);
 pagina leerPaginaDeProceso(int pid, int paginaNro);
 void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag);
-void compactacion ();
-int obtener_primer_disp();
+int obtener_primer_disponible(int offset);
 int ultimo_disponible(int primero);
+void moverFrame(int frame_origen, int frame_destino);
+void compactarSwap();
 
 
 #endif /* FILEHANDLER_H_ */

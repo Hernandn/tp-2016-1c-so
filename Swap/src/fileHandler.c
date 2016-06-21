@@ -163,98 +163,74 @@ void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
 }
 
 
-int obtener_primer_disp()
-{
-		//contado de espacio contiguo
-		int  i;
-
-		for(i=0; i<bitMap->size; i++){
-			//a partir del primer 0 espacio disponible
-			if(!bitarray_test_bit(bitMap,i)){
-				return i;
-			}
-			else{
-				return -1;
-			}
-		}
-
-}
-
-int ultimo_disponible(int primero)
-{
+int obtener_primer_disponible(int offset){
 	//contado de espacio contiguo
-	int  i;
-	int cont = 0;
-
-	for(i=(primero); i<bitMap->size; i++){
+	int i;
+	for(i=offset; i<bitMap->size; i++){
 		//a partir del primer 0 espacio disponible
 		if(!bitarray_test_bit(bitMap,i)){
-			cont++;
+			break;
 		}
 	}
-	return cont;
+	return i;
 }
 
-int cant_pag_frame (int frame)
-{
-	int cont, i;
-	cont=0;
-	for(i=0; i<config->cantidad_paginas;i++)
-	{
-		if (i==frame)
-		{
-			cont ++;
+int ultimo_disponible(int primero){
+	//contado de espacio contiguo
+	int  i;
+
+	for(i=primero; i<bitMap->size; i++){
+		//corta si encuentra uno ocupado
+		if(bitarray_test_bit(bitMap,i)){
+			i--;
+			break;
 		}
 	}
-		return cont;
+	return i;
 }
 
-void moverframe(int frame_origen, int frame_destino)
-{
-	int i, cantPaginas;
+void moverFrame(int frame_origen, int frame_destino){
 	pagina pag;
 	//setea el frame donde se va mover en 1
 	bitarray_set_bit(bitMap,frame_destino);
 	//trae la pagina del frame origen y la escribe en el frame destino
 	pag = leerPaginaFromFrame(frame_origen);
 	escribirPaginaEnFrame(frame_destino,pag);
-
-	//de cada frame pasa las paginas necesarias al nuevo frame
-	cantPaginas=cant_pag_frame(frame_origen);
-	for(i=frame_destino; i<(cantPaginas+frame_destino); i++){
+	free(pag);
 
 	tabla[frame_destino].page = tabla[frame_origen].page;
 	tabla[frame_destino].pid = tabla[frame_origen].pid;
 
 	tabla[frame_origen].page = -1;
 	tabla[frame_origen].pid = -1;
-	}
-	bitarray_clean_bit(bitMap,frame_origen);
 
+	bitarray_clean_bit(bitMap,frame_origen);
 }
 
-void compactacion (Configuration* config)
-{
-	while (1)
-	{
+void compactarSwap(){
+	logInfo("Realizando compactacion de espacio: %d ms",config->retardo_compact);
+	usleep(config->retardo_compact*1000);//convierto micro en milisegundos
+	int ultimo_frame_disponible = 0;
+	int j=0;
+	while(j<config->cantidad_paginas){
 		int i;
-			//primer bloque disponible para empezar a compactar
-			int primer_frame_disponible = obtener_primer_disp();
-			//busco ultimo disponible empezando desde el primero disponible
-			int ultimo_frame_disponible = ultimo_disponible(primer_frame_disponible);
-			int j=0;
-			i=primer_frame_disponible;
-			//Voy acomodando desde el primero disponible hasta el ultimo de ese bloque todos los ocupados que
-			//encuentro a partir de ahi
-			while(i<= ultimo_frame_disponible)
-			{
-				if(bitarray_test_bit(bitMap,ultimo_frame_disponible+j))
-				{
-					moverframe(ultimo_frame_disponible+j, i);
-					i++;
-				}
-				j++;
+		//primer bloque disponible para empezar a compactar
+		int primer_frame_disponible = obtener_primer_disponible(ultimo_frame_disponible);
+		//busco ultimo disponible empezando desde el primero disponible
+		ultimo_frame_disponible = ultimo_disponible(primer_frame_disponible);
 
+		i=primer_frame_disponible;
+		j=ultimo_frame_disponible+1;
+		//Voy acomodando desde el primero disponible hasta el ultimo de ese bloque todos los ocupados que
+		//encuentro a partir de ahi
+		while(i <= ultimo_frame_disponible && j<config->cantidad_paginas)
+		{
+			if(bitarray_test_bit(bitMap,j))
+			{
+				moverFrame(j, i);
+				i++;
 			}
+			j++;
+		}
 	}
 }
