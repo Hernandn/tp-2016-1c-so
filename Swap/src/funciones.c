@@ -180,14 +180,12 @@ pagina getPagina_EscribirPagina(char* str, int size){
 	pagina pag = malloc(sizeof(char)*size);
 	memcpy(pag,str+offset,size);
 	return pag;
+}
 
 uint32_t getNumeroPagina_EscribirPagina(char* str){
 	uint32_t numPag;
 	memcpy(&numPag,str+sizeof(uint32_t),sizeof(uint32_t));
 	return numPag;
-}
-
-
 }
 
 uint32_t getProcessID_SolicitarPagina(char* str){
