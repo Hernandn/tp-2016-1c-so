@@ -131,19 +131,16 @@ void finalizarProg(Package* package){
 	PCB* pcb = removeNextFromEXIT();
 
 	while(pcb != NULL){
-		int consolaFD = pcb->consolaFD;
-
 		//finalizar en UMC y Swap
 		int resultado = finalizar_programa(pcb->processID);
 		logTrace("Solicitar UMC finalizar el programa PID:%d, resultado:%d",pcb->processID,resultado);
 
+		if(pcb->consolaActiva){
+			logDebug("Informando Consola %d la finalizacion de su programa",pcb->consolaFD);
+			enviarMensajeSocket(pcb->consolaFD,PROGRAMA_FINALIZADO,"");
+		}
 		logTrace("Destruyendo PCB [PID:%d, ConsolaFD:%d]",pcb->processID,pcb->consolaFD);
 		destroyPCB(pcb);
-
-		if(pcb->consolaActiva){
-			logDebug("Informando Consola %d la finalizacion de su programa",consolaFD);
-			enviarMensajeSocket(consolaFD,PROGRAMA_FINALIZADO,"");
-		}
 		pcb = removeNextFromEXIT();
 	}
 

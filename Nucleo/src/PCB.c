@@ -392,17 +392,22 @@ void iniciarPrograma(int consolaFD, char* programa){
 	nuevo-> stackFirstPage = (pagsNecesarias-stack_size);
 	logDebug("Se necesitan %d paginas para almacenar el programa",pagsNecesarias);
 
+	logDebug("Enviado inicio de programa a UMC");
 	int resultado = inicializar_programa(nuevo->processID,pagsNecesarias,programa);
-	logDebug("Enviado inicio de programa a UMC. Resultado: %d",resultado);
-
-	//pagina* paginas = getPaginasFromPrograma(programa,size_pagina);
-	//destroyPaginas(paginas,pagsNecesarias-stack_size);
-	//TODO: hacer las validaciones para ver si puede pasar a READY
-	//hay que ver si hacer que apenas entran se pongan en READY o si poner en NEW y que otra funcion vaya pasando los NEW a READY
 	nuevo = getNextFromNEW(estados);
-	sendToREADY(nuevo);
-	logTrace("Informando Planificador [Program READY]");
-	informarPlanificador(PROGRAM_READY,nuevo->processID);
+	if(resultado<0){//ERROR
+		logDebug("Ha ocurrido un error en la inicializacion del Proceso %d en UMC",nuevo->processID);
+		if(nuevo->consolaActiva){
+			logDebug("Informando Consola %d que el programa no se pudo inicializar",consolaFD);
+			enviarMensajeSocket(consolaFD,INIT_EXCEPTION,"");
+		}
+		logTrace("Destruyendo PCB [PID:%d]",nuevo->processID);
+		destroyPCB(nuevo);
+	} else {
+		sendToREADY(nuevo);
+		logTrace("Informando Planificador [Program READY]");
+		informarPlanificador(PROGRAM_READY,nuevo->processID);
+	}
 }
 
 void abortarPrograma(int consolaFD){

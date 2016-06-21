@@ -38,6 +38,8 @@
 #define SEM_SIGNAL 86
 #define CONTEXT_SWITCH_SEM_BLOCKED 87
 #define CPU_LIBRE 90
+#define INIT_EXCEPTION 200
+#define STACK_OVERFLOW_EXCEPTION 201
 //-------------------------------
 
 typedef struct dir_memoria {
