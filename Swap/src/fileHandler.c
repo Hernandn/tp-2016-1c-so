@@ -146,6 +146,12 @@ int buscarFramePorPagina(int pid, int pagina){
 	return -1;//retorna -1 si no encuentra la pagina del proceso en la tabla
 }
 
+void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
+	int frame = buscarFramePorPagina(pid,paginaNro);
+	if(frame>=0){
+		escribirPaginaEnFrame(frame,pag);
+	}
+}
 pagina leerPaginaDeProceso(int pid, int paginaNro){
 	int frame = buscarFramePorPagina(pid,paginaNro);
 	if(frame>=0){
@@ -155,12 +161,6 @@ pagina leerPaginaDeProceso(int pid, int paginaNro){
 	}
 }
 
-void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
-	int frame = buscarFramePorPagina(pid,paginaNro);
-	if(frame>=0){
-		escribirPaginaEnFrame(frame,pag);
-	}
-}
 
 
 int obtener_primer_disponible(int offset){
