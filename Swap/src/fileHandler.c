@@ -162,29 +162,6 @@ void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
 	}
 }
 
-void compactacion (Configuration* config)
-{
-	int i;
-	//primer bloque disponible para empezar a compactar
-	int primer_frame_disponible = obtener_primer_disp();
-	//busco ultimo disponible empezando desde el primero disponible
-	int ultimo_frame_disponible = ultimo_disponible(primer_frame_disponible);
-	int j=0;
-	i=primer_frame_disponible;
-	//Voy acomodando desde el primero disponible hasta el ultimo de ese bloque todos los ocupados que
-	//encuentro a partir de ahi
-	while(i<= ultimo_frame_disponible)
-	{
-		if(bitarray_test_bit(bitMap,ultimo_frame_disponible+j))
-		{
-			//mover_frame(ultimo_frame_disponible+j, i);
-			i++;
-		}
-		j++;
-
-	}
-
-}
 
 int obtener_primer_disp()
 {
@@ -200,6 +177,7 @@ int obtener_primer_disp()
 				return -1;
 			}
 		}
+
 }
 
 int ultimo_disponible(int primero)
@@ -215,4 +193,68 @@ int ultimo_disponible(int primero)
 		}
 	}
 	return cont;
+}
+
+int cant_pag_frame (int frame)
+{
+	int cont, i;
+	cont=0;
+	for(i=0; i<config->cantidad_paginas;i++)
+	{
+		if (i==frame)
+		{
+			cont ++;
+		}
+	}
+		return cont;
+}
+
+void moverframe(int frame_origen, int frame_destino)
+{
+	int i, cantPaginas;
+	pagina pag;
+	//setea el frame donde se va mover en 1
+	bitarray_set_bit(bitMap,frame_destino);
+	//trae la pagina del frame origen y la escribe en el frame destino
+	pag = leerPaginaFromFrame(frame_origen);
+	escribirPaginaEnFrame(frame_destino,pag);
+
+	//de cada frame pasa las paginas necesarias al nuevo frame
+	cantPaginas=cant_pag_frame(frame_origen);
+	for(i=frame_destino; i<(cantPaginas+frame_destino); i++){
+
+	tabla[frame_destino].page = tabla[frame_origen].page;
+	tabla[frame_destino].pid = tabla[frame_origen].pid;
+
+	tabla[frame_origen].page = -1;
+	tabla[frame_origen].pid = -1;
+	}
+	bitarray_clean_bit(bitMap,frame_origen);
+
+}
+
+void compactacion (Configuration* config)
+{
+	while (1)
+	{
+		int i;
+			//primer bloque disponible para empezar a compactar
+			int primer_frame_disponible = obtener_primer_disp();
+			//busco ultimo disponible empezando desde el primero disponible
+			int ultimo_frame_disponible = ultimo_disponible(primer_frame_disponible);
+			int j=0;
+			i=primer_frame_disponible;
+			//Voy acomodando desde el primero disponible hasta el ultimo de ese bloque todos los ocupados que
+			//encuentro a partir de ahi
+			while(i<= ultimo_frame_disponible)
+			{
+				if(bitarray_test_bit(bitMap,ultimo_frame_disponible+j))
+				{
+					moverframe(ultimo_frame_disponible+j, i);
+					i++;
+				}
+				j++;
+
+			}
+	}
 }
