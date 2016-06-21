@@ -329,7 +329,7 @@ void finalizarPrograma(PCB* pcbActualizado, int socketCPU){
 	actualizarPCB(proceso,pcbActualizado);
 	destroyPCB(pcbActualizado);
 	sendToEXIT(proceso);
-	enviarMensajeSocket(socketPlanificador,FINALIZAR_PROGRAMA,"");
+	informarPlanificadorFinalizarPrograma();
 }
 
 void actualizarPCB(PCB* local, PCB* actualizado){
@@ -351,6 +351,7 @@ void switchProcess(int pid, int socketCPU){
 void abortProcess(int pid, int socketCPU){
 	abortFromEXEC(pid);
 	informarCPU(socketCPU,ABORT_EXECUTION,pid);
+	informarPlanificadorFinalizarPrograma();
 }
 
 void continueExec(int socketCPU, PCB* pcb){
@@ -408,17 +409,27 @@ void abortarPrograma(int consolaFD){
 	logTrace("Finalizando Programa Consola");
 	//primero lo busca en los estados distintos de EXEC(ejecutandose)
 	bool encontrado = findAndExitPCBnotExecuting(consolaFD);
-	//si no lo encuentra, lo busca en la lista de EXEC
-	if(!encontrado){
+	if(encontrado){
+		informarPlanificadorFinalizarPrograma();
+	} else {
+		//si no lo encuentra, lo busca en la lista de EXEC
 		encontrado = findAndExitPCBexecuting(consolaFD);
+		if(!encontrado){
+			encontrado = findAndExitPCBblockedInSemaphore(consolaFD);
+			if(encontrado){
+				informarPlanificadorFinalizarPrograma();
+			} else {
+				//deprecado pero lo dejo por las dudas
+				//...porque esta bloqueado en un semaforo
+				pthread_mutex_lock(&discConsoleMutex);
+				int* consola_p = malloc(sizeof(int));
+				*consola_p = consolaFD;
+				list_add(consolas_desconectadas,consola_p);
+				pthread_mutex_unlock(&discConsoleMutex);
+			}
+		}
 	}
-	if(!encontrado){//porque esta en el medio de una ejecucion de IO o bloqueado en un semaforo
-		pthread_mutex_lock(&readyMutex);
-		int* consola_p = malloc(sizeof(int));
-		*consola_p = consolaFD;
-		list_add(consolas_desconectadas,consola_p);
-		pthread_mutex_unlock(&readyMutex);
-	}
+
 }
 
 bool findAndExitPCBnotExecuting(int consolaFD){
@@ -442,9 +453,9 @@ bool findAndExitPCBnotExecuting(int consolaFD){
 	int j=0;
 	while(!encontrado && j<config->io_length){
 		//busco en block
-		pthread_mutex_lock(&io_mutex_queues[i]);
-		for(i=0; i<estados->block[i]->elements->elements_count; i++){
-			solicitud_io* solicitud = list_get(estados->block[i]->elements,i);
+		pthread_mutex_lock(&io_mutex_queues[j]);
+		for(i=0; i<estados->block[j]->elements->elements_count; i++){
+			solicitud_io* solicitud = list_get(estados->block[j]->elements,i);
 			if(solicitud->pcb->consolaFD==consolaFD){
 				solicitud->pcb->consolaActiva = false;
 				abortFromBLOCK(i,j);
@@ -452,7 +463,7 @@ bool findAndExitPCBnotExecuting(int consolaFD){
 				break;
 			}
 		}
-		pthread_mutex_unlock(&io_mutex_queues[i]);
+		pthread_mutex_unlock(&io_mutex_queues[j]);
 		j++;
 	}
 
@@ -491,6 +502,31 @@ bool findAndExitPCBexecuting(int consolaFD){
 		}
 	}
 	pthread_mutex_unlock(&executeMutex);
+
+	return encontrado;
+}
+
+//esto es bastante feo pero bueno... hay que poder finalizar el programa y liberar memoria en umc
+bool findAndExitPCBblockedInSemaphore(int consolaFD){
+	bool encontrado = false;
+	int j=0, i;
+	//busco en colas de semaforos
+	while(!encontrado && j<config->sem_length){
+
+		for(i=0; i<sem_blocked[j]->elements->elements_count; i++){
+			PCB* pcb = list_get(sem_blocked[j]->elements,i);
+			if(pcb->consolaFD==consolaFD){
+				pcb->consolaActiva = false;
+				logTrace("Removiendo proceso %d bloqueado en semaforo %s",pcb->processID,config->sem_ids[j]);
+				list_remove(sem_blocked[j]->elements,i);
+				sendToEXIT(pcb);
+				encontrado = true;
+				sem_values[j]++;//tengo que aumentar 1 el semaforo ya que estoy sacando un proceso de la cola
+				break;
+			}
+		}
+		j++;
+	}
 
 	return encontrado;
 }
@@ -579,7 +615,7 @@ void ejecutarIO(void* arguments){
 
 		if(consola_desconectada(solicitud->pcb->consolaFD)){
 			sendToEXIT(solicitud->pcb);
-			enviarMensajeSocket(socketPlanificador,ABORTAR_PROGRAMA,"");
+			informarPlanificadorFinalizarPrograma();
 		} else {
 			//mando el proceso a ready
 			notifyProcessREADY(solicitud->pcb);
@@ -684,12 +720,12 @@ void execute_signal(char* sem_id){
 	int pos = getPosicionSemaforo(sem_id);
 	sem_values[pos]++;
 	logTrace("[SIGNAL] Semaforo %s. Valor actual: %d",sem_id,sem_values[pos]);
-	if(sem_values[pos]>=0){
+	if(sem_values[pos]<=0){
 		PCB* pcb = getNextFromSemaforo(pos);
 		if(pcb!=NULL){
 			if(consola_desconectada(pcb->consolaFD)){
 				sendToEXIT(pcb);
-				enviarMensajeSocket(socketPlanificador,ABORTAR_PROGRAMA,"");
+				informarPlanificadorFinalizarPrograma();
 			} else {
 				sendToREADY(pcb);
 			}
@@ -724,4 +760,8 @@ void setValorVariableCompartida(char* var_id, int valor){
 	int pos = getPosicionVariableCompartida(var_id);
 	logTrace("[SET] Variable compartida %s. Valor: %d",var_id,valor);
 	shared_vars_values[pos] = valor;
+}
+
+void informarPlanificadorFinalizarPrograma(){
+	enviarMensajeSocket(socketPlanificador,FINALIZAR_PROGRAMA,"");
 }

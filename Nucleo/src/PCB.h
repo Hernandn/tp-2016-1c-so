@@ -71,6 +71,7 @@ void iniciarPrograma(int consolaFD, char* programa);
 void abortarPrograma(int consolaFD);
 bool findAndExitPCBnotExecuting(int consolaFD);
 bool findAndExitPCBexecuting(int consolaFD);
+bool findAndExitPCBblockedInSemaphore(int consolaFD);
 void informarPlanificador(int accion, int pid);
 void getCodeIndex(PCB* pcb, char* programa);
 int esInstruccionValida(char* str, int offset, int length);
@@ -95,5 +96,6 @@ void inicializarVariablesCompartidas();
 int getPosicionVariableCompartida(char* var_id);
 int getValorVariableCompartida(char* var_id);
 void setValorVariableCompartida(char* var_id, int valor);
+void informarPlanificadorFinalizarPrograma();
 
 #endif /* PCB_H_ */
