@@ -19,6 +19,7 @@
 
 void handleUMCRequests(Configuration* config);
 void analizarMensaje(Package* package, int socketUMC, Configuration* config);
+void ejecutarRetardo(int miliseconds);
 uint32_t getProcessID_NuevoPrograma(char* str);
 uint32_t getCantidadPaginas_NuevoPrograma(char* str);
 uint32_t getProcessID_EscribirPagina(char* str);

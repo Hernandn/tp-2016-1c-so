@@ -25,6 +25,7 @@ Configuration* configurar(){
 	config->nombre_swap = config_get_string_value(nConfig,NOMBRE_SWAP);
 	config->cantidad_paginas = config_get_int_value(nConfig,CANTIDAD_PAGINAS);
 	config->size_pagina = config_get_int_value(nConfig,TAMANIO_PAGINA);
+	config->retardo_acceso = config_get_int_value(nConfig,RETARDO_ACCESO);
 	config->retardo_compact = config_get_int_value(nConfig,RETARDO_COMPACTACION);
 	//configuracion de log
 	config->log_level = config_get_string_value(nConfig,LOG_LEVEL);

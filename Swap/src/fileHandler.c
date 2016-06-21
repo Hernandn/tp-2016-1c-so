@@ -233,4 +233,5 @@ void compactarSwap(){
 			j++;
 		}
 	}
+	logInfo("Compactacion finalizada");
 }

@@ -32,6 +32,7 @@
 #define NOMBRE_SWAP "NOMBRE_SWAP"
 #define CANTIDAD_PAGINAS "CANTIDAD_PAGINAS"
 #define TAMANIO_PAGINA "TAMANIO_PAGINA"
+#define RETARDO_ACCESO "RETARDO_ACCESO"
 #define RETARDO_COMPACTACION "RETARDO_COMPACTACION"
 
 
@@ -41,6 +42,7 @@ typedef struct Configuration {
 	char* nombre_swap;
 	int cantidad_paginas;
 	int size_pagina;
+	int retardo_acceso;
 	int retardo_compact;
 	char* log_level;
 	char* log_file;

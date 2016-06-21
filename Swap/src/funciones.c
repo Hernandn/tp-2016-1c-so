@@ -42,6 +42,7 @@ void handleUMCRequests(Configuration* config){
 		perror ("Error al abrir servidor");
 		exit (-1);
 	}
+	logInfo("SWAP iniciado correctamente");
 
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
@@ -55,7 +56,6 @@ void handleUMCRequests(Configuration* config){
 		FD_SET (socketServidor, &descriptoresLectura);
 
 		/* Se añaden para select() los sockets con los clientes ya conectados */
-		logDebug("sockets %d",socketUMC[0]);
 		if(socketUMC[0]!=-1){
 			FD_SET (socketUMC[0], &descriptoresLectura);
 		}
@@ -65,7 +65,6 @@ void handleUMCRequests(Configuration* config){
 		if (maximo < socketServidor)
 			maximo = socketServidor;
 
-		logDebug("Esperando conexion");
 		/* Espera indefinida hasta que alguno de los descriptores tenga algo
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */
@@ -102,6 +101,8 @@ void handleUMCRequests(Configuration* config){
 }
 
 void analizarMensaje(Package* package, int socketUMC, Configuration* config){
+
+	ejecutarRetardo(config->retardo_acceso);
 
 	if(package->msgCode==ALMACENAR_PAGINA_SWAP){
 
@@ -151,6 +152,10 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 	}
 }
 
+void ejecutarRetardo(int miliseconds){
+	logTrace("Ejecutando retardo de acceso %d ms",miliseconds);
+	usleep(miliseconds*1000);//convierto micro en milisegundos
+}
 
 uint32_t getProcessID_NuevoPrograma(char* str){
 	uint32_t pid;
