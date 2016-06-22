@@ -154,7 +154,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 
 			logDebug("Ejecutando retraso de %d", config->retraso);
 			pthread_mutex_lock(&retardo_mutex);
-			sleep(config->retraso);
+			usleep(config->retraso * 1000);
 			pthread_mutex_unlock(&retardo_mutex);
 			logDebug("Fin del retraso");
 
@@ -250,7 +250,7 @@ void handleNucleo(t_arg_thread_nucleo* args){
 
 			logDebug("Ejecutando retraso de %d", config->retraso);
 			pthread_mutex_lock(&retardo_mutex);
-			sleep(config->retraso);
+			usleep(config->retraso * 1000);
 			pthread_mutex_unlock(&retardo_mutex);
 			logDebug("Fin del retraso");
 

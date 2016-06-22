@@ -62,7 +62,9 @@ void handshake(int serverSocket){
 }
 
 void iniciarProgramaAnsisop(int serverSocket,char* arch_programa){
-	enviarMensajeSocket(serverSocket,NEW_ANSISOP_PROGRAM,obtener_programa(arch_programa));
+	char* programa = obtener_programa(arch_programa);
+	enviarMensajeSocket(serverSocket,NEW_ANSISOP_PROGRAM,programa);
+	free(programa);
 }
 
 char* obtener_programa(char* arch_programa){

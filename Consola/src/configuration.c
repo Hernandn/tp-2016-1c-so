@@ -18,14 +18,14 @@ Configuration* configurar(char* archConf){
 	}
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
 	config->ip_nucleo = strdup(config_get_string_value(nConfig,IP_NUCLEO));
-	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));
-	logDebug("Arhivo log: %s",config->log_file);
 	config->puerto_nucleo=config_get_int_value(nConfig,PUERTO_NUCLEO);
 
 	config->log_level = strdup(config_get_string_value(nConfig,LOG_LEVEL));
 	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));
 	config->log_program_name = strdup(config_get_string_value(nConfig,LOG_PROGRAM_NAME));
 	config->log_print_console = config_get_int_value(nConfig,LOG_PRINT_CONSOLE);
+
+	logDebug("Arhivo log: %s",config->log_file);
 
 	config_destroy(nConfig);
 	return config;
@@ -131,6 +131,8 @@ void liberar_parametros(Parameters* parametros){
 		if(parametros->config != NULL){
 			free(parametros->config->ip_nucleo);
 			free(parametros->config->log_file);
+			free(parametros->config->log_level);
+			free(parametros->config->log_program_name);
 			free(parametros->config);
 		}
 		free(parametros);
