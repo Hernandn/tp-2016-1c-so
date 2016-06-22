@@ -26,8 +26,9 @@ uint32_t getProcessID_EscribirPagina(char* str);
 uint32_t getNumeroPagina_EscribirPagina(char* str);
 pagina getPagina_EscribirPagina(char* str, int size);
 uint32_t getProcessID_SolicitarPagina(char* str);
-uint32_t getNumeroPagina_SolicitarPagina(char* str);
 uint32_t getProcessID_EliminarPrograma(char* str);
+uint32_t getNumeroPagina_SolicitarPagina(char* str);
+
 
 
 #endif /* SWAP_H_ */
