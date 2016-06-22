@@ -21,6 +21,7 @@
 #define ANSISOP_PROGRAM 11
 #define HANDSHAKE_NUCLEO 12
 #define PROGRAMA_FINALIZADO 13
+#define HANDSHAKE_CPU_NUCLEO 101
 //---------------------
 //codigos de operacion con la UMC
 #define HANDSHAKE_UMC 5

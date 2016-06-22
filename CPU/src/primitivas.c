@@ -8,8 +8,6 @@
 #include "primitivas.h"
 #include "CPU.h"
 
-static const int CONTENIDO_VARIABLE = 20;
-
 contexto* getContextoActual(){
 	return &(pcbActual->stackIndex[pcbActual->context_len-1]);
 }
@@ -42,6 +40,19 @@ void crearArgumento(t_nombre_variable variable_nom){
 	contexto->argumentos[contexto->arg_len].direccion.size = sizeof(uint32_t);
 	contexto->arg_len++;
 	pcbActual->stackOffset += sizeof(uint32_t);
+}
+
+bool verificarStackOverflow(){
+	bool hayOverflow = false;
+	int aux = pcbActual->stackOffset;
+	aux = aux/size_pagina;
+	if(aux>=size_stack){
+		hayOverflow = true;
+		if(!hubo_stackoverflow){
+			informarStackOverflow();
+		}
+	}
+	return hayOverflow;
 }
 
 dir_memoria* puntero_a_direccion_logica(t_puntero puntero){
@@ -122,28 +133,30 @@ int escribir_variable_en_umc(uint32_t variable, dir_memoria* dir){
 //************************************************************
 
 t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
-	printf("Definir la variable %c\n", variable_nom);
+	t_puntero puntero = -1;
+	if(!verificarStackOverflow()){
+		printf("Definir la variable %c\n", variable_nom);
 
-	contexto* contexto = getContextoActual();
-	t_puntero puntero;
-	dir_memoria dir;
-	if(isdigit(variable_nom)){
-		crearArgumento(variable_nom);
-		printf("Argumento definido: Nom: %c\n",contexto->argumentos[contexto->arg_len-1].nombre);
-		puntero = direccion_logica_a_puntero(&(contexto->argumentos[contexto->arg_len-1].direccion));
-		dir = contexto->argumentos[contexto->arg_len-1].direccion;
-	} else {
-		crearVariable(variable_nom);
-		printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);
-		puntero = direccion_logica_a_puntero(&(contexto->variables[contexto->var_len-1].direccion));
-		dir = contexto->variables[contexto->var_len-1].direccion;
+		contexto* contexto = getContextoActual();
+
+		dir_memoria dir;
+		if(isdigit(variable_nom)){
+			crearArgumento(variable_nom);
+			printf("Argumento definido: Nom: %c\n",contexto->argumentos[contexto->arg_len-1].nombre);
+			puntero = direccion_logica_a_puntero(&(contexto->argumentos[contexto->arg_len-1].direccion));
+			dir = contexto->argumentos[contexto->arg_len-1].direccion;
+		} else {
+			crearVariable(variable_nom);
+			printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);
+			puntero = direccion_logica_a_puntero(&(contexto->variables[contexto->var_len-1].direccion));
+			dir = contexto->variables[contexto->var_len-1].direccion;
+		}
+
+		uint32_t variable;//variable sin inicializar para guardar el valor (basura) en la UMC
+		escribir_variable_en_umc(variable,&dir);//ignorar el warning
+
+		printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir.pagina,dir.offset,dir.size,puntero);
 	}
-
-	uint32_t variable;//variable sin inicializar para guardar el valor (basura) en la UMC
-	escribir_variable_en_umc(variable,&dir);//ignorar el warning
-
-	printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir.pagina,dir.offset,dir.size,puntero);
-
 	return puntero;
 }
 

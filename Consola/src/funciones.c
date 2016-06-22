@@ -38,15 +38,17 @@ void comunicacionConNucleo(Configuration* config, char* arch_programa){
 	int continua = 1;
 	while (continua)
 	{
-		Package* package = malloc(sizeof(Package));
+		Package* package = createPackage();
 		if(recieve_and_deserialize(package,socket) > 0){
-			logDebug("Nucleo envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
 			if(package->msgCode==PROGRAMA_FINALIZADO){
 				continua = 0;
 				logDebug("Nucleo me informa que finalizo mi programa");
 			} else if(package->msgCode==INIT_EXCEPTION){
 				continua = 0;
 				logDebug("Nucleo me informa que no fue posible iniciar el programa");
+			} else if(package->msgCode==STACK_OVERFLOW_EXCEPTION){
+				continua = 0;
+				logDebug("Nucleo me informa: Stack Overflow");
 			} else if(package->msgCode==PRINT_VARIABLE){
 				uint32_t valor = deserializar_imprimirVariable_consola(package->message);
 				printf("print> %d\n",valor);

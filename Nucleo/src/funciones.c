@@ -205,7 +205,7 @@ void handleCPUs(void* arguments){
 		{
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
-				Package* package = malloc(sizeof(Package));
+				Package* package = createPackage();
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				//if ((leerSocket (socketCliente[i], (char *)&buffer, sizeof(int)) > 0))
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
@@ -319,6 +319,9 @@ void nuevoCPU(t_list* listaCPUs, int socketCPU){
 	nuevo->cpuFD = socketCPU;
 	list_add(listaCPUs,nuevo);
 	logTrace("Creado nuevo CPU: %d", socketCPU);
+	char* tmp_str = string_itoa(config->stack_size);
+	enviarMensajeSocket(socketCPU,HANDSHAKE_CPU_NUCLEO, tmp_str);
+	free(tmp_str);
 	liberarCPU(nuevo);
 }
 
@@ -406,6 +409,20 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	} else if(package->msgCode==CPU_LIBRE){
 		logTrace("CPU %d informa que esta Libre",socketCPU);
 		liberarCPUporSocketFD(socketCPU,args);
+	} else if(package->msgCode==STACK_OVERFLOW_EXCEPTION){
+		liberarCPUporSocketFD(socketCPU,args);
+		PCB* pcb = removeFromEXEC(atoi(package->message));
+		if(pcb!=NULL){
+			logDebug("StackOverflow en Proceso %d",pcb->processID);
+			if(pcb->consolaActiva){
+				logDebug("Informando Consola %d StackOverflow",pcb->consolaFD);
+				enviarMensajeSocket(pcb->consolaFD,STACK_OVERFLOW_EXCEPTION,"");
+			}
+			int resultado = finalizar_programa(pcb->processID);
+			logTrace("Solicitar UMC finalizar el programa PID:%d, resultado:%d",pcb->processID,resultado);
+			logTrace("Destruyendo PCB [PID:%d]",pcb->processID);
+			destroyPCB(pcb);
+		}
 	} else if(package->msgCode==EXEC_IO_OPERATION){
 		logTrace("Solicitada operacion I/O");
 		solicitud_io* solicitud = deserializar_ejecutarOperacionIO(package->message);
