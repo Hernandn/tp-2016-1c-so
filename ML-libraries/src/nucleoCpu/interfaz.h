@@ -38,8 +38,14 @@
 #define SEM_SIGNAL 86
 #define CONTEXT_SWITCH_SEM_BLOCKED 87
 #define CPU_LIBRE 90
-#define INIT_EXCEPTION 200
+
+//Exceptions
+#define GENERIC_EXCEPTION 200
 #define STACK_OVERFLOW_EXCEPTION 201
+#define INIT_EXCEPTION 202
+#define GENERIC_EXCEPTION_MESSAGE "Generic UMC Exception"
+#define STACK_OVERFLOW_EXCEPTION_MESSAGE "Stack overflow Exception"
+#define INIT_EXCEPTION_MESSAGE "Initialization Exception"
 //-------------------------------
 
 typedef struct dir_memoria {

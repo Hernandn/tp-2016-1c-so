@@ -399,7 +399,7 @@ void iniciarPrograma(int consolaFD, char* programa){
 		logDebug("Ha ocurrido un error en la inicializacion del Proceso %d en UMC",nuevo->processID);
 		if(nuevo->consolaActiva){
 			logDebug("Informando Consola %d que el programa no se pudo inicializar",consolaFD);
-			enviarMensajeSocket(consolaFD,INIT_EXCEPTION,"");
+			enviarMensajeSocket(consolaFD,GENERIC_EXCEPTION,INIT_EXCEPTION_MESSAGE);
 		}
 		logTrace("Destruyendo PCB [PID:%d]",nuevo->processID);
 		destroyPCB(nuevo);

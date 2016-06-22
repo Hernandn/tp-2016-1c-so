@@ -73,5 +73,6 @@ void borrarSocketConsola(arg_struct *args, int socketConsola);
 void setQuantum(int valor);
 int getQuantum();
 void handleInotify(void* arguments);
+void finalizarProgramaException(PCB* pcb, char* mensaje);
 
 #endif /* NUCLEO_H_ */

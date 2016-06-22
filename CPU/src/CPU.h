@@ -40,7 +40,7 @@ int programa_finalizado;
 int end_signal_received;
 int end_cpu;
 int esperando_mensaje;
-int hubo_stackoverflow;
+int hubo_exception;
 
 int size_pagina;
 int size_stack;
@@ -73,6 +73,7 @@ void finalizarPrograma();
 void execute_wait(char* sem_id);
 void execute_signal(char* sem_id);
 void informarStackOverflow();
+void informarException();
 
 
 #endif /* CPU_H_ */

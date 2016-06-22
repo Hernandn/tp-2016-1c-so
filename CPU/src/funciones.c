@@ -79,7 +79,7 @@ void iniciarEjecucionCPU(void* arguments){
 	end_signal_received = 0;
 	end_cpu = 0;
 	esperando_mensaje = 0;
-	hubo_stackoverflow = 0;
+	hubo_exception = 0;
 
 	/* Se abre una conexión con el servidor */
 	socketNucleo = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
@@ -182,10 +182,10 @@ void quantumSleep(arg_struct *args, int milisegundos){
 			logTrace("CPU se encuentra libre");
 			proceso_fue_bloqueado = 0;
 		}
-	} else if(hubo_stackoverflow){
+	} else if(hubo_exception){
 		informarNucleoCPUlibre(socketNucleo);
 		logTrace("CPU se encuentra libre");
-		hubo_stackoverflow = 0;
+		hubo_exception = 0;
 	} else {
 		if (end_signal_received){
 			logInfo("*** Se ha recibido la signal de desconexion de CPU ***");
@@ -217,13 +217,15 @@ void abortarProceso(arg_struct *args){
 void ejecutarInstruccion(){
 	char* instruccion = getSiguienteInstruccion();
 
-	//incremento el PC antes de ejecutar la instruccion por si se bloquea
-	pcbActual->programCounter++;
+	if(!hubo_exception){
+		//incremento el PC antes de ejecutar la instruccion por si se bloquea
+		pcbActual->programCounter++;
 
-	printf("=================================\n");
-	printf("Ejecutando '%s'\n", instruccion);
-	analizadorLinea(instruccion, &functions, &kernel_functions);
-	printf("=================================\n");
+		printf("=================================\n");
+		printf("Ejecutando '%s'\n", instruccion);
+		analizadorLinea(instruccion, &functions, &kernel_functions);
+		printf("=================================\n");
+	}
 	if(instruccion!=NULL){
 		free(instruccion);
 	}
@@ -255,7 +257,7 @@ char* getInstruccion(char* codigo, int offset, int length){
 char* getSiguienteInstruccion(){
 	int offset = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].start;
 	int length = pcbActual->codeIndex->instrucciones_serializado[pcbActual->programCounter].offset;
-	//return getInstruccion(pcbActual->programa,offset,length);//TODO cambiar por getInstruccionFromUMC cuando ya se pueda pedir a UMC
+	//return getInstruccion(pcbActual->programa,offset,length);
 	return getInstruccionFromUMC(offset,length);
 }
 
@@ -270,6 +272,9 @@ char* getInstruccionFromUMC(int offset, int length){
 		size_pedido = size_pagina - pagina_offset;
 		buffer = realloc(buffer,buffer_len+size_pedido);
 		char* pedido = pedirCodigoUMC(pagina_num,pagina_offset,size_pedido);
+		if(hubo_exception){
+			return NULL;
+		}
 		memcpy(buffer+buffer_len,pedido,size_pedido);
 		buffer_len += size_pedido;
 		restante -= size_pedido;
@@ -283,6 +288,9 @@ char* getInstruccionFromUMC(int offset, int length){
 	if(restante>0){
 		buffer = realloc(buffer,buffer_len+restante);
 		char* pedido = pedirCodigoUMC(pagina_num,pagina_offset,restante);
+		if(hubo_exception){
+			return NULL;
+		}
 		memcpy(buffer+buffer_len,pedido,restante);
 		free(pedido);
 		buffer_len += restante;
@@ -296,7 +304,10 @@ char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size){
 	char* contenido = NULL;
 	int resultado = leer_pagina(pagina,offset,size,&contenido);
 	printf("****** RESULTADO LECTURA %d *******\n",resultado);
-	return contenido;//TODO llamar a leerpagina de la UMC
+	if(resultado<=0){
+		informarException();
+	}
+	return contenido;
 }
 
 void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones){
@@ -347,6 +358,14 @@ void informarStackOverflow(){
 	logTrace("Informando Nucleo StackOverflow");
 	char* tmp_str = string_itoa(pcbActual->processID);
 	enviarMensajeSocket(socketNucleo,STACK_OVERFLOW_EXCEPTION,tmp_str);
-	hubo_stackoverflow = 1;
+	hubo_exception = 1;
+	free(tmp_str);
+}
+
+void informarException(){
+	logTrace("Informando Nucleo excepcion de la UMC");
+	char* tmp_str = string_itoa(pcbActual->processID);
+	enviarMensajeSocket(socketNucleo,GENERIC_EXCEPTION,tmp_str);
+	hubo_exception = 1;
 	free(tmp_str);
 }

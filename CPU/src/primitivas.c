@@ -48,7 +48,7 @@ bool verificarStackOverflow(){
 	aux = aux/size_pagina;
 	if(aux>=size_stack){
 		hayOverflow = true;
-		if(!hubo_stackoverflow){
+		if(!hubo_exception){
 			informarStackOverflow();
 		}
 	}
@@ -123,6 +123,9 @@ int escribir_variable_en_umc(uint32_t variable, dir_memoria* dir){
 	memcpy(buffer,&variable,sizeof(uint32_t));
 	int resultado = escribir_pagina(dir->pagina,dir->offset,dir->size,buffer);
 	printf("\n****** RESULTADO ESCRITURA %d *******\n",resultado);
+	if(resultado<=0){
+		informarException();
+	}
 	free(buffer);
 	return resultado;
 }
@@ -161,50 +164,58 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 }
 
 t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable_nom) {
-	printf("Obtener posicion de %c\n", variable_nom);
+	t_puntero puntero = -1;
+	if(!hubo_exception){
+		printf("Obtener posicion de %c\n", variable_nom);
 
-	variable* variable = NULL;
-	if(isdigit(variable_nom)){
-		variable = obtener_argumento(variable_nom);
-	} else {
-		variable = obtener_variable(variable_nom);
+		variable* variable = NULL;
+		if(isdigit(variable_nom)){
+			variable = obtener_argumento(variable_nom);
+		} else {
+			variable = obtener_variable(variable_nom);
+		}
+
+		dir_memoria* dir = &(variable->direccion);
+		puntero = direccion_logica_a_puntero(dir);
+		printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir->pagina,dir->offset,dir->size,puntero);
 	}
-
-	dir_memoria* dir = &(variable->direccion);
-	t_puntero puntero = direccion_logica_a_puntero(dir);
-	printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir->pagina,dir->offset,dir->size,puntero);
-
 	return puntero;
 }
 
 t_valor_variable ml_dereferenciar(t_puntero puntero) {
-	dir_memoria* dir = puntero_a_direccion_logica(puntero);
-	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
-	char* contenido = NULL;
-	int resultado = leer_pagina(dir->pagina,dir->offset,dir->size,&contenido);
-	printf("****** RESULTADO LECTURA %d *******\n",resultado);
-
 	uint32_t valor = -1;
-	if(resultado>0){
-		memcpy(&valor,contenido,sizeof(uint32_t));
-		free(contenido);
+	if(!hubo_exception){
+		dir_memoria* dir = puntero_a_direccion_logica(puntero);
+		printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+		char* contenido = NULL;
+		int resultado = leer_pagina(dir->pagina,dir->offset,dir->size,&contenido);
+		printf("****** RESULTADO LECTURA %d *******\n",resultado);
+
+
+		if(resultado>0){
+			memcpy(&valor,contenido,sizeof(uint32_t));
+			free(contenido);
+		} else {
+			informarException();
+		}
+		free(dir);
+
+		printf("Dereferenciar %d y su valor es: %d\n", puntero, valor);
 	}
-	free(dir);
-
-	printf("Dereferenciar %d y su valor es: %d\n", puntero, valor);
-
 	return valor;
 }
 
 void ml_asignar(t_puntero puntero, t_valor_variable variable) {
-	printf("Asignando en %d el valor %d\n", puntero, variable);
+	if(!hubo_exception){
+		printf("Asignando en %d el valor %d\n", puntero, variable);
 
-	dir_memoria* dir = puntero_a_direccion_logica(puntero);
-	printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+		dir_memoria* dir = puntero_a_direccion_logica(puntero);
+		printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
 
-	escribir_variable_en_umc(variable,dir);
+		escribir_variable_en_umc(variable,dir);
 
-	free(dir);
+		free(dir);
+	}
 }
 
 void ml_imprimir(t_valor_variable valor) {

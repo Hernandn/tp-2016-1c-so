@@ -413,15 +413,13 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 		liberarCPUporSocketFD(socketCPU,args);
 		PCB* pcb = removeFromEXEC(atoi(package->message));
 		if(pcb!=NULL){
-			logDebug("StackOverflow en Proceso %d",pcb->processID);
-			if(pcb->consolaActiva){
-				logDebug("Informando Consola %d StackOverflow",pcb->consolaFD);
-				enviarMensajeSocket(pcb->consolaFD,STACK_OVERFLOW_EXCEPTION,"");
-			}
-			int resultado = finalizar_programa(pcb->processID);
-			logTrace("Solicitar UMC finalizar el programa PID:%d, resultado:%d",pcb->processID,resultado);
-			logTrace("Destruyendo PCB [PID:%d]",pcb->processID);
-			destroyPCB(pcb);
+			finalizarProgramaException(pcb,STACK_OVERFLOW_EXCEPTION_MESSAGE);
+		}
+	} else if(package->msgCode==GENERIC_EXCEPTION){
+		liberarCPUporSocketFD(socketCPU,args);
+		PCB* pcb = removeFromEXEC(atoi(package->message));
+		if(pcb!=NULL){
+			finalizarProgramaException(pcb,GENERIC_EXCEPTION_MESSAGE);
 		}
 	} else if(package->msgCode==EXEC_IO_OPERATION){
 		logTrace("Solicitada operacion I/O");
@@ -559,5 +557,17 @@ void handleInotify(void* arguments){
 	inotify_rm_watch(file_descriptor, watch_descriptor);
 	close(file_descriptor);
 
+}
+
+void finalizarProgramaException(PCB* pcb, char* mensaje){
+	logDebug("%s en Proceso %d",mensaje,pcb->processID);
+	if(pcb->consolaActiva){
+		logDebug("Informando Consola %d: %s",pcb->consolaFD,mensaje);
+		enviarMensajeSocket(pcb->consolaFD,GENERIC_EXCEPTION,mensaje);
+	}
+	int resultado = finalizar_programa(pcb->processID);
+	logTrace("Solicitar UMC finalizar el programa PID:%d, resultado:%d",pcb->processID,resultado);
+	logTrace("Destruyendo PCB [PID:%d]",pcb->processID);
+	destroyPCB(pcb);
 }
 

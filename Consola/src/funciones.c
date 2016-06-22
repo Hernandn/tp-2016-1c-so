@@ -43,12 +43,9 @@ void comunicacionConNucleo(Configuration* config, char* arch_programa){
 			if(package->msgCode==PROGRAMA_FINALIZADO){
 				continua = 0;
 				logDebug("Nucleo me informa que finalizo mi programa");
-			} else if(package->msgCode==INIT_EXCEPTION){
+			} else if(package->msgCode==GENERIC_EXCEPTION){
 				continua = 0;
-				logDebug("Nucleo me informa que no fue posible iniciar el programa");
-			} else if(package->msgCode==STACK_OVERFLOW_EXCEPTION){
-				continua = 0;
-				logDebug("Nucleo me informa: Stack Overflow");
+				logDebug("Nucleo me informa: %s",package->message);
 			} else if(package->msgCode==PRINT_VARIABLE){
 				uint32_t valor = deserializar_imprimirVariable_consola(package->message);
 				printf("print> %d\n",valor);
