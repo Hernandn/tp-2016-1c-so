@@ -7,10 +7,7 @@
 
 #include "comandos.h"
 
-void dump (){
-	printf("Este es un reporte de prueba del estado dump\n");
 
-}
 
 void retardo (int segundos){
 	pthread_mutex_lock(&retardo_mutex);
@@ -87,7 +84,10 @@ void intepretarComando(char* comando){
 
 	cantidad=parsear_comando(comando, &comando_parseado);
 
-	if(!strcmp(*comando_parseado,"dump")) dump();
+	if(!strcmp(*comando_parseado,"dump"))
+		{
+		if(cantidad == 2) dump(atoi(*(comando_parseado + 1)));
+		}
 	else if(!strcmp(*comando_parseado,"flush") && (cantidad == 2))
 
 			if(!strcmp(*(comando_parseado+1),"tlb")) flush_tlb();

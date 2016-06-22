@@ -384,4 +384,37 @@ void crearListaDeTablas(){
 	tablas_de_paginas = list_create();
 }
 
+void mostrar_tablas_pag ()
+{
+
+
+}
+
+mostrar_pag(int pid)
+{
+
+}
+
+/*dump: Este comando generará un reporte en pantalla y en un archivo en disco del estado actual de:
+Estructuras de memoria: Tablas de páginas de todos los procesos o de un proceso en particular.
+Contenido de memoria: Datos almacenados en la memoria de todos los procesos o de un proceso en particular.
+*/
+
+void dump (int pid){
+
+	FILE * reporte;
+	reporte = fopen ("reporte.txt", "w+");
+	//si el pid es 0 imprimo todos los procesos
+	if (pid == 0)
+	{
+		mostrar_tablas_pag();
+	}
+
+	else
+	{
+		mostrar_pag(pid);
+	}
+
+}
+
 

@@ -65,5 +65,8 @@ void liberar_memoria(uint32_t);
 void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();
+void mostrar_tablas_pag ();
+void dump(int pid);
+
 
 #endif /* MEMORIA_H_ */
