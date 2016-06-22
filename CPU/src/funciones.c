@@ -48,7 +48,7 @@ void conectarConUMC(void* arguments){
 	socketUMC = socket;
 
 	logDebug("Realizando handshake con UMC");
-	package=malloc(sizeof(Package));
+	package = createPackage();
 	if(recieve_and_deserialize(package, socket) > 0) {
 		if(package->msgCode==HANDSHAKE_UMC){
 			if(package->msgCode==HANDSHAKE_UMC){
@@ -57,6 +57,7 @@ void conectarConUMC(void* arguments){
 			}
 		}
 	}
+	destroyPackage(package);
 
 	//Le aviso a la UMC que soy un nucleo
 	enviarMensajeSocket(socket,HANDSHAKE_CPU,"");
@@ -78,6 +79,7 @@ void iniciarEjecucionCPU(void* arguments){
 	end_signal_received = 0;
 	end_cpu = 0;
 	esperando_mensaje = 0;
+	hubo_stackoverflow = 0;
 
 	/* Se abre una conexión con el servidor */
 	socketNucleo = abrirConexionInetConServer(args->config->ip_nucleo, args->config->puerto_nucleo);
@@ -92,6 +94,18 @@ void iniciarEjecucionCPU(void* arguments){
 		logError("Me han cerrado la conexión.");
 		exit(-1);
 	}
+
+	logDebug("Realizando handshake con Nucleo");
+	Package* package=malloc(sizeof(Package));
+	if(recieve_and_deserialize(package, socketNucleo) > 0) {
+		if(package->msgCode==HANDSHAKE_CPU_NUCLEO){
+			if(package->msgCode==HANDSHAKE_CPU_NUCLEO){
+				size_stack = atoi(package->message);//recibo el tamanio de stack
+				logDebug("Conexion con Nucleo confirmada, tamanio de stack: %d",size_stack);
+			}
+		}
+	}
+	destroyPackage(package);
 
 	/* Se escribe el número de cliente que nos ha enviado el servidor */
 	logDebug("Soy el CPU %d", buffer);
@@ -168,6 +182,10 @@ void quantumSleep(arg_struct *args, int milisegundos){
 			logTrace("CPU se encuentra libre");
 			proceso_fue_bloqueado = 0;
 		}
+	} else if(hubo_stackoverflow){
+		informarNucleoCPUlibre(socketNucleo);
+		logTrace("CPU se encuentra libre");
+		hubo_stackoverflow = 0;
 	} else {
 		if (end_signal_received){
 			logInfo("*** Se ha recibido la signal de desconexion de CPU ***");
@@ -323,4 +341,12 @@ void execute_signal(char* sem_id){
 	char* serialized = serializar_semaforo(pcbActual->processID,sem_id);
 	uint32_t length = getLong_semaforo(sem_id);
 	enviarMensajeSocketConLongitud(socketNucleo,SEM_SIGNAL,serialized,length);
+}
+
+void informarStackOverflow(){
+	logTrace("Informando Nucleo StackOverflow");
+	char* tmp_str = string_itoa(pcbActual->processID);
+	enviarMensajeSocket(socketNucleo,STACK_OVERFLOW_EXCEPTION,tmp_str);
+	hubo_stackoverflow = 1;
+	free(tmp_str);
 }

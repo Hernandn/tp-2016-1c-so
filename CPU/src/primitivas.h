@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <ctype.h>
 
+bool verificarStackOverflow();
+
 t_puntero ml_definirVariable(t_nombre_variable variable);
 t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable);
 t_valor_variable ml_dereferenciar(t_puntero puntero);

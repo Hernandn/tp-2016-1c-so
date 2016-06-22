@@ -20,6 +20,7 @@
 #define END_PROGRAM 4
 #define HANDSHAKE_CPU 5
 #define SWITCH_PROCESS 6
+#define HANDSHAKE_CPU_NUCLEO 101
 //---------------------
 //codigos de operaciones con UMC
 #define HANDSHAKE_UMC 5
@@ -39,8 +40,10 @@ int programa_finalizado;
 int end_signal_received;
 int end_cpu;
 int esperando_mensaje;
+int hubo_stackoverflow;
 
 int size_pagina;
+int size_stack;
 
 PCB* pcbActual;//pcb del proceso que se esta ejecutando actualmente en el CPU
 
@@ -69,6 +72,7 @@ void ejecutarOperacionIO(char* io_id, uint32_t cant_operaciones);
 void finalizarPrograma();
 void execute_wait(char* sem_id);
 void execute_signal(char* sem_id);
+void informarStackOverflow();
 
 
 #endif /* CPU_H_ */

@@ -441,13 +441,13 @@ void destroy_stackIndex(contexto* contexto, uint32_t context_len){
 }
 
 void destroyPCB(PCB* self){
-	free(self->programa);
-	metadata_destruir(self->codeIndex);
-	//TODO ver como destruir stack
-	destroy_stackIndex(self->stackIndex,self->context_len);
-	//free(self->stackIndex);
-	//free(self->tagIndex);
-	free(self);
+	if(self!=NULL){
+		free(self->programa);
+		metadata_destruir(self->codeIndex);
+		destroy_stackIndex(self->stackIndex,self->context_len);
+		free(self);
+		self=NULL;
+	}
 }
 
 
