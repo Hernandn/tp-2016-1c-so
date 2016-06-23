@@ -23,6 +23,7 @@
 #define TAMANIO_PAGINA "TAMANIO_PAGINA"
 #define TAMANIO_TLB "TAMANIO_TLB"
 #define RETRASO "RETRASO"
+#define MARCOS_X_PROC "MARCOS_X_PROC"
 
 typedef struct Configuration {
 
@@ -38,6 +39,7 @@ typedef struct Configuration {
 	int log_print_console;
 	int retraso;
 	int tamanio_tlb;
+	int marcos_x_proc;
 } Configuration;
 
 

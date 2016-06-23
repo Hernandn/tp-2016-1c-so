@@ -94,14 +94,18 @@ void cargar_dir_tabla(uint32_t numero_pagina, uint32_t numero_marco){
 	if(!(fila=list_find(tabla->filas,fila_valida))){
 		//La fila puede no existir, la tabla se crea vacia
 		fila=malloc(sizeof(t_fila_tabla));
-		list_add(tabla->filas,(void*)fila);
+		list_add_in_index(tabla->filas,tabla->puntero,(void*)fila);
+		tabla->puntero++;
+		tabla->puntero %= config->marcos_x_proc;
 	}
 
 	fila->numero_pagina=numero_pagina;
 	fila->numero_marco=numero_marco;
+	fila->accedido=1;
+	fila->modificado=0;
 }
 
-void borrar_dir_tablas(uint32_t numero_marco){
+void borrar_dir_tabla(t_tabla *tabla_prc, uint32_t numero_marco){
 
 	void eliminar(void* fila){
 		free(fila);
@@ -111,55 +115,42 @@ void borrar_dir_tablas(uint32_t numero_marco){
 		return ((t_fila_tabla*)fila)->numero_marco == numero_marco;
 	}
 
-	void eliminar_fila(void* tabla){
-		list_remove_and_destroy_by_condition(((t_tabla*)tabla)->filas, fila_valida, eliminar);
-	}
 
-	/* Itero todas las tablas porque no encuentro una forma copada de parar en la que tiene el marco.
-	 * De todas formas no deberia traer problemas ya que un numero de marco solo puede pertenecer a un
-	 * programa.
-	 */
-	list_iterate(tablas_de_paginas,eliminar_fila);
-
+	list_remove_and_destroy_by_condition(tabla_prc->filas, fila_valida, eliminar);
 }
 
-uint32_t obtener_marco_para_swap(){
-	int i=0, marco_no_encontrado=1;
-
-	while(marco_no_encontrado){
-		pthread_mutex_lock(&activo_mutex);
-
-		if(bitarray_test_bit(memoria_principal.activo,i))
-			bitarray_clean_bit(memoria_principal.activo,i);
-		else
-			marco_no_encontrado=0;
-
-		pthread_mutex_unlock(&activo_mutex);
-
-		if(i == bitarray_get_max_bit(memoria_principal.activo)) i=0;
-		else i++;
-	}
-
-	return i;
-}
-
-uint32_t swap_marco(uint32_t numero_pagina){
+uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 	int tamanio_pagina = config->size_pagina,
 		pid = obtener_pid();
-	uint32_t marco_elegido = obtener_marco_para_swap(),
-			 dir_fisica = marco_elegido * tamanio_pagina;
-	bool result;
+	logDebug("Limite marcos x proceso alcanzado PID: %d, ejecutando algoritmo de reemplazo", pid);
 
-	logDebug("Se realiza swap sobre marco %d para programa %d", marco_elegido, pid);
+	t_list* filas = tabla_prc->filas;
 
-	pthread_mutex_lock(&modificacion_mutex);
-	result = !bitarray_test_bit(memoria_principal.modificacion,marco_elegido);
-	pthread_mutex_unlock(&modificacion_mutex);
+	bool marco_encontrado = false;
+	uint32_t marco_elegido;
+	t_fila_tabla* fila;
+	while(!marco_encontrado){
+		fila = list_get(filas,tabla_prc->puntero);
+		if(fila->accedido){
+			fila->accedido = 0;
+			tabla_prc->puntero++;
+			tabla_prc->puntero %= config->marcos_x_proc;
+		} else {
+			marco_encontrado = true;
+			marco_elegido = fila->numero_marco;
+		}
+	}
 
-	if(result)
-		escribirPaginaSwap(pid, numero_pagina, tamanio_pagina,memoria_principal.memoria + dir_fisica);
+	uint32_t dir_fisica = marco_elegido * tamanio_pagina;
 
-	borrar_dir_tablas(marco_elegido);
+	if(fila->modificado){
+		logDebug("Se realiza swap de pagina para PID: %d", fila->numero_pagina, pid);
+		escribirPaginaSwap(pid, fila->numero_pagina, tamanio_pagina,memoria_principal.memoria + dir_fisica);
+	} else {
+		logDebug("No fue necesario realizar swap de pagina %d para PID: %d", fila->numero_pagina, pid);
+	}
+
+	borrar_dir_tabla(tabla_prc,marco_elegido);
 
 	return marco_elegido;
 }
@@ -183,10 +174,19 @@ uint32_t obtener_marco_libre(){
 
 void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina){
 
-	int marco_libre = obtener_marco_libre();
+	int marco_libre;
+	t_tabla *tabla_buscada = obtener_tabla(obtener_pid());
+	if(tabla_buscada->filas->elements_count < config->marcos_x_proc){
+		marco_libre	= obtener_marco_libre();
+	} else {
+		marco_libre = -1;
+	}
+
 	uint32_t dir_fisica;
 
-	if(marco_libre < 0) marco_libre = swap_marco(numero_pagina);	//Si es -1 hago swap, swap no deberia fallar nunca
+	if(marco_libre < 0){
+		marco_libre = swap_marco(numero_pagina,tabla_buscada);	//Si es -1 hago swap, swap no deberia fallar nunca
+	}
 	dir_fisica = marco_libre * config->size_pagina;
 
 	logDebug("Se agrega pagina %d en marco %d",numero_pagina, marco_libre);
@@ -199,7 +199,7 @@ void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina
 	cargar_dir_tabla(numero_pagina, marco_libre);
 }
 
-void copiar_pagina_a_tlb(uint32_t numero_pagina){
+void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco){
 	//Todo copiar la pagina a la tlb para la proxima busqueda
 }
 
@@ -222,10 +222,36 @@ uint32_t obtener_numero_marco(uint32_t numero_pagina){
 		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1){
 			copiar_pagina_a_memoria(numero_pagina);
 			nro_marco=obtener_numero_marco_tabla(numero_pagina);
-		}else copiar_pagina_a_tlb(numero_pagina);
+			copiar_pagina_a_tlb(numero_pagina,nro_marco);
+		} else {
+			copiar_pagina_a_tlb(numero_pagina,nro_marco);
+		}
 	}
 
 	return nro_marco;
+}
+
+t_fila_tabla* get_fila_tabla(uint32_t numero_pagina){
+	t_tabla *tabla_buscada;
+	t_fila_tabla *fila_buscada;
+
+	bool fila_valida(void* fila){
+		return ((t_fila_tabla*) fila)->numero_pagina==numero_pagina;
+	}
+
+	tabla_buscada=obtener_tabla(obtener_pid());
+	fila_buscada=list_find(tabla_buscada->filas,fila_valida);
+	return fila_buscada;
+}
+
+void marcar_pagina_accedida(uint32_t numero_pagina){
+	t_fila_tabla *fila = get_fila_tabla(numero_pagina);
+	fila->accedido=1;
+}
+
+void marcar_pagina_modificada(uint32_t numero_pagina){
+	t_fila_tabla *fila = get_fila_tabla(numero_pagina);
+	fila->modificado=1;
 }
 
 //----------------------------------PUBLICO---------------------------------------
@@ -257,8 +283,9 @@ void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
 	t_tabla *nueva_tabla = malloc(sizeof(t_tabla));
 
 	nueva_tabla->pid = pid;
-	nueva_tabla->tamanio = cant_paginas;
+	nueva_tabla->tamanio = cant_paginas;//TODO esto me parece que no sirve
 	nueva_tabla->filas = list_create();
+	nueva_tabla->puntero = 0;
 
 	list_add(tablas_de_paginas,(void*) nueva_tabla);
 
@@ -307,9 +334,7 @@ int obtener_contenido_memoria(char** contenido, uint32_t numero_pagina, uint32_t
 
 	memcpy(*contenido,mem,tamanio);
 
-	pthread_mutex_lock(&activo_mutex);
-	bitarray_set_bit(memoria_principal.activo,numero_marco);
-	pthread_mutex_unlock(&activo_mutex);
+	marcar_pagina_accedida(numero_pagina);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que lei
 }
@@ -325,13 +350,8 @@ int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t
 
 	memcpy(mem,contenido,tamanio);
 
-	pthread_mutex_lock(&modificacion_mutex);
-	bitarray_set_bit(memoria_principal.modificacion,numero_marco);
-	pthread_mutex_unlock(&modificacion_mutex);
-
-	pthread_mutex_lock(&activo_mutex);
-	bitarray_set_bit(memoria_principal.activo,numero_marco);
-	pthread_mutex_unlock(&activo_mutex);
+	marcar_pagina_accedida(numero_pagina);
+	marcar_pagina_modificada(numero_pagina);
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
@@ -390,7 +410,7 @@ void mostrar_tablas_pag ()
 
 }
 
-mostrar_pag(int pid)
+void mostrar_pag(int pid)
 {
 
 }

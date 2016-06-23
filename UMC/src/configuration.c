@@ -28,6 +28,7 @@ void configurar(){
 	config->tamanio_tlb = config_get_int_value(nConfig,TAMANIO_TLB);
 	config->size_pagina = config_get_int_value(nConfig,TAMANIO_PAGINA);
 	config->retraso = config_get_int_value(nConfig,RETRASO);
+	config->marcos_x_proc = config_get_int_value(nConfig,MARCOS_X_PROC);
 	//configuracion de log
 	config->log_level = strdup(config_get_string_value(nConfig,LOG_LEVEL));
 	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));

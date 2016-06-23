@@ -31,12 +31,15 @@ typedef struct memoria_principal{
 typedef struct fila_tabla{
 	uint16_t numero_pagina;
 	uint16_t numero_marco;
+	char accedido;//para clock y mejorado
+	char modificado;//solo para clock mejorado
 } t_fila_tabla;
 
 typedef struct tabla{
 	t_list* filas;
 	uint32_t pid;
 	uint32_t tamanio;
+	uint32_t puntero;
 } t_tabla;
 
 typedef struct fila_tlb{
