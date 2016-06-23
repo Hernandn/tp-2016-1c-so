@@ -124,7 +124,7 @@ void handleComandos(){
 	while(continua){
 
 		comando = NULL;
-		printf("ml-umc> ");
+		printf("\nml-umc> ");
 		getline(&comando,&size_buff,stdin);
 		comando[strlen(comando)-1]='\0';	//getline tambien guarda el \n y hay que eliminarlo para poder comparar despues
 		intepretarComando(comando);
