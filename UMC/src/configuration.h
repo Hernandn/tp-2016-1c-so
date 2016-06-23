@@ -24,6 +24,13 @@
 #define TAMANIO_TLB "TAMANIO_TLB"
 #define RETRASO "RETRASO"
 #define MARCOS_X_PROC "MARCOS_X_PROC"
+#define ALGORITMO "ALGORITMO"
+
+//algoritmos de reemplazo
+#define ALGO_CLOCK "CLOCK"
+#define CLOCK 1
+#define ALGO_CLOCK_MEJORADO "CLOCK_MEJORADO"
+#define CLOCK_MEJORADO 2
 
 typedef struct Configuration {
 
@@ -40,6 +47,7 @@ typedef struct Configuration {
 	int retraso;
 	int tamanio_tlb;
 	int marcos_x_proc;
+	int algoritmo;
 } Configuration;
 
 

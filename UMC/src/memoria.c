@@ -125,20 +125,25 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 	logDebug("Limite marcos x proceso alcanzado PID: %d, ejecutando algoritmo de reemplazo", pid);
 
 	t_list* filas = tabla_prc->filas;
-
-	bool marco_encontrado = false;
 	uint32_t marco_elegido;
 	t_fila_tabla* fila;
-	while(!marco_encontrado){
-		fila = list_get(filas,tabla_prc->puntero);
-		if(fila->accedido){
-			fila->accedido = 0;
-			tabla_prc->puntero++;
-			tabla_prc->puntero %= config->marcos_x_proc;
-		} else {
-			marco_encontrado = true;
-			marco_elegido = fila->numero_marco;
+
+	if(config->algoritmo==CLOCK){
+		bool marco_encontrado = false;
+
+		while(!marco_encontrado){
+			fila = list_get(filas,tabla_prc->puntero);
+			if(fila->accedido){
+				fila->accedido = 0;
+				tabla_prc->puntero++;
+				tabla_prc->puntero %= config->marcos_x_proc;
+			} else {
+				marco_encontrado = true;
+				marco_elegido = fila->numero_marco;
+			}
 		}
+	} else {
+		//TODO CLOCK MEJORADO
 	}
 
 	uint32_t dir_fisica = marco_elegido * tamanio_pagina;

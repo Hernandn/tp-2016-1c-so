@@ -29,6 +29,13 @@ void configurar(){
 	config->size_pagina = config_get_int_value(nConfig,TAMANIO_PAGINA);
 	config->retraso = config_get_int_value(nConfig,RETRASO);
 	config->marcos_x_proc = config_get_int_value(nConfig,MARCOS_X_PROC);
+	char* algoritmo = strdup(config_get_string_value(nConfig,ALGORITMO));
+	if(string_equals_ignore_case(algoritmo,ALGO_CLOCK_MEJORADO)){
+		config->algoritmo = CLOCK_MEJORADO;
+	} else {
+		config->algoritmo = CLOCK;
+	}
+	free(algoritmo);
 	//configuracion de log
 	config->log_level = strdup(config_get_string_value(nConfig,LOG_LEVEL));
 	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));
