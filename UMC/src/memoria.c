@@ -127,9 +127,9 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 	t_list* filas = tabla_prc->filas;
 	uint32_t marco_elegido;
 	t_fila_tabla* fila;
+	bool marco_encontrado = false;
 
 	if(config->algoritmo==CLOCK){
-		bool marco_encontrado = false;
 
 		while(!marco_encontrado){
 			fila = list_get(filas,tabla_prc->puntero);
@@ -139,11 +139,39 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 				tabla_prc->puntero %= config->marcos_x_proc;
 			} else {
 				marco_encontrado = true;
-				marco_elegido = fila->numero_marco;
 			}
 		}
+		marco_elegido = fila->numero_marco;
 	} else {
-		//TODO CLOCK MEJORADO
+		int contador_vuelta = 0;
+		while(!marco_encontrado){
+			//Paso 1
+			while(!marco_encontrado && contador_vuelta < config->marcos_x_proc){
+				fila = list_get(filas,tabla_prc->puntero);
+				if(!fila->accedido && !fila->modificado){
+					marco_encontrado = true;
+				} else {
+					tabla_prc->puntero++;
+					tabla_prc->puntero %= config->marcos_x_proc;
+				}
+				contador_vuelta++;
+			}
+			contador_vuelta = 0;
+			//Paso 2
+			while(!marco_encontrado && contador_vuelta<config->marcos_x_proc){
+				fila = list_get(filas,tabla_prc->puntero);
+				if(!fila->accedido && fila->modificado){
+					marco_encontrado = true;
+				} else {
+					fila->accedido = 0;
+					tabla_prc->puntero++;
+					tabla_prc->puntero %= config->marcos_x_proc;
+				}
+				contador_vuelta++;
+			}
+			contador_vuelta = 0;
+		}
+		marco_elegido = fila->numero_marco;
 	}
 
 	uint32_t dir_fisica = marco_elegido * tamanio_pagina;
