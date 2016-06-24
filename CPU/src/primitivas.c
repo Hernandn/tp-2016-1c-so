@@ -108,7 +108,7 @@ t_puntero_instruccion obtenerIndiceInstruccion(char* serialized, char* label, t_
 	}
 
 	while(offset<size && strcmp(serialized+offset,label)!=0){
-		offset = strlen(serialized+offset) + 1 + sizeof(t_puntero_instruccion);
+		offset += strlen(serialized+offset) + 1 + sizeof(t_puntero_instruccion);
 	}
 
 	if(offset<size){
