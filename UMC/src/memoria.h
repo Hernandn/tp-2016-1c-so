@@ -64,6 +64,7 @@ void eliminar_tabla_de_paginas(uint32_t);
 void eliminar_tabla(t_tabla*, t_tabla**, int);
 int obtener_contenido_memoria(char**, uint32_t, uint32_t, uint32_t);
 int escribir_contenido_memoria(uint32_t, uint32_t, uint32_t, char*);
+int hayMarcosLibres();
 void liberar_memoria(uint32_t);
 void flush_tlb();
 void flush_memory();

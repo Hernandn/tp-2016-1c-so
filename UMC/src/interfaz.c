@@ -53,16 +53,18 @@ int inicializar_programa(char* mensaje_serializado){
 	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
 
 	if((resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas)) == 0){
+		if((resultado = hayMarcosLibres()) >= 0){
 
-		//Guardo el codigo en un buffer de tamanio multipo de tamanio de pagina
-		tmp = malloc(tamanio_pagina * cant_paginas);
-		memcpy(tmp,contenido,strlen(contenido));
+			//Guardo el codigo en un buffer de tamanio multipo de tamanio de pagina
+			tmp = malloc(tamanio_pagina * cant_paginas);
+			memcpy(tmp,contenido,strlen(contenido));
 
-		//Si hay espacio mando las paginas una por una y creo la tabla de paginas
-		for(i=0; i<cant_paginas; i++){
-			escribirPaginaSwap(pid,i,tamanio_pagina,tmp + (i * tamanio_pagina));
+			//Si hay espacio mando las paginas una por una y creo la tabla de paginas
+			for(i=0; i<cant_paginas; i++){
+				escribirPaginaSwap(pid,i,tamanio_pagina,tmp + (i * tamanio_pagina));
+			}
+			crear_tabla_de_paginas(pid,cant_paginas);
 		}
-		crear_tabla_de_paginas(pid,cant_paginas);
 	}
 
 	free(tmp);

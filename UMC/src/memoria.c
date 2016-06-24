@@ -389,6 +389,10 @@ int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
 
+int hayMarcosLibres(){
+	return obtener_marco_libre();
+}
+
 void liberar_memoria(uint32_t pid){
 
 	t_tabla *tabla_buscada;
