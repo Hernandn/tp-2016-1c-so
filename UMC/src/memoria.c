@@ -1,8 +1,6 @@
 /*
  * memoria.c
  *
- *  Created on: 5/6/2016
- *      Author: utnso
  */
 
 #include "memoria.h"
