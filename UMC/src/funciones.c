@@ -1,8 +1,5 @@
 /*
  * funciones.c
- *
- *  Created on: 21/04/2016
- *      Author: hernan
  */
 
 #include "funciones.h"
