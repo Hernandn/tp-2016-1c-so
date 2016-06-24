@@ -96,7 +96,7 @@ void cargar_dir_tabla(uint32_t numero_pagina, uint32_t numero_marco){
 		fila=malloc(sizeof(t_fila_tabla));
 		list_add_in_index(tabla->filas,tabla->puntero,(void*)fila);
 		tabla->puntero++;
-		tabla->puntero %= config->marcos_x_proc;
+		tabla->puntero %= tabla->filas->elements_count;
 	}
 
 	fila->numero_pagina=numero_pagina;
@@ -136,7 +136,7 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 			if(fila->accedido){
 				fila->accedido = 0;
 				tabla_prc->puntero++;
-				tabla_prc->puntero %= config->marcos_x_proc;
+				tabla_prc->puntero %= filas->elements_count;
 			} else {
 				marco_encontrado = true;
 			}
@@ -146,26 +146,26 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 		int contador_vuelta = 0;
 		while(!marco_encontrado){
 			//Paso 1
-			while(!marco_encontrado && contador_vuelta < config->marcos_x_proc){
+			while(!marco_encontrado && contador_vuelta < filas->elements_count){
 				fila = list_get(filas,tabla_prc->puntero);
 				if(!fila->accedido && !fila->modificado){
 					marco_encontrado = true;
 				} else {
 					tabla_prc->puntero++;
-					tabla_prc->puntero %= config->marcos_x_proc;
+					tabla_prc->puntero %= filas->elements_count;
 				}
 				contador_vuelta++;
 			}
 			contador_vuelta = 0;
 			//Paso 2
-			while(!marco_encontrado && contador_vuelta<config->marcos_x_proc){
+			while(!marco_encontrado && contador_vuelta < filas->elements_count){
 				fila = list_get(filas,tabla_prc->puntero);
 				if(!fila->accedido && fila->modificado){
 					marco_encontrado = true;
 				} else {
 					fila->accedido = 0;
 					tabla_prc->puntero++;
-					tabla_prc->puntero %= config->marcos_x_proc;
+					tabla_prc->puntero %= filas->elements_count;
 				}
 				contador_vuelta++;
 			}
@@ -205,7 +205,7 @@ uint32_t obtener_marco_libre(){
 	return bit_no_encontrado ? -1 : i;
 }
 
-void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina){
+int agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina){
 
 	int marco_libre;
 	t_tabla *tabla_buscada = obtener_tabla(obtener_pid());
@@ -218,6 +218,10 @@ void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina
 	uint32_t dir_fisica;
 
 	if(marco_libre < 0){
+		if(list_is_empty(tabla_buscada->filas)){
+			logDebug("No hay marcos libres ni tiene marcos para hacer swap [PID: %d]",pid);
+			return -1;//Si no se encontro marco libre y el proceso no tiene ningun marco asignado para swapear
+		}
 		marco_libre = swap_marco(numero_pagina,tabla_buscada);	//Si es -1 hago swap, swap no deberia fallar nunca
 	}
 	dir_fisica = marco_libre * config->size_pagina;
@@ -230,30 +234,35 @@ void agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina
 	pthread_mutex_unlock(&bitMap_mutex);
 
 	cargar_dir_tabla(numero_pagina, marco_libre);
+	return marco_libre;
 }
 
 void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco){
 	//Todo copiar la pagina a la tlb para la proxima busqueda
 }
 
-void copiar_pagina_a_memoria(uint32_t numero_pagina){
+int copiar_pagina_a_memoria(uint32_t numero_pagina){
 
 	uint32_t pid = obtener_pid();
 	char* pagina = leerPaginaSwap(pid, numero_pagina);
 
-	if(!pagina) return;	//Todo ver de poner un error copado
+	if(!pagina) return -1;	//Todo ver de poner un error copado
 
-	agregar_pagina_a_memoria(pid,numero_pagina,pagina);
+	int result = agregar_pagina_a_memoria(pid,numero_pagina,pagina);
 
 	free(pagina);
+	return result;
 }
 
-uint32_t obtener_numero_marco(uint32_t numero_pagina){
+int obtener_numero_marco(uint32_t numero_pagina){
 	uint32_t nro_marco;
 
 	if((nro_marco=obtener_numero_marco_tlb(numero_pagina)) == -1){
 		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1){
-			copiar_pagina_a_memoria(numero_pagina);
+			int result = copiar_pagina_a_memoria(numero_pagina);
+			if(result<0){
+				return -1;
+			}
 			nro_marco=obtener_numero_marco_tabla(numero_pagina);
 			copiar_pagina_a_tlb(numero_pagina,nro_marco);
 		} else {
@@ -355,7 +364,7 @@ void elimina_tlb(t_tabla_tlb *tabla){
 
 int obtener_contenido_memoria(char** contenido, uint32_t numero_pagina, uint32_t offset, uint32_t tamanio){
 
-	uint32_t numero_marco=obtener_numero_marco(numero_pagina),
+	int numero_marco=obtener_numero_marco(numero_pagina),
 			 dir_fisica=numero_marco*config->size_pagina;
 	memoria mem=memoria_principal.memoria+offset+dir_fisica;
 
