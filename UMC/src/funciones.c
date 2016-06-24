@@ -289,3 +289,4 @@ void inicializarUMC(){
 	crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 	crearListaDeTablas();
 }
+

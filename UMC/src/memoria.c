@@ -463,9 +463,30 @@ void mostrar_tablas_pag ()	//TODO hice una impresion asi rapida para probar noma
 
 }
 
-void imprimir_tabla_pag(int pid)
-{
 
+void imprimirTabla (int pid)
+{
+	void imprimirFilaMarcos(void* aux){
+		t_fila_tabla* fila = (t_fila_tabla *) aux;
+		printf("%d, ",fila->numero_marco);
+	}
+	void imprimirFilaPaginas(void* aux){
+		t_fila_tabla* fila = (t_fila_tabla *) aux;
+		printf("%d, ",fila->numero_pagina);
+	}
+
+	 void imprimirTable(void *aux)
+	 {
+		 t_tabla* tabla = (t_tabla *) aux;
+		 if(pid == tabla->pid)
+		 {
+				printf("\nMarcos: ");
+				list_iterate(tabla->filas,imprimirFilaMarcos);
+				printf("\nPaginas: ");
+				list_iterate(tabla->filas,imprimirFilaPaginas);
+		 }
+	 }
+	list_iterate(tablas_de_paginas,imprimirTabla);
 }
 
 void mostrar_pag(int pid)
@@ -473,7 +494,7 @@ void mostrar_pag(int pid)
 		if (pid != 0)
 		{
 			printf("\n Proceso: %d", pid);
-			imprimir_tabla_pag(pid);
+			imprimirTabla(pid);
 		}
 }
 
