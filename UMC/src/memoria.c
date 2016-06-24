@@ -463,9 +463,18 @@ void mostrar_tablas_pag ()	//TODO hice una impresion asi rapida para probar noma
 
 }
 
-void mostrar_pag(int pid)
+void imprimir_tabla_pag(int pid)
 {
 
+}
+
+void mostrar_pag(int pid)
+{
+		if (pid != 0)
+		{
+			printf("\n Proceso: %d", pid);
+			imprimir_tabla_pag(pid);
+		}
 }
 
 /*dump: Este comando generará un reporte en pantalla y en un archivo en disco del estado actual de:
