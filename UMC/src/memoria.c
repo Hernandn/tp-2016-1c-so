@@ -31,6 +31,7 @@ void destructor_tabla(void* tabla){
 t_tabla* obtener_tabla(uint32_t pid){
 	t_tabla *tabla_buscada;
 
+
 	bool tabla_valida(void* tabla){
 		return ((t_tabla*) tabla)->pid==pid;
 	}
@@ -263,6 +264,10 @@ int obtener_numero_marco(uint32_t numero_pagina){
 	{
 		nro_marco = obtener_numero_marco_tlb(numero_pagina);
 	}
+	else
+	{
+		nro_marco = -1;
+	}
 
 	if(nro_marco == -1)
 	{
@@ -484,7 +489,12 @@ void mostrar_guardar_tablas_pag (uint32_t pid)
 
 	void imprimirTabla(void* aux){
 		t_tabla* tabla = (t_tabla *) aux;
+		char *tmp;
 		printf("\nTabla de paginas PID: %d", tabla->pid);
+		/*tmp = malloc(10*sizeof(char));
+		sprintf(tmp,"%d",tabla->pid);
+		free(tmp);*/
+		//fprintf( "\nTabla de paginas PID:  %d" + itoa(tabla->pid));
 		printf("\nCantidad de filas: %d",list_size(tabla->filas));
 		fprintf(reporte, "\nTabla de paginas PID: %d", tabla->pid);
 		printf("\nMarcos: ");
