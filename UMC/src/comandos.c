@@ -87,6 +87,7 @@ void intepretarComando(char* comando){
 	if(!strcmp(*comando_parseado,"dump"))
 		{
 		if(cantidad == 2) dump(atoi(*(comando_parseado + 1)));
+		else dump(0);
 		}
 	else if(!strcmp(*comando_parseado,"flush") && (cantidad == 2))
 

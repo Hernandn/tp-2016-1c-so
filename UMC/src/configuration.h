@@ -25,6 +25,7 @@
 #define RETRASO "RETRASO"
 #define MARCOS_X_PROC "MARCOS_X_PROC"
 #define ALGORITMO "ALGORITMO"
+#define CACHE "CACHE"
 
 //algoritmos de reemplazo
 #define ALGO_CLOCK "CLOCK"
@@ -48,6 +49,7 @@ typedef struct Configuration {
 	int tamanio_tlb;
 	int marcos_x_proc;
 	int algoritmo;
+	int usa_cache;
 } Configuration;
 
 

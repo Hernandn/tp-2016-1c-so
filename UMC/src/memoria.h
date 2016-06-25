@@ -70,7 +70,7 @@ void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();
 void mostrar_tablas_pag ();
-void dump(int pid);
+void dump(uint32_t pid);
 
 
 #endif /* MEMORIA_H_ */

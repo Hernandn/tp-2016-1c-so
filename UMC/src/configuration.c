@@ -36,6 +36,7 @@ void configurar(){
 		config->algoritmo = CLOCK;
 	}
 	free(algoritmo);
+	config->usa_cache = config_get_int_value(nConfig,CACHE);
 	//configuracion de log
 	config->log_level = strdup(config_get_string_value(nConfig,LOG_LEVEL));
 	config->log_file = strdup(config_get_string_value(nConfig,LOG_FILE));

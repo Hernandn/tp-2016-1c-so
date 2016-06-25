@@ -185,6 +185,7 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 	}
 
 	borrar_dir_tabla(tabla_prc,marco_elegido);
+	//Todo borrar_dir_tlb(puntero_tlb,marco_elegido
 
 	return marco_elegido;
 }
@@ -258,19 +259,28 @@ int copiar_pagina_a_memoria(uint32_t numero_pagina){
 int obtener_numero_marco(uint32_t numero_pagina){
 	uint32_t nro_marco;
 
-	if((nro_marco=obtener_numero_marco_tlb(numero_pagina)) == -1){
-		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1){
+	if (config->usa_cache)
+	{
+		nro_marco = obtener_numero_marco_tlb(numero_pagina);
+	}
+
+	if(nro_marco == -1)
+	{
+		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1)
+		{
 			int result = copiar_pagina_a_memoria(numero_pagina);
-			if(result<0){
+			if(result<0)
+			{
 				return -1;
 			}
 			nro_marco=obtener_numero_marco_tabla(numero_pagina);
 			copiar_pagina_a_tlb(numero_pagina,nro_marco);
-		} else {
+		} else
+		{
 			copiar_pagina_a_tlb(numero_pagina,nro_marco);
 		}
-	}
 
+	}
 	return nro_marco;
 }
 
@@ -453,22 +463,29 @@ void crearListaDeTablas(){
 
 
 //imprimo todos los pids
-void mostrar_tablas_pag ()
+void mostrar_guardar_tablas_pag (uint32_t pid)
 {
+	t_list *lista_tmp;
+
+	bool mismo_pid (void *tabla){
+		return pid ? ((t_tabla *) tabla)->pid == pid : 1;
+	}
+
 	void imprimirFilaMarcos(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;
 		printf("%d, ",fila->numero_marco);
-		fprintf(reporte, fila->numero_marco);
+	//	fprintf(reporte, fila->numero_marco);
 	}
 	void imprimirFilaPaginas(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;
 		printf("%d, ",fila->numero_pagina);
-		fprintf(reporte, fila->numero_pagina);
+	//	fprintf(reporte, fila->numero_pagina);
 	}
 
 	void imprimirTabla(void* aux){
 		t_tabla* tabla = (t_tabla *) aux;
 		printf("\nTabla de paginas PID: %d", tabla->pid);
+		printf("\nCantidad de filas: %d",list_size(tabla->filas));
 		fprintf(reporte, "\nTabla de paginas PID: %d", tabla->pid);
 		printf("\nMarcos: ");
 		fprintf(reporte, "\nMarcos: ");
@@ -478,60 +495,27 @@ void mostrar_tablas_pag ()
 		list_iterate(tabla->filas,imprimirFilaPaginas);
 	}
 
-	list_iterate(tablas_de_paginas,imprimirTabla);
+	lista_tmp=list_filter(tablas_de_paginas,mismo_pid);
+
+	list_iterate(lista_tmp,imprimirTabla);
+	list_destroy(lista_tmp);
 
 }
-
-//Imprimo un solo PID
-void mostrar_una_tablas_pag (int pid)
-{
-	void imprimirFilaMarcos(void* aux){
-		t_fila_tabla* fila = (t_fila_tabla *) aux;
-		printf("%d, ",fila->numero_marco);
-
-	}
-	void imprimirFilaPaginas(void* aux){
-		t_fila_tabla* fila = (t_fila_tabla *) aux;
-		printf("%d, ",fila->numero_pagina);
-	}
-
-	void imprimirTabla(void* aux){
-		t_tabla* tabla = (t_tabla *) aux;
-		if(pid == tabla->pid)
-		{
-			printf("\nTabla de paginas PID: %d", tabla->pid);
-			printf("\nMarcos: ");
-			list_iterate(tabla->filas,imprimirFilaMarcos);
-			printf("\nPaginas: ");
-			list_iterate(tabla->filas,imprimirFilaPaginas);
-		}
-	}
-
-	list_iterate(tablas_de_paginas,imprimirTabla);
-
-}
-
-
-
 
 /*dump: Este comando generará un reporte en pantalla y en un archivo en disco del estado actual de:
 Estructuras de memoria: Tablas de páginas de todos los procesos o de un proceso en particular.
 Contenido de memoria: Datos almacenados en la memoria de todos los procesos o de un proceso en particular.
 */
 
-void dump (int pid)
+void dump (uint32_t pid)
 {
-	reporte = fopen ("reporte.txt", "w+");
+	reporte = fopen ("reporte.txt", "a+");
 	//si el pid es 0 imprimo todos los procesos
-	if (pid == 0)
-	{
-		mostrar_tablas_pag();
-	}
+	printf("---------------------------------------------------------------------------------------------------------------------------\n");
+	printf("Dump memoria\n");
 
-	else
-	{
-		mostrar_una_tablas_pag(pid);
-	}
+	mostrar_guardar_tablas_pag(pid);
+
 	fclose(reporte);
 }
 
