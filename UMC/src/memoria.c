@@ -479,29 +479,25 @@ void mostrar_guardar_tablas_pag (uint32_t pid)
 	void imprimirFilaMarcos(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;
 		printf("%d, ",fila->numero_marco);
-	//	fprintf(reporte, fila->numero_marco);
+		fprintf(reporte," %d",fila->numero_marco);
 	}
 	void imprimirFilaPaginas(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;
 		printf("%d, ",fila->numero_pagina);
-	//	fprintf(reporte, fila->numero_pagina);
+		fprintf(reporte,"%d",fila->numero_pagina);
 	}
 
 	void imprimirTabla(void* aux){
 		t_tabla* tabla = (t_tabla *) aux;
-		char *tmp;
 		printf("\nTabla de paginas PID: %d", tabla->pid);
-		/*tmp = malloc(10*sizeof(char));
-		sprintf(tmp,"%d",tabla->pid);
-		free(tmp);*/
-		//fprintf( "\nTabla de paginas PID:  %d" + itoa(tabla->pid));
+		fprintf(reporte,"%s %d", "\nTabla de paginas PID:",tabla->pid);
 		printf("\nCantidad de filas: %d",list_size(tabla->filas));
-		fprintf(reporte, "\nTabla de paginas PID: %d", tabla->pid);
+		fprintf(reporte,"%s %d", "\nCantidad de filas;",list_size(tabla->filas));
 		printf("\nMarcos: ");
-		fprintf(reporte, "\nMarcos: ");
+		fprintf(reporte,"\nMarcos:");
 		list_iterate(tabla->filas,imprimirFilaMarcos);
 		printf("\nPaginas: ");
-		fprintf(reporte, "\nPaginas: ");
+		fprintf(reporte,"\nPaginas: ");
 		list_iterate(tabla->filas,imprimirFilaPaginas);
 	}
 
