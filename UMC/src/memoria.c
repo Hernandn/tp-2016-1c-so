@@ -448,17 +448,17 @@ void flush_tlb(){
 
 void flush_memory(){
 	//Marca todas las paginas como modificadas
-	int i, tamanio;
-	t_bitarray *bitMap_Modificacion = memoria_principal.modificacion;
-
-	tamanio = bitarray_get_max_bit(bitMap_Modificacion);
-
-	pthread_mutex_lock(&modificacion_mutex);
-	for(i=0; i<tamanio; i++){
-
-		bitarray_clean_bit(bitMap_Modificacion,i);
+	void flushFila(void* aux){
+		t_fila_tabla* fila = (t_fila_tabla *) aux;
+		fila->modificado = 1;
 	}
-	pthread_mutex_unlock(&modificacion_mutex);
+
+	void flushTabla(void* aux){
+		t_tabla* tabla = (t_tabla *) aux;
+		list_iterate(tabla->filas,flushFila);
+	}
+
+	list_iterate(tablas_de_paginas,flushTabla);
 }
 
 void crearListaDeTablas(){
@@ -479,33 +479,54 @@ void mostrar_guardar_tablas_pag (uint32_t pid)
 	void imprimirFilaMarcos(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;
 		printf("%d, ",fila->numero_marco);
-		fprintf(reporte," %d",fila->numero_marco);
+		fprintf(reporte,"%d, ",fila->numero_marco);
 	}
 	void imprimirFilaPaginas(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;
 		printf("%d, ",fila->numero_pagina);
-		fprintf(reporte,"%d",fila->numero_pagina);
+		fprintf(reporte,"%d, ",fila->numero_pagina);
+	}
+	void imprimirFilaAccedido(void* aux){
+		t_fila_tabla* fila = (t_fila_tabla *) aux;
+		printf("%d, ",fila->accedido);
+		fprintf(reporte,"%d, ",fila->accedido);
+	}
+	void imprimirFilaModificado(void* aux){
+		t_fila_tabla* fila = (t_fila_tabla *) aux;
+		printf("%d, ",fila->modificado);
+		fprintf(reporte,"%d, ",fila->modificado);
 	}
 
 	void imprimirTabla(void* aux){
 		t_tabla* tabla = (t_tabla *) aux;
-		printf("\nTabla de paginas PID: %d", tabla->pid);
-		fprintf(reporte,"%s %d", "\nTabla de paginas PID:",tabla->pid);
+		printf("\n\nTabla de paginas PID: %d", tabla->pid);
+		fprintf(reporte,"%s %d", "\n\nTabla de paginas PID:",tabla->pid);
 		printf("\nCantidad de filas: %d",list_size(tabla->filas));
-		fprintf(reporte,"%s %d", "\nCantidad de filas;",list_size(tabla->filas));
+		fprintf(reporte,"%s %d", "\nCantidad de filas:",list_size(tabla->filas));
 		printf("\nMarcos: ");
-		fprintf(reporte,"\nMarcos:");
+		fprintf(reporte,"\nMarcos: ");
 		list_iterate(tabla->filas,imprimirFilaMarcos);
 		printf("\nPaginas: ");
 		fprintf(reporte,"\nPaginas: ");
 		list_iterate(tabla->filas,imprimirFilaPaginas);
+		printf("\nAccedido: ");
+		fprintf(reporte,"\nAccedido: ");
+		list_iterate(tabla->filas,imprimirFilaAccedido);
+		printf("\nModificado: ");
+		fprintf(reporte,"\nModificado: ");
+		list_iterate(tabla->filas,imprimirFilaModificado);
 	}
+	printf("\n-------------------------------------------------------------------------------\n");
+	printf("Dump memoria");
+	fprintf(reporte,"\n-------------------------------------------------------------------------------\nDump memoria");
 
 	lista_tmp=list_filter(tablas_de_paginas,mismo_pid);
 
 	list_iterate(lista_tmp,imprimirTabla);
 	list_destroy(lista_tmp);
 
+	printf("\n");
+	fprintf(reporte,"\n");
 }
 
 /*dump: Este comando generará un reporte en pantalla y en un archivo en disco del estado actual de:
@@ -517,8 +538,6 @@ void dump (uint32_t pid)
 {
 	reporte = fopen ("reporte.txt", "a+");
 	//si el pid es 0 imprimo todos los procesos
-	printf("---------------------------------------------------------------------------------------------------------------------------\n");
-	printf("Dump memoria\n");
 
 	mostrar_guardar_tablas_pag(pid);
 
