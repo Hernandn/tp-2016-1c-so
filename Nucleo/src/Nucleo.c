@@ -10,9 +10,9 @@
 
 #include "Nucleo.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	configurar();
+	configurar(argc > 1 ? argv[1] : NULL);
 	Configuration* config = getConfiguration();
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));

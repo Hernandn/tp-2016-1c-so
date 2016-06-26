@@ -11,7 +11,7 @@ static t_memoria_principal memoria_principal;
 static t_list *tablas_de_paginas;
 static t_tabla_tlb *tlb;
 
-void log( FILE *fp, char screen_log, char* message_template, ...){
+void log_reporte( FILE *fp, char screen_log, char* message_template, ...){
 
 	char* message;
 
@@ -319,24 +319,24 @@ void genearar_reporte_memoria(FILE *reporte, char screen_print){
 	char *buff=NULL, *tiempo;
 
 	tiempo = temporal_get_string_time();
-	log(reporte,screen_print, "Reporte de memoria - %s\n",tiempo);
+	log_reporte(reporte,screen_print, "Reporte de memoria - %s\n",tiempo);
 	free(tiempo);
 
 	for(i=0; i<config->cantidad_paginas; i++){
 
 		if(bitarray_test_bit(memoria_principal.bitmap,i)){
-			log(reporte,screen_print,"Pagina: %d\n",i);
+			log_reporte(reporte,screen_print,"Pagina: %d\n",i);
 
-			log(reporte,screen_print,"Contenido:\n");
+			log_reporte(reporte,screen_print,"Contenido:\n");
 			buff = stream_a_string(memoria_principal.memoria + i * config->size_pagina, config->size_pagina);
-			log(reporte,screen_print,buff);
+			log_reporte(reporte,screen_print,buff);
 			free(buff);
 
-			log(reporte,screen_print,"\n\n");
+			log_reporte(reporte,screen_print,"\n\n");
 		}
 	}
 
-	log(reporte,screen_print,"\n");
+	log_reporte(reporte,screen_print,"\n");
 }
 
 void generar_reporte_tablas(FILE *reporte, uint32_t pid, char screen_print){
@@ -349,23 +349,23 @@ void generar_reporte_tablas(FILE *reporte, uint32_t pid, char screen_print){
 
 		void generar_reporte_fila(void *fila){
 			t_fila_tabla *fila_tmp = (t_fila_tabla*) fila;
-			log(reporte,screen_print,"┠─────┼──────┼─┼─┨\n");
-			log(reporte,screen_print,"┃%5d|%6d|%d|%d┃\n",fila_tmp->numero_marco,fila_tmp->numero_pagina,fila_tmp->accedido,fila_tmp->modificado);
+			log_reporte(reporte,screen_print,"┠─────┼──────┼─┼─┨\n");
+			log_reporte(reporte,screen_print,"┃%5d|%6d|%d|%d┃\n",fila_tmp->numero_marco,fila_tmp->numero_pagina,fila_tmp->accedido,fila_tmp->modificado);
 		}
 
 		void imprimirTabla(void* aux){
 			t_tabla* tabla = (t_tabla *) aux;
 
-			log(reporte,screen_print, "Proceso: %d\n", tabla->pid);
-			log(reporte,screen_print, "Cantidad de paginas en memoria: %d\n",list_size(tabla->filas));
-			log(reporte,screen_print,"┏━━━━━┯━━━━━━┯━┯━┓\n");
-			log(reporte,screen_print,"┃Marco|Pagina|A|M┃\n");
+			log_reporte(reporte,screen_print, "Proceso: %d\n", tabla->pid);
+			log_reporte(reporte,screen_print, "Cantidad de paginas en memoria: %d\n",list_size(tabla->filas));
+			log_reporte(reporte,screen_print,"┏━━━━━┯━━━━━━┯━┯━┓\n");
+			log_reporte(reporte,screen_print,"┃Marco|Pagina|A|M┃\n");
 			list_iterate(tabla->filas,generar_reporte_fila);
-			log(reporte,screen_print,"┗━━━━━┷━━━━━━┷━┷━┛\n");
+			log_reporte(reporte,screen_print,"┗━━━━━┷━━━━━━┷━┷━┛\n");
 		}
 
 		tiempo = temporal_get_string_time();
-		log(reporte,screen_print, "Reporte de tabla de paginas - %s\n",tiempo);
+		log_reporte(reporte,screen_print, "Reporte de tabla de paginas - %s\n",tiempo);
 		free(tiempo);
 
 		lista_tmp=list_filter(tablas_de_paginas,mismo_pid);
@@ -373,7 +373,7 @@ void generar_reporte_tablas(FILE *reporte, uint32_t pid, char screen_print){
 		list_iterate(lista_tmp,imprimirTabla);
 		list_destroy(lista_tmp);
 
-		log(reporte,screen_print,"\n");
+		log_reporte(reporte,screen_print,"\n");
 
 }
 

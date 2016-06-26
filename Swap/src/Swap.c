@@ -15,9 +15,9 @@ void imprimirBitmap();
 void imprimirTablaPaginas();
 void crearProgramaTest(int,int,int);
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-	Configuration* config = configurar();
+	Configuration* config = configurar(argc > 1 ? argv[1] : NULL);
 
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));
