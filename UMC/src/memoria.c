@@ -11,8 +11,20 @@ static t_memoria_principal memoria_principal;
 static t_list *tablas_de_paginas;
 static t_tabla_tlb *tlb;
 
-FILE * reporte;
+void log_reporte( FILE *fp, char screen_log, char* message_template, ...){
 
+	char* message;
+
+	va_list arguments;
+	va_start(arguments, message_template);
+	message = string_from_vformat(message_template, arguments);
+
+	if(screen_log) printf(message);
+	fprintf(fp,message);
+
+	free(message);
+	va_end(arguments);
+}
 
 void destructor_tabla(void* tabla){
 	t_tabla *tmp;
@@ -354,29 +366,18 @@ int obtener_numero_marco(uint32_t numero_pagina){
 	uint32_t nro_marco;
 
 	if (config->usa_cache)
-	{
 		nro_marco = obtener_numero_marco_tlb(numero_pagina);
-	}
 	else
-	{
 		nro_marco = -1;
-	}
 
-	if(nro_marco == -1)
-	{
-		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1)
-		{
-			int result = copiar_pagina_a_memoria(numero_pagina);
-			if(result<0)
-			{
-				return -1;
-			}
+	if(nro_marco == -1){
+		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1){
+
+			if(copiar_pagina_a_memoria(numero_pagina) < 0) return -1;
+
 			nro_marco=obtener_numero_marco_tabla(numero_pagina);
-			copiar_pagina_a_tlb(numero_pagina,nro_marco);
-		} else
-		{
-			copiar_pagina_a_tlb(numero_pagina,nro_marco);
 		}
+		copiar_pagina_a_tlb(numero_pagina,nro_marco);
 
 	}
 	return nro_marco;
@@ -405,6 +406,70 @@ void marcar_pagina_modificada(uint32_t numero_pagina){
 	fila->modificado=1;
 }
 
+void genearar_reporte_memoria(FILE *reporte, char screen_print){
+
+	int i;
+	char *buff=NULL, *tiempo;
+
+	tiempo = temporal_get_string_time();
+	log_reporte(reporte,screen_print, "Reporte de memoria - %s\n",tiempo);
+	free(tiempo);
+
+	for(i=0; i<config->cantidad_paginas; i++){
+
+		if(bitarray_test_bit(memoria_principal.bitmap,i)){
+			log_reporte(reporte,screen_print,"Pagina: %d\n",i);
+
+			log_reporte(reporte,screen_print,"Contenido:\n");
+			buff = stream_a_string(memoria_principal.memoria + i * config->size_pagina, config->size_pagina);
+			log_reporte(reporte,screen_print,buff);
+			free(buff);
+
+			log_reporte(reporte,screen_print,"\n\n");
+		}
+	}
+
+	log_reporte(reporte,screen_print,"\n");
+}
+
+void generar_reporte_tablas(FILE *reporte, uint32_t pid, char screen_print){
+	t_list *lista_tmp;
+	char *tiempo = NULL;
+
+		bool mismo_pid (void *tabla){
+			return pid ? ((t_tabla *) tabla)->pid == pid : 1;
+		}
+
+		void generar_reporte_fila(void *fila){
+			t_fila_tabla *fila_tmp = (t_fila_tabla*) fila;
+			log_reporte(reporte,screen_print,"┠─────┼──────┼─┼─┨\n");
+			log_reporte(reporte,screen_print,"┃%5d|%6d|%d|%d┃\n",fila_tmp->numero_marco,fila_tmp->numero_pagina,fila_tmp->accedido,fila_tmp->modificado);
+		}
+
+		void imprimirTabla(void* aux){
+			t_tabla* tabla = (t_tabla *) aux;
+
+			log_reporte(reporte,screen_print, "Proceso: %d\n", tabla->pid);
+			log_reporte(reporte,screen_print, "Cantidad de paginas en memoria: %d\n",list_size(tabla->filas));
+			log_reporte(reporte,screen_print,"┏━━━━━┯━━━━━━┯━┯━┓\n");
+			log_reporte(reporte,screen_print,"┃Marco|Pagina|A|M┃\n");
+			list_iterate(tabla->filas,generar_reporte_fila);
+			log_reporte(reporte,screen_print,"┗━━━━━┷━━━━━━┷━┷━┛\n");
+		}
+
+		tiempo = temporal_get_string_time();
+		log_reporte(reporte,screen_print, "Reporte de tabla de paginas - %s\n",tiempo);
+		free(tiempo);
+
+		lista_tmp=list_filter(tablas_de_paginas,mismo_pid);
+
+		list_iterate(lista_tmp,imprimirTabla);
+		list_destroy(lista_tmp);
+
+		log_reporte(reporte,screen_print,"\n");
+
+}
+
 //----------------------------------PUBLICO---------------------------------------
 
 void crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
@@ -424,9 +489,6 @@ void crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
 
 	memoria_principal.memoria = malloc(cantidad_paginas*size_pagina);
 	memoria_principal.bitmap = bitarray_create(bits_bitMap,cantidad_paginas);
-	memoria_principal.modificacion = bitarray_create(bits_modificacion,cantidad_paginas);
-	memoria_principal.activo = bitarray_create(bits_activo,cantidad_paginas);
-
 }
 
 void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
@@ -497,7 +559,7 @@ int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t
 	memoria mem=memoria_principal.memoria+offset+dir_fisica;
 
 	//Si no se pudo encontrar la direccion fisica devuelvo el codigo de error
-	if(dir_fisica<0) return dir_fisica;
+	if(numero_marco<0) return numero_marco;
 
 	memcpy(mem,contenido,tamanio);
 
@@ -559,82 +621,8 @@ void crearListaDeTablas(){
 	tablas_de_paginas = list_create();
 }
 
+void generar_reporte(FILE *reporte, uint32_t pid, char reporte_memoria, char reporte_tabla, char screen_print){
 
-//imprimo todos los pids
-void mostrar_guardar_tablas_pag (uint32_t pid)
-{
-	t_list *lista_tmp;
-
-	bool mismo_pid (void *tabla){
-		return pid ? ((t_tabla *) tabla)->pid == pid : 1;
-	}
-
-	void imprimirFilaMarcos(void* aux){
-		t_fila_tabla* fila = (t_fila_tabla *) aux;
-		printf("%d, ",fila->numero_marco);
-		fprintf(reporte,"%d, ",fila->numero_marco);
-	}
-	void imprimirFilaPaginas(void* aux){
-		t_fila_tabla* fila = (t_fila_tabla *) aux;
-		printf("%d, ",fila->numero_pagina);
-		fprintf(reporte,"%d, ",fila->numero_pagina);
-	}
-	void imprimirFilaAccedido(void* aux){
-		t_fila_tabla* fila = (t_fila_tabla *) aux;
-		printf("%d, ",fila->accedido);
-		fprintf(reporte,"%d, ",fila->accedido);
-	}
-	void imprimirFilaModificado(void* aux){
-		t_fila_tabla* fila = (t_fila_tabla *) aux;
-		printf("%d, ",fila->modificado);
-		fprintf(reporte,"%d, ",fila->modificado);
-	}
-
-	void imprimirTabla(void* aux){
-		t_tabla* tabla = (t_tabla *) aux;
-		printf("\n\nTabla de paginas PID: %d", tabla->pid);
-		fprintf(reporte,"%s %d", "\n\nTabla de paginas PID:",tabla->pid);
-		printf("\nCantidad de filas: %d",list_size(tabla->filas));
-		fprintf(reporte,"%s %d", "\nCantidad de filas:",list_size(tabla->filas));
-		printf("\nMarcos: ");
-		fprintf(reporte,"\nMarcos: ");
-		list_iterate(tabla->filas,imprimirFilaMarcos);
-		printf("\nPaginas: ");
-		fprintf(reporte,"\nPaginas: ");
-		list_iterate(tabla->filas,imprimirFilaPaginas);
-		printf("\nAccedido: ");
-		fprintf(reporte,"\nAccedido: ");
-		list_iterate(tabla->filas,imprimirFilaAccedido);
-		printf("\nModificado: ");
-		fprintf(reporte,"\nModificado: ");
-		list_iterate(tabla->filas,imprimirFilaModificado);
-	}
-	printf("\n-------------------------------------------------------------------------------\n");
-	printf("Dump memoria");
-	fprintf(reporte,"\n-------------------------------------------------------------------------------\nDump memoria");
-
-	lista_tmp=list_filter(tablas_de_paginas,mismo_pid);
-
-	list_iterate(lista_tmp,imprimirTabla);
-	list_destroy(lista_tmp);
-
-	printf("\n");
-	fprintf(reporte,"\n");
+	genearar_reporte_memoria(reporte, screen_print);
+	generar_reporte_tablas(reporte, pid, screen_print);
 }
-
-/*dump: Este comando generará un reporte en pantalla y en un archivo en disco del estado actual de:
-Estructuras de memoria: Tablas de páginas de todos los procesos o de un proceso en particular.
-Contenido de memoria: Datos almacenados en la memoria de todos los procesos o de un proceso en particular.
-*/
-
-void dump (uint32_t pid)
-{
-	reporte = fopen ("reporte.txt", "a+");
-	//si el pid es 0 imprimo todos los procesos
-
-	mostrar_guardar_tablas_pag(pid);
-
-	fclose(reporte);
-}
-
-

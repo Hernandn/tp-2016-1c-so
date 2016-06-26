@@ -7,6 +7,15 @@
 
 #include "comandos.h"
 
+void dump (uint32_t pid)
+{
+	FILE *reporte = fopen ("reporte.txt", "a+");
+	//si el pid es 0 imprimo todos los procesos
+
+	generar_reporte(reporte, pid, 1, 1, 1);
+
+	fclose(reporte);
+}
 
 
 void retardo (int segundos){
@@ -125,9 +134,9 @@ void handleComandos(){
 	while(continua){
 
 		comando = NULL;
-		printf("\nml-umc> ");
+		printf("ml-umc>");
 		getline(&comando,&size_buff,stdin);
-		comando[strlen(comando)-1]='\0';	//getline tambien guarda el \n y hay que eliminarlo para poder comparar despues
+		comando[strlen(comando)-1]='\0'; //getline tambien guarda el \n y hay que eliminarlo para poder comparar despues
 		intepretarComando(comando);
 
 		free(comando);

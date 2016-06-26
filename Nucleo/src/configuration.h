@@ -78,7 +78,7 @@ typedef struct Configuration {
 Configuration* config;
 char* config_dir;
 
-void configurar();
+void configurar(char*);
 Configuration* getConfiguration();
 
 #endif /* CONFIGURATION_H_ */

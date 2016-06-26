@@ -47,7 +47,7 @@ int inicializar_programa(char* mensaje_serializado){
 	logDebug("----------------------Comienza inicializacion de programa----------------------\n");
 
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, sizeof(uint32_t), (void*) &size_programa);
-	contenido = malloc(sizeof(char)*size_programa);
+	contenido = calloc(sizeof(char),size_programa);
 	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,size_programa);
 
 	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);

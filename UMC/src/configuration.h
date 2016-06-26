@@ -52,11 +52,8 @@ typedef struct Configuration {
 	int usa_cache;
 } Configuration;
 
-
-
-
 Configuration* config;
 
-void configurar();
+void configurar(char*);
 
 #endif /* CONFIGURATION_H_ */

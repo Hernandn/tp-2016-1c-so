@@ -7,16 +7,16 @@
 
 #include "configuration.h"
 
-void configurar(){
+void configurar(char *config_file){
 
 	config = malloc(sizeof(Configuration));
 
-	t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
+	t_config* nConfig = config_create(config_file ? config_file : NUCLEO_CONFIG_PATH);
 	if(nConfig==NULL){
 		//para debuggear desde eclipse
 		nConfig = config_create(NUCLEO_CONFIG_PATH_ECLIPSE);
 		if(nConfig==NULL){
-			printf("No se encontro el archivo de configuracion.");
+			printf("No se encontro el archivo de configuracion.\n");
 			exit (1);
 		} else {
 			config_dir = strdup(".");

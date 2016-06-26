@@ -16,12 +16,12 @@
  * a empezar.
  */
 
-int main(void) {
+int main(int argc, char *argv[]){
 
 	pthread_t hilo1;
 
 	//Leo la configuracion del archivo y lo guardo en una variable global (config)
-	configurar();
+	configurar(argc > 1 ? argv[1] : NULL);
 
 	//creo el log
 	initLogMutex(config->log_file, config->log_program_name, config->log_print_console, log_level_from_string(config->log_level));

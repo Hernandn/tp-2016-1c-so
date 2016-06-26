@@ -50,6 +50,6 @@ typedef struct Configuration {
 	int log_print_console;
 } Configuration;
 
-Configuration* configurar();
+Configuration* configurar(char*);
 
 #endif /* CONFIGURATION_H_ */

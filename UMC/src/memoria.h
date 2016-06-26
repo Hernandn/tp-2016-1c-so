@@ -15,6 +15,7 @@
 #include <time.h>
 #include <commons/collections/list.h>
 #include <commons/bitarray.h>
+#include <commons/temporal.h>
 #include <mllibs/log/logger.h>
 #include "configuration.h"
 #include "funciones.h"
@@ -25,8 +26,6 @@ typedef char* memoria;
 typedef struct memoria_principal{
 	memoria memoria;
 	t_bitarray *bitmap;
-	t_bitarray *modificacion;
-	t_bitarray *activo;
 } t_memoria_principal;
 
 typedef struct fila_tabla{
@@ -65,8 +64,8 @@ void crear_tabla_de_paginas(uint32_t,uint32_t);
 void crear_tlb(uint32_t tamanio);
 void eliminar_tabla_de_paginas(uint32_t);
 void eliminar_tabla(t_tabla*, t_tabla**, int);
-int obtener_contenido_memoria(char**, uint32_t, uint32_t, uint32_t);
-int escribir_contenido_memoria(uint32_t, uint32_t, uint32_t, char*);
+int obtener_contenido_memoria(char**,uint32_t,uint32_t,uint32_t);
+int escribir_contenido_memoria(uint32_t,uint32_t,uint32_t,char*);
 int hayMarcosLibres();
 void liberar_memoria(uint32_t);
 void flush_tlb();
@@ -77,6 +76,8 @@ void agregar_fila_tlb(t_list* filas, t_fila_tlb* filaAgregar);
 void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar);
 t_fila_tlb* algoritmoLRU (t_list* filas);
 void dump(uint32_t pid);
+void generar_reporte(FILE*,uint32_t,char,char,char);
+
 
 
 #endif /* MEMORIA_H_ */
