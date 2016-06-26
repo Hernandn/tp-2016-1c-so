@@ -14,6 +14,7 @@
 #include <string.h>
 #include <commons/collections/list.h>
 #include <commons/bitarray.h>
+#include <commons/temporal.h>
 #include <mllibs/log/logger.h>
 #include "configuration.h"
 #include "funciones.h"
@@ -62,15 +63,14 @@ void crear_tabla_de_paginas(uint32_t,uint32_t);
 void crear_tlb(uint32_t tamanio);
 void eliminar_tabla_de_paginas(uint32_t);
 void eliminar_tabla(t_tabla*, t_tabla**, int);
-int obtener_contenido_memoria(char**, uint32_t, uint32_t, uint32_t);
-int escribir_contenido_memoria(uint32_t, uint32_t, uint32_t, char*);
+int obtener_contenido_memoria(char**,uint32_t,uint32_t,uint32_t);
+int escribir_contenido_memoria(uint32_t,uint32_t,uint32_t,char*);
 int hayMarcosLibres();
 void liberar_memoria(uint32_t);
 void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();
-void mostrar_tablas_pag ();
-void dump(uint32_t pid);
+void generar_reporte(FILE*,uint32_t,char,char,char);
 
 
 #endif /* MEMORIA_H_ */
