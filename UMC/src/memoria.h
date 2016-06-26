@@ -25,8 +25,6 @@ typedef char* memoria;
 typedef struct memoria_principal{
 	memoria memoria;
 	t_bitarray *bitmap;
-	t_bitarray *modificacion;
-	t_bitarray *activo;
 } t_memoria_principal;
 
 typedef struct fila_tabla{
