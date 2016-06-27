@@ -301,7 +301,7 @@ void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar)
 			{
 				t_fila_tlb* fila = (t_fila_tlb *) aux;
 
-				if(filaQuitar->pid == fila->pid)
+				if((filaQuitar->pid == fila->pid) && (filaQuitar->numero_marco == fila->numero_marco) && (filaQuitar->numero_pagina == fila->numero_pagina))
 				{
 					posicion = cont;
 				}
@@ -330,16 +330,15 @@ void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
 
 	pthread_mutex_lock(&tlb_mutex);
 
-	printf("voy a comparar cosas");
+
 	if (list_size(tlb->filas) < config->tamanio_tlb)
 	{
-		printf("agrego directamente fila tlbl");
+
 		agregar_fila_tlb(tlb->filas, filaAgregar);
-		printf("ya la agregue directamente");
+
 	}
 	else
 	{
-		printf("quito la fila porque no hay lugar");
 		filaQuitar = algoritmoLRU(tlb->filas);
 		remover_fila_tlb(tlb->filas,filaQuitar);
 		agregar_fila_tlb(tlb->filas, filaAgregar);
