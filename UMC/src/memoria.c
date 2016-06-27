@@ -313,7 +313,7 @@ void marcar_pagina_modificada(uint32_t numero_pagina){
 	fila->modificado=1;
 }
 
-void genearar_reporte_memoria(FILE *reporte, char screen_print){
+void genearar_reporte_memoria(FILE *reporte, int screen_print){
 
 	int i;
 	char *buff=NULL, *tiempo;
@@ -339,7 +339,7 @@ void genearar_reporte_memoria(FILE *reporte, char screen_print){
 	log_reporte(reporte,screen_print,"\n");
 }
 
-void generar_reporte_tablas(FILE *reporte, uint32_t pid, char screen_print){
+void generar_reporte_tablas(FILE *reporte, uint32_t pid, int screen_print){
 	t_list *lista_tmp;
 	char *tiempo = NULL;
 
@@ -528,8 +528,9 @@ void crearListaDeTablas(){
 	tablas_de_paginas = list_create();
 }
 
-void generar_reporte(FILE *reporte, uint32_t pid, char reporte_memoria, char reporte_tabla, char screen_print){
+void generar_reporte(FILE *reporte, uint32_t pid, int reporte_memoria, int reporte_tabla, int screen_print){
 
-	genearar_reporte_memoria(reporte, screen_print);
-	generar_reporte_tablas(reporte, pid, screen_print);
+	printf("Generando reporte, pid: %d logMemoria: %d, logTabla: %d, scree_print: %d\n",pid, reporte_memoria, reporte_tabla, screen_print);
+	if(reporte_memoria) genearar_reporte_memoria(reporte, screen_print);
+	if(reporte_tabla) generar_reporte_tablas(reporte, pid, screen_print);
 }

@@ -7,12 +7,11 @@
 
 #include "comandos.h"
 
-void dump (uint32_t pid)
-{
+void dump (uint32_t pid, int screen_log, int reporte_memoria, int reporte_tabla){
 	FILE *reporte = fopen ("reporte.txt", "a+");
 	//si el pid es 0 imprimo todos los procesos
 
-	generar_reporte(reporte, pid, 1, 1, 1);
+	generar_reporte(reporte, pid, reporte_memoria, reporte_tabla, screen_log);
 
 	fclose(reporte);
 }
@@ -61,7 +60,7 @@ int parsear_comando(char * comando, char *** comando_parseado_p){
 		 ** comando_parseado=NULL;	//Puntero temporal
 
 	while(comando[i] != '\0'){
-		if (comando[i] == 32){
+		if(comando[i] == 32){
 			if(letras != 0){
 				comando_parseado=realloc(comando_parseado,sizeof(char*)*(contador+1));
 				comando_parseado[contador] = malloc(sizeof(char)*letras+1);
@@ -69,10 +68,9 @@ int parsear_comando(char * comando, char *** comando_parseado_p){
 				comando_parseado[contador][letras] = '\0';
 				contador ++;
 			}
-			tmp=tmp+i+1;
+			tmp=tmp+letras+1;
 			letras = 0;
 		}else letras++;
-
 		i++;
 	}
 
@@ -93,12 +91,26 @@ void intepretarComando(char* comando){
 
 	cantidad=parsear_comando(comando, &comando_parseado);
 
-	if(!strcmp(*comando_parseado,"dump"))
-		{
-		if(cantidad == 2) dump(atoi(*(comando_parseado + 1)));
-		else dump(0);
+	if(!strcmp(*comando_parseado,"dump")){
+		switch(cantidad){
+			case 1:
+				dump(0,1,1,1);
+				break;
+
+			case 2:
+				dump(atoi(comando_parseado[1]),1,1,1);
+				break;
+
+			case 3:
+				dump(atoi(comando_parseado[1]),comando_parseado[2][0]-'0',comando_parseado[2][1]-'0',comando_parseado[2][2]-'0');
+				break;
+
+			default:
+				error_comando(comando);
+
 		}
-	else if(!strcmp(*comando_parseado,"flush") && (cantidad == 2))
+
+	}else if(!strcmp(*comando_parseado,"flush") && (cantidad == 2))
 
 			if(!strcmp(*(comando_parseado+1),"tlb")) flush_tlb();
 			else if (!strcmp(*(comando_parseado+1),"memory")) flush_memory();

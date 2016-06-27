@@ -68,7 +68,7 @@ void liberar_memoria(uint32_t);
 void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();
-void generar_reporte(FILE*,uint32_t,char,char,char);
+void generar_reporte(FILE*,uint32_t,int,int,int);
 
 
 #endif /* MEMORIA_H_ */
