@@ -19,7 +19,7 @@ void log_reporte( FILE *fp, char screen_log, char* message_template, ...){
 	va_start(arguments, message_template);
 	message = string_from_vformat(message_template, arguments);
 
-	if(screen_log) printf(message);
+	if(screen_log) printf(message); //No termino de entender porque tira estos dos warnings, igual funciona
 	fprintf(fp,message);
 
 	free(message);
@@ -198,7 +198,8 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 	}
 
 	borrar_dir_tabla(tabla_prc,marco_elegido);
-	//Todo borrar_dir_tlb(puntero_tlb,marco_elegido
+	//eliminar de la tlb
+	//Todo borrar_dir_tlb(puntero_tlb,marco_elegido)
 
 	return marco_elegido;
 }
@@ -252,8 +253,99 @@ int agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina)
 	return marco_libre;
 }
 
-void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco){
-	//Todo copiar la pagina a la tlb para la proxima busqueda
+char *time_stamp(){
+
+char *timestamp = (char *)malloc(sizeof(char) * 16);
+time_t ltime;
+ltime=time(NULL);
+struct tm *tm;
+tm=localtime(&ltime);
+
+sprintf(timestamp,"%04d%02d%02d%02d%02d%04d", tm->tm_year+1900, tm->tm_mon,
+    tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+return timestamp;
+}
+
+void agregar_fila_tlb(t_list* filas, t_fila_tlb* filaAgregar)
+{
+	list_add(tlb->filas,filaAgregar);
+}
+
+
+t_fila_tlb* algoritmoLRU (t_list* filas)
+{
+	t_fila_tlb* filaVictima;
+	filaVictima = list_get(filas,0);
+
+
+	void esMayor(void* aux)
+	{
+		t_fila_tlb* fila = (t_fila_tlb *) aux;
+
+		if(atoi(filaVictima->timeStamp) > atoi(fila->timeStamp))
+		{
+			filaVictima = fila;
+		}
+	}
+	list_iterate(filas, esMayor);
+
+	return filaVictima;
+}
+
+void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar)
+		{
+			uint32_t posicion;
+			uint32_t cont = 0;
+
+			void buscarPosicion(void* aux)
+			{
+				t_fila_tlb* fila = (t_fila_tlb *) aux;
+
+				if((filaQuitar->pid == fila->pid) && (filaQuitar->numero_marco == fila->numero_marco) && (filaQuitar->numero_pagina == fila->numero_pagina))
+				{
+					posicion = cont;
+				}
+				else
+				{
+					cont ++;
+				}
+			}
+
+			list_iterate(filas,buscarPosicion);
+
+			list_remove(filas,posicion);
+
+		}
+
+void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
+{
+
+	t_fila_tlb* filaQuitar;
+	t_fila_tlb* filaAgregar;
+	filaAgregar = (t_fila_tlb*)malloc(sizeof(t_fila_tlb));
+	filaAgregar ->timeStamp = time_stamp();
+	filaAgregar ->numero_marco = numero_marco;
+	filaAgregar ->numero_pagina = numero_pagina;
+	filaAgregar->pid = obtener_pid();
+
+	pthread_mutex_lock(&tlb_mutex);
+
+
+	if (list_size(tlb->filas) < config->tamanio_tlb)
+	{
+
+		agregar_fila_tlb(tlb->filas, filaAgregar);
+
+	}
+	else
+	{
+		filaQuitar = algoritmoLRU(tlb->filas);
+		remover_fila_tlb(tlb->filas,filaQuitar);
+		agregar_fila_tlb(tlb->filas, filaAgregar);
+	}
+
+	pthread_mutex_unlock(&tlb_mutex);
+
 }
 
 int copiar_pagina_a_memoria(uint32_t numero_pagina){

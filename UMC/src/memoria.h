@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include <commons/collections/list.h>
 #include <commons/bitarray.h>
 #include <commons/temporal.h>
@@ -45,6 +46,7 @@ typedef struct fila_tlb{
 	uint32_t numero_pagina;
 	uint32_t numero_marco;
 	uint32_t pid;
+	char* timeStamp;
 } t_fila_tlb;
 
 typedef struct tabla_tlb{
@@ -54,7 +56,8 @@ typedef struct tabla_tlb{
 
 pthread_mutex_t bitMap_mutex,
 				modificacion_mutex,
-				activo_mutex;
+				activo_mutex,
+				tlb_mutex;
 
 void crearMemoriaPrincipal(int, int);
 void crear_tabla_de_paginas(uint32_t,uint32_t);
@@ -69,6 +72,5 @@ void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();
 void generar_reporte(FILE*,uint32_t,int,int,int);
-
 
 #endif /* MEMORIA_H_ */
