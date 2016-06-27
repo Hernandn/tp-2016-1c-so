@@ -26,17 +26,34 @@ void log_reporte( FILE *fp, char screen_log, char* message_template, ...){
 	va_end(arguments);
 }
 
-char *time_stamp(){
+int compareTimestamps(timestamp* t1, timestamp* t2){
+	if(t1->tv_sec == t2->tv_sec){
+		return t1->tv_usec - t2->tv_usec;
+	} else {
+		return t1->tv_sec - t2->tv_sec;
+	}
+}
 
-	char *timestamp = (char *)malloc(sizeof(char) * 16);
-	time_t ltime;
-	ltime=time(NULL);
-	struct tm *tm;
-	tm=localtime(&ltime);
+//para convertir el timestamp a string, por si lo quieren usar para hacer algun reporte de la tlb
+char* timestamp_to_string(timestamp* ts){
+	time_t nowtime;
+	struct tm *nowtm;
+	char* tmbuf = malloc(sizeof(char)*20);
+	char* buf = malloc(sizeof(char)*27);
 
-	sprintf(timestamp,"%04d%02d%02d%02d%02d%04d", tm->tm_year+1900, tm->tm_mon,
-		tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-	return timestamp;
+	gettimeofday(ts, NULL);
+	nowtime = ts->tv_sec;
+	nowtm = localtime(&nowtime);
+	strftime(tmbuf, 20, "%Y-%m-%d %H:%M:%S", nowtm);
+	snprintf(buf, 27, "%s.%06d", tmbuf, (int)ts->tv_usec);
+	free(tmbuf);
+	return buf;
+}
+
+timestamp *time_stamp(){
+	timestamp* ts = malloc(sizeof(timestamp));
+	gettimeofday(ts, NULL);
+	return ts;
 }
 
 void destructor_tabla(void* tabla){
@@ -176,7 +193,7 @@ t_fila_tlb* algoritmoLRU (t_list* filas)
 	{
 		t_fila_tlb* fila = (t_fila_tlb *) aux;
 
-		if(atoi(filaVictima->timeStamp) > atoi(fila->timeStamp))
+		if(compareTimestamps(fila->timeStamp,filaVictima->timeStamp) < 0)
 		{
 			filaVictima = fila;
 		}
@@ -235,7 +252,7 @@ void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
 	else
 	{
 		filaQuitar = algoritmoLRU(tlb->filas);
-		logDebug("LRU ejecutado, removiendo (PID:%d,Pag:%d,Marco:%d)",obtener_pid(),filaQuitar->numero_pagina,filaQuitar->numero_marco);
+		logDebug("LRU ejecutado, removiendo (PID:%d,Pag:%d,Marco:%d)",filaQuitar->pid,filaQuitar->numero_pagina,filaQuitar->numero_marco);
 		remover_fila_tlb(tlb->filas,filaQuitar);
 		agregar_fila_tlb(tlb->filas, filaAgregar);
 	}
@@ -620,18 +637,28 @@ void liberar_memoria(uint32_t pid){
 
 void liberar_entradas_tlb(uint32_t pid){
 
+	t_fila_tlb* aux;
+
 	bool tiene_igual_pid (void* elemento){
 		return ((t_fila_tlb*) elemento)->pid==pid;
 	}
-	list_remove_and_destroy_by_condition(tlb->filas,tiene_igual_pid,destructor_fila_tlb);
+	pthread_mutex_lock(&tlb_mutex);
+	while((aux = list_remove_by_condition(tlb->filas,tiene_igual_pid))!=NULL){
+		destructor_fila_tlb(aux);
+	}
+	pthread_mutex_unlock(&tlb_mutex);
 }
 
 void flush_tlb(){
+	logDebug("Ejecutando Flush TLB");
 	//Limpia el contenido de la TLB
+	pthread_mutex_lock(&tlb_mutex);
 	list_clean_and_destroy_elements(tlb->filas, destructor_fila_tlb);
+	pthread_mutex_unlock(&tlb_mutex);
 }
 
 void flush_memory(){
+	logDebug("Ejecutando Flush Memoria");
 	//Marca todas las paginas como modificadas
 	void flushFila(void* aux){
 		t_fila_tabla* fila = (t_fila_tabla *) aux;

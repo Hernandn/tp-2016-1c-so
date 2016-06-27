@@ -149,7 +149,7 @@ void nuevo_pid(char* mensaje_serializado){
 	uint32_t pid;
 
 	deserializar_parametros(1, mensaje_serializado, sizeof(uint32_t), (void*) &pid);
-	logDebug("Se recivio un nuevo pid %d",pid);
+	logDebug("Se recibio un nuevo pid %d",pid);
 
 	setear_pid(pid);
 

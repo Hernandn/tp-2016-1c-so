@@ -22,6 +22,7 @@
 #include "interfazSwap.h"
 
 typedef char* memoria;
+typedef struct timeval timestamp;
 
 typedef struct memoria_principal{
 	memoria memoria;
@@ -46,7 +47,7 @@ typedef struct fila_tlb{
 	uint32_t numero_pagina;
 	uint32_t numero_marco;
 	uint32_t pid;
-	char* timeStamp;
+	timestamp* timeStamp;
 } t_fila_tlb;
 
 typedef struct tabla_tlb{
