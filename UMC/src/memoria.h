@@ -68,6 +68,7 @@ int obtener_contenido_memoria(char**,uint32_t,uint32_t,uint32_t);
 int escribir_contenido_memoria(uint32_t,uint32_t,uint32_t,char*);
 int hayMarcosLibres();
 void liberar_memoria(uint32_t);
+void liberar_entradas_tlb(uint32_t pid);
 void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();

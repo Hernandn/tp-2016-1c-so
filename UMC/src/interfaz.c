@@ -46,6 +46,8 @@ int inicializar_programa(char* mensaje_serializado){
 
 	logDebug("----------------------Comienza inicializacion de programa----------------------\n");
 
+	ejecutarRetardoMemoria();
+
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &pid, sizeof(uint32_t), (void*) &cant_paginas, sizeof(uint32_t), (void*) &size_programa);
 	contenido = calloc(sizeof(char),size_programa);
 	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,size_programa);
@@ -81,9 +83,11 @@ int leer_pagina(char* mensaje_serializado, char** contenido){
 
 	logDebug("----------------------Comienza lectura de pagina----------------------\n");
 
+	ejecutarRetardoMemoria();
+
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 
-	logDebug("Leyendo pagina %d, cantidad paginas %d", dir, tamanio);
+	logDebug("Leyendo pagina %d, cantidad bytes %d", dir, tamanio);
 
 	resultado = obtener_contenido_memoria(contenido, dir, offset, tamanio);
 
@@ -98,6 +102,8 @@ int escribir_pagina(char* mensaje_serializado){
 	char *contenido=NULL, *tmp_buf;
 
 	logDebug("----------------------Comienza escritura de pagina----------------------\n");
+
+	ejecutarRetardoMemoria();
 
 	deserializar_parametros(3, mensaje_serializado, sizeof(uint32_t), (void*) &dir, sizeof(uint32_t), (void*) &offset, sizeof(uint32_t), (void*) &tamanio);
 	contenido = malloc(sizeof(char)*tamanio);
@@ -122,11 +128,14 @@ int finalizar_programa(char* mensaje_serializado){
 
 	logDebug("----------------------Comienza finalizacion de programa----------------------\n");
 
+	ejecutarRetardoMemoria();
+
 	deserializar_parametros(1, mensaje_serializado, sizeof(uint32_t), (void*) &pid);
 
 	logDebug("Finalizando programa %d", pid);
 
 	liberar_memoria(pid);
+	liberar_entradas_tlb(pid);
 	eliminar_tabla_de_paginas(pid);
 	finalizarProgramaSwap(pid);
 

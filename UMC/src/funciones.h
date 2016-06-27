@@ -63,6 +63,7 @@ void handleClients();
 void comunicarSWAP(int);
 int conectarConSwap();
 void inicializarUMC();
+void ejecutarRetardoMemoria();
 void handle_cpu(t_arg_thread_cpu*);
 void handleNucleo(t_arg_thread_nucleo*);
 void setear_pid(uint32_t);

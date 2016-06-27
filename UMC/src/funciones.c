@@ -149,12 +149,6 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 		if(recieve_and_deserialize(package_receive,*socket_cpu) > 0){
 			logDebug("CPU envía [message code]: %d", package_receive->msgCode);
 
-			logDebug("Ejecutando retraso de %d", config->retraso);
-			pthread_mutex_lock(&retardo_mutex);
-			usleep(config->retraso * 1000);
-			pthread_mutex_unlock(&retardo_mutex);
-			logDebug("Fin del retraso");
-
 			switch(package_receive->msgCode){
 
 				case SOLICITAR_BYTES_PAGINA:
@@ -245,12 +239,6 @@ void handleNucleo(t_arg_thread_nucleo* args){
 		if(recieve_and_deserialize(package,*socket_nucleo) > 0){
 			logDebug("Nucleo envía [message code]: %d", package->msgCode);
 
-			logDebug("Ejecutando retraso de %d", config->retraso);
-			pthread_mutex_lock(&retardo_mutex);
-			usleep(config->retraso * 1000);
-			pthread_mutex_unlock(&retardo_mutex);
-			logDebug("Fin del retraso");
-
 			switch(package->msgCode){
 
 				case INIT_PROGRAM:
@@ -288,5 +276,13 @@ void inicializarUMC(){
 	crear_tlb(config->tamanio_tlb);
 	crearMemoriaPrincipal(config->cantidad_paginas, config->size_pagina);
 	crearListaDeTablas();
+}
+
+void ejecutarRetardoMemoria(){
+	logDebug("Ejecutando retardo de %d ms", config->retraso);
+	pthread_mutex_lock(&retardo_mutex);
+	usleep(config->retraso * 1000);
+	pthread_mutex_unlock(&retardo_mutex);
+	logDebug("Fin del retardo");
 }
 

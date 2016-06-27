@@ -26,6 +26,19 @@ void log_reporte( FILE *fp, char screen_log, char* message_template, ...){
 	va_end(arguments);
 }
 
+char *time_stamp(){
+
+	char *timestamp = (char *)malloc(sizeof(char) * 16);
+	time_t ltime;
+	ltime=time(NULL);
+	struct tm *tm;
+	tm=localtime(&ltime);
+
+	sprintf(timestamp,"%04d%02d%02d%02d%02d%04d", tm->tm_year+1900, tm->tm_mon,
+		tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+	return timestamp;
+}
+
 void destructor_tabla(void* tabla){
 	t_tabla *tmp;
 
@@ -37,6 +50,12 @@ void destructor_tabla(void* tabla){
 
 	list_destroy_and_destroy_elements(tmp->filas,eliminar_fila);
 
+	free(tmp);
+}
+
+void destructor_fila_tlb(void* fila){
+	t_fila_tlb *tmp=(t_fila_tlb*) fila;
+	free(tmp->timeStamp);
 	free(tmp);
 }
 
@@ -63,10 +82,18 @@ uint32_t obtener_numero_marco_tlb(uint32_t numero_pagina){
 
 	fila_buscada=list_find(tlb->filas,fila_valida);
 
+	if(fila_buscada){
+		free(fila_buscada->timeStamp);
+		fila_buscada->timeStamp = time_stamp();//hago refresh del timestamp
+		logDebug("Acierto TLB: (PID:%d,Pag:%d,Marco:%d)",obtener_pid(),fila_buscada->numero_pagina,fila_buscada->numero_marco);
+	}
+
 	return fila_buscada ? fila_buscada->numero_marco : -1;
 }
 
 uint32_t obtener_numero_marco_tabla(uint32_t numero_pagina){
+
+	ejecutarRetardoMemoria();//retardo por acceder a la tabla de paginas
 
 	t_tabla *tabla_buscada;
 	t_fila_tabla *fila_buscada;
@@ -133,10 +160,105 @@ void borrar_dir_tabla(t_tabla *tabla_prc, uint32_t numero_marco){
 	list_remove_and_destroy_by_condition(tabla_prc->filas, fila_valida, eliminar);
 }
 
+void agregar_fila_tlb(t_list* filas, t_fila_tlb* filaAgregar)
+{
+	list_add(tlb->filas,filaAgregar);
+}
+
+
+t_fila_tlb* algoritmoLRU (t_list* filas)
+{
+	t_fila_tlb* filaVictima;
+	filaVictima = list_get(filas,0);
+
+
+	void esMayor(void* aux)
+	{
+		t_fila_tlb* fila = (t_fila_tlb *) aux;
+
+		if(atoi(filaVictima->timeStamp) > atoi(fila->timeStamp))
+		{
+			filaVictima = fila;
+		}
+	}
+	list_iterate(filas, esMayor);
+
+	return filaVictima;
+}
+
+void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar)
+{
+	uint32_t posicion;
+	uint32_t cont = 0;
+
+	void buscarPosicion(void* aux)
+	{
+		t_fila_tlb* fila = (t_fila_tlb *) aux;
+
+		if((filaQuitar->pid == fila->pid) && (filaQuitar->numero_marco == fila->numero_marco) && (filaQuitar->numero_pagina == fila->numero_pagina))
+		{
+			posicion = cont;
+		}
+		else
+		{
+			cont ++;
+		}
+	}
+
+	list_iterate(filas,buscarPosicion);
+
+	if(posicion < list_size(filas)){//si se encontro la posicion, se borra
+		list_remove(filas,posicion);
+	}
+}
+
+void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
+{
+	logDebug("Copiando entrada a TLB: (PID:%d,Pag:%d,Marco:%d)",obtener_pid(),numero_pagina,numero_marco);
+	t_fila_tlb* filaQuitar;
+	t_fila_tlb* filaAgregar;
+	filaAgregar = (t_fila_tlb*)malloc(sizeof(t_fila_tlb));
+	filaAgregar ->timeStamp = time_stamp();
+	filaAgregar ->numero_marco = numero_marco;
+	filaAgregar ->numero_pagina = numero_pagina;
+	filaAgregar->pid = obtener_pid();
+
+	pthread_mutex_lock(&tlb_mutex);
+
+
+	if (list_size(tlb->filas) < config->tamanio_tlb)
+	{
+
+		agregar_fila_tlb(tlb->filas, filaAgregar);
+
+	}
+	else
+	{
+		filaQuitar = algoritmoLRU(tlb->filas);
+		logDebug("LRU ejecutado, removiendo (PID:%d,Pag:%d,Marco:%d)",obtener_pid(),filaQuitar->numero_pagina,filaQuitar->numero_marco);
+		remover_fila_tlb(tlb->filas,filaQuitar);
+		agregar_fila_tlb(tlb->filas, filaAgregar);
+	}
+
+	pthread_mutex_unlock(&tlb_mutex);
+
+}
+
+void borrar_dir_tlb(uint32_t numero_marco, uint32_t numero_pagina){
+	t_fila_tlb* fila = (t_fila_tlb*)malloc(sizeof(t_fila_tlb));
+	fila->numero_marco = numero_marco;
+	fila->numero_pagina = numero_pagina;
+	fila->pid = obtener_pid();
+	pthread_mutex_lock(&tlb_mutex);
+	remover_fila_tlb(tlb->filas,fila);
+	pthread_mutex_unlock(&tlb_mutex);
+	free(fila);
+}
+
 uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 	int tamanio_pagina = config->size_pagina,
 		pid = obtener_pid();
-	logDebug("Limite marcos x proceso alcanzado PID: %d, ejecutando algoritmo de reemplazo", pid);
+	logDebug("Ejecutando algoritmo de reemplazo de pagina");
 
 	t_list* filas = tabla_prc->filas;
 	uint32_t marco_elegido;
@@ -197,9 +319,8 @@ uint32_t swap_marco(uint32_t numero_pagina, t_tabla *tabla_prc){
 		logDebug("No fue necesario realizar swap de pagina %d para PID: %d", fila->numero_pagina, pid);
 	}
 
+	borrar_dir_tlb(marco_elegido,fila->numero_pagina);
 	borrar_dir_tabla(tabla_prc,marco_elegido);
-	//eliminar de la tlb
-	//Todo borrar_dir_tlb(puntero_tlb,marco_elegido)
 
 	return marco_elegido;
 }
@@ -210,12 +331,8 @@ uint32_t obtener_marco_libre(){
 	char bit_no_encontrado=1;
 
 	while(i < config->cantidad_paginas && bit_no_encontrado){
-		pthread_mutex_lock(&bitMap_mutex);
-
 		if(bitarray_test_bit(memoria_principal.bitmap,i)==0) bit_no_encontrado = 0;
 		else i++;
-
-		pthread_mutex_unlock(&bitMap_mutex);
 	}
 
 	return bit_no_encontrado ? -1 : i;
@@ -225,128 +342,41 @@ int agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina)
 
 	int marco_libre;
 	t_tabla *tabla_buscada = obtener_tabla(obtener_pid());
+
+	pthread_mutex_lock(&bitMap_mutex);//lockeo el mutex para buscar un marco libre
+
 	if(tabla_buscada->filas->elements_count < config->marcos_x_proc){
 		marco_libre	= obtener_marco_libre();
 	} else {
+		logDebug("Limite marcos x proceso alcanzado PID: %d",pid);
 		marco_libre = -1;
 	}
 
 	uint32_t dir_fisica;
 
 	if(marco_libre < 0){
+
+		pthread_mutex_unlock(&bitMap_mutex);//desbloqueo si no se encontro
+
 		if(list_is_empty(tabla_buscada->filas)){
 			logDebug("No hay marcos libres ni tiene marcos para hacer swap [PID: %d]",pid);
 			return -1;//Si no se encontro marco libre y el proceso no tiene ningun marco asignado para swapear
 		}
 		marco_libre = swap_marco(numero_pagina,tabla_buscada);	//Si es -1 hago swap, swap no deberia fallar nunca
+	} else {
+		bitarray_set_bit(memoria_principal.bitmap,marco_libre);
+		pthread_mutex_unlock(&bitMap_mutex);//desbloqueo despues de setear en ocupado el marco asignado
 	}
 	dir_fisica = marco_libre * config->size_pagina;
 
 	logDebug("Se agrega pagina %d en marco %d",numero_pagina, marco_libre);
 	memcpy(memoria_principal.memoria+dir_fisica,pagina,config->size_pagina);
 
-	pthread_mutex_lock(&bitMap_mutex);
-	bitarray_set_bit(memoria_principal.bitmap,marco_libre);
-	pthread_mutex_unlock(&bitMap_mutex);
-
 	cargar_dir_tabla(numero_pagina, marco_libre);
 	return marco_libre;
 }
 
-char *time_stamp(){
 
-char *timestamp = (char *)malloc(sizeof(char) * 16);
-time_t ltime;
-ltime=time(NULL);
-struct tm *tm;
-tm=localtime(&ltime);
-
-sprintf(timestamp,"%04d%02d%02d%02d%02d%04d", tm->tm_year+1900, tm->tm_mon,
-    tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
-return timestamp;
-}
-
-void agregar_fila_tlb(t_list* filas, t_fila_tlb* filaAgregar)
-{
-	list_add(tlb->filas,filaAgregar);
-}
-
-
-t_fila_tlb* algoritmoLRU (t_list* filas)
-{
-	t_fila_tlb* filaVictima;
-	filaVictima = list_get(filas,0);
-
-
-	void esMayor(void* aux)
-	{
-		t_fila_tlb* fila = (t_fila_tlb *) aux;
-
-		if(atoi(filaVictima->timeStamp) > atoi(fila->timeStamp))
-		{
-			filaVictima = fila;
-		}
-	}
-	list_iterate(filas, esMayor);
-
-	return filaVictima;
-}
-
-void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar)
-		{
-			uint32_t posicion;
-			uint32_t cont = 0;
-
-			void buscarPosicion(void* aux)
-			{
-				t_fila_tlb* fila = (t_fila_tlb *) aux;
-
-				if((filaQuitar->pid == fila->pid) && (filaQuitar->numero_marco == fila->numero_marco) && (filaQuitar->numero_pagina == fila->numero_pagina))
-				{
-					posicion = cont;
-				}
-				else
-				{
-					cont ++;
-				}
-			}
-
-			list_iterate(filas,buscarPosicion);
-
-			list_remove(filas,posicion);
-
-		}
-
-void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
-{
-
-	t_fila_tlb* filaQuitar;
-	t_fila_tlb* filaAgregar;
-	filaAgregar = (t_fila_tlb*)malloc(sizeof(t_fila_tlb));
-	filaAgregar ->timeStamp = time_stamp();
-	filaAgregar ->numero_marco = numero_marco;
-	filaAgregar ->numero_pagina = numero_pagina;
-	filaAgregar->pid = obtener_pid();
-
-	pthread_mutex_lock(&tlb_mutex);
-
-
-	if (list_size(tlb->filas) < config->tamanio_tlb)
-	{
-
-		agregar_fila_tlb(tlb->filas, filaAgregar);
-
-	}
-	else
-	{
-		filaQuitar = algoritmoLRU(tlb->filas);
-		remover_fila_tlb(tlb->filas,filaQuitar);
-		agregar_fila_tlb(tlb->filas, filaAgregar);
-	}
-
-	pthread_mutex_unlock(&tlb_mutex);
-
-}
 
 int copiar_pagina_a_memoria(uint32_t numero_pagina){
 
@@ -364,12 +394,7 @@ int copiar_pagina_a_memoria(uint32_t numero_pagina){
 int obtener_numero_marco(uint32_t numero_pagina){
 	uint32_t nro_marco;
 
-	if (config->usa_cache)
-		nro_marco = obtener_numero_marco_tlb(numero_pagina);
-	else
-		nro_marco = -1;
-
-	if(nro_marco == -1){
+	if((nro_marco=obtener_numero_marco_tlb(numero_pagina)) == -1){
 		if((nro_marco=obtener_numero_marco_tabla(numero_pagina)) == -1){
 
 			if(copiar_pagina_a_memoria(numero_pagina) < 0) return -1;
@@ -569,7 +594,11 @@ int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t
 }
 
 int hayMarcosLibres(){
-	return obtener_marco_libre();
+	int marco_libre = -1;
+	pthread_mutex_lock(&bitMap_mutex);
+	marco_libre = obtener_marco_libre();
+	pthread_mutex_unlock(&bitMap_mutex);
+	return marco_libre;
 }
 
 void liberar_memoria(uint32_t pid){
@@ -584,20 +613,22 @@ void liberar_memoria(uint32_t pid){
 		nro_marco=((t_fila_tabla *) fila)->numero_marco;
 		bitarray_clean_bit(memoria_principal.bitmap,nro_marco);
 	}
-
+	pthread_mutex_lock(&bitMap_mutex);
 	list_iterate(tabla_buscada->filas,liberar_memoria_con_fila);
+	pthread_mutex_unlock(&bitMap_mutex);
+}
+
+void liberar_entradas_tlb(uint32_t pid){
+
+	bool tiene_igual_pid (void* elemento){
+		return ((t_fila_tlb*) elemento)->pid==pid;
+	}
+	list_remove_and_destroy_by_condition(tlb->filas,tiene_igual_pid,destructor_fila_tlb);
 }
 
 void flush_tlb(){
 	//Limpia el contenido de la TLB
-
-	void eliminarFila(void* fila)
-	{
-		free(fila);
-	}
-
-	list_clean_and_destroy_elements(tlb->filas, eliminarFila);
-
+	list_clean_and_destroy_elements(tlb->filas, destructor_fila_tlb);
 }
 
 void flush_memory(){
