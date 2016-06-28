@@ -447,30 +447,44 @@ void marcar_pagina_modificada(uint32_t numero_pagina){
 	fila->modificado=1;
 }
 
-void genearar_reporte_memoria(FILE *reporte, int screen_print){
+void genearar_reporte_memoria(FILE *reporte, uint32_t pid, int screen_print){
 
-	int i;
 	char *buff=NULL, *tiempo;
+	t_list *lista_tmp;
 
 	tiempo = temporal_get_string_time();
 	log_reporte(reporte,screen_print, "Reporte de memoria - %s\n",tiempo);
 	free(tiempo);
 
-	for(i=0; i<config->cantidad_paginas; i++){
-
-		if(bitarray_test_bit(memoria_principal.bitmap,i)){
-			log_reporte(reporte,screen_print,"Pagina: %d\n",i);
-
-			log_reporte(reporte,screen_print,"Contenido:\n");
-			buff = stream_a_string(memoria_principal.memoria + i * config->size_pagina, config->size_pagina);
-			log_reporte(reporte,screen_print,buff);
-			free(buff);
-
-			log_reporte(reporte,screen_print,"\n\n");
-		}
+	bool mismo_pid (void *tabla){
+		return pid ? ((t_tabla *) tabla)->pid == pid : 1;
 	}
 
-	log_reporte(reporte,screen_print,"\n");
+	void imprimir_memoria_fila(void *fila){
+		t_fila_tabla *fila_tmp = (t_fila_tabla*) fila;
+
+		log_reporte(reporte,screen_print,"Marco: %d\n",fila_tmp->numero_marco);
+		log_reporte(reporte,screen_print,"Contenido:\n");
+		buff = stream_a_string(memoria_principal.memoria + fila_tmp->numero_marco * config->size_pagina, config->size_pagina);
+		log_reporte(reporte,screen_print,buff);
+		free(buff);
+
+		log_reporte(reporte,screen_print,"\n\n");
+	}
+
+	void imprimir_memoria(void *tabla){
+		t_tabla *tabla_tmp = (t_tabla*)tabla;
+
+		log_reporte(reporte,screen_print,"Proceso: %d\n",tabla_tmp->pid);
+		list_iterate(tabla_tmp->filas,imprimir_memoria_fila);
+		log_reporte(reporte,screen_print,"\n");
+	}
+
+	lista_tmp=list_filter(tablas_de_paginas,mismo_pid);
+
+	list_iterate(lista_tmp,imprimir_memoria);
+	list_destroy(lista_tmp);
+
 }
 
 void generar_reporte_tablas(FILE *reporte, uint32_t pid, int screen_print){
@@ -680,7 +694,7 @@ void crearListaDeTablas(){
 
 void generar_reporte(FILE *reporte, uint32_t pid, int reporte_memoria, int reporte_tabla, int screen_print){
 
-	printf("Generando reporte, pid: %d logMemoria: %d, logTabla: %d, scree_print: %d\n",pid, reporte_memoria, reporte_tabla, screen_print);
-	if(reporte_memoria) genearar_reporte_memoria(reporte, screen_print);
+	//printf("Generando reporte, pid: %d logMemoria: %d, logTabla: %d, scree_print: %d\n",pid, reporte_memoria, reporte_tabla, screen_print);
+	if(reporte_memoria) genearar_reporte_memoria(reporte, pid, screen_print);
 	if(reporte_tabla) generar_reporte_tablas(reporte, pid, screen_print);
 }
