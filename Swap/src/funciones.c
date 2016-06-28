@@ -103,6 +103,7 @@ void handleUMCRequests(Configuration* config){
 void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 
 	ejecutarRetardo(config->retardo_acceso);
+	char *buff_tmp;
 
 	if(package->msgCode==ALMACENAR_PAGINA_SWAP){
 
@@ -110,8 +111,11 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		int numeroPagina = getNumeroPagina_EscribirPagina(package->message);
 		pagina pagina = getPagina_EscribirPagina(package->message,config->size_pagina);
 		escribirPaginaDeProceso(pid,numeroPagina,pagina);
+		free(pagina);
 		logDebug("Escritura: [PID: %d, Pagina: %d]",pid,numeroPagina);
-		enviarMensajeSocket(socketUMC,ALMACENAR_PAGINA_SWAP,string_itoa(0));//retorna 0 si pudo escribir bien la pagina
+		buff_tmp=string_itoa(0);
+		enviarMensajeSocket(socketUMC,ALMACENAR_PAGINA_SWAP,buff_tmp);//retorna 0 si pudo escribir bien la pagina
+		free(buff_tmp);
 
 	} else if(package->msgCode==SOLICITAR_PAGINA_SWAP){
 
@@ -119,6 +123,7 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		int numeroPagina = getNumeroPagina_SolicitarPagina(package->message);
 		pagina page = leerPaginaDeProceso(pid,numeroPagina);
 		enviarMensajeSocketConLongitud(socketUMC,SOLICITAR_PAGINA_SWAP,page,config->size_pagina);
+		free(page);
 		logDebug("Lectura: [PID: %d, Pagina: %d]",pid,numeroPagina);
 
 	} else if(package->msgCode==NUEVO_PROGRAMA_SWAP){
@@ -130,17 +135,23 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		if(frame>=0){//hay espacio disponible
 			nuevoPrograma(frame,pid,cantidadPaginas);
 			logDebug("Se han reservado %d paginas para el Programa PID:%d",cantidadPaginas,pid);
-			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(0));//retorna 1 si PUDO reservar el espacio
+			buff_tmp=string_itoa(0);
+			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,buff_tmp);//retorna 1 si PUDO reservar el espacio
+			free(buff_tmp);
 		} else if(frame==-1){
 			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d (%d pags)",pid,cantidadPaginas);
-			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(-1));//retorna 0 si NO PUDO reservar el espacio
+			buff_tmp=string_itoa(-1);
+			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,buff_tmp);//retorna 0 si NO PUDO reservar el espacio
+			free(buff_tmp);
 		} else if(frame==-2){
 			logInfo("No hay espacio suficiente en Swap para almacenar el programa PID:%d (%d pags), pero se puede realizar una Compactacion",pid,cantidadPaginas);
 			compactarSwap();
 			frame = getFirstAvailableBlock(cantidadPaginas);
 			nuevoPrograma(frame,pid,cantidadPaginas);
 			logDebug("Se han reservado %d paginas para el Programa PID:%d",cantidadPaginas,pid);
-			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,string_itoa(0));//retorna 1 si PUDO reservar el espacio
+			buff_tmp=string_itoa(0);
+			enviarMensajeSocket(socketUMC,NUEVO_PROGRAMA_SWAP,buff_tmp);//retorna 1 si PUDO reservar el espacio
+			free(buff_tmp);
 		}
 
 	} else if(package->msgCode==ELIMINAR_PROGRAMA_SWAP){
@@ -148,7 +159,9 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		int pid = getProcessID_EliminarPrograma(package->message);
 		eliminarPrograma(pid);
 		logDebug("Programa PID:%d ha sido eliminado",pid);
-		enviarMensajeSocket(socketUMC,ELIMINAR_PROGRAMA_SWAP,string_itoa(0));//retorna 0 si pudo eliminar el programa
+		buff_tmp=string_itoa(0);
+		enviarMensajeSocket(socketUMC,ELIMINAR_PROGRAMA_SWAP,buff_tmp);//retorna 0 si pudo eliminar el programa
+		free(buff_tmp);
 	}
 }
 
