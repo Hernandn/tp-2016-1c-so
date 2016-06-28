@@ -11,10 +11,14 @@ void configurar(char *config_file){
 
 	config = malloc(sizeof(Configuration));
 
-	t_config* nConfig = config_create(config_file ? config_file : NUCLEO_CONFIG_PATH);
+	config_file_name = strdup(config_file ? config_file : NUCLEO_CONFIG_PATH);
+
+	t_config* nConfig = config_create(config_file_name);
 	if(nConfig==NULL){
 		//para debuggear desde eclipse
-		nConfig = config_create(NUCLEO_CONFIG_PATH_ECLIPSE);
+		free(config_file_name);
+		config_file_name = strdup(NUCLEO_CONFIG_PATH_ECLIPSE);
+		nConfig = config_create(config_file_name);
 		if(nConfig==NULL){
 			printf("No se encontro el archivo de configuracion.\n");
 			exit (1);

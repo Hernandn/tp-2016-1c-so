@@ -537,13 +537,14 @@ void handleInotify(void* arguments){
 					if (event->mask & IN_ISDIR) {
 						//printf("The directory %s was modified.\n", event->name);
 					} else {
-						if(string_equals_ignore_case(event->name,NUCLEO_CONFIG_PATH_ECLIPSE)){
-							t_config* nConfig = config_create(NUCLEO_CONFIG_PATH);
-							if(nConfig==NULL){
-								nConfig = config_create(NUCLEO_CONFIG_PATH_ECLIPSE);
-							}
-							if(nConfig!=NULL){
-								setQuantum(config_get_int_value(nConfig,QUANTUM));
+						if(string_equals_ignore_case(event->name,config_file_name)){
+							t_config* tConfig = config_create(config_file_name);
+							if(tConfig!=NULL){
+								char* valor = config_get_string_value(tConfig,QUANTUM);
+								if(valor!=NULL){
+									setQuantum(atoi(valor));
+								}
+								free(tConfig);
 							}
 						}
 					}
