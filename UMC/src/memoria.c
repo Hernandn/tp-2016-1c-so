@@ -633,7 +633,7 @@ void liberar_memoria(uint32_t pid){
 
 void liberar_entradas_tlb(uint32_t pid){
 
-	t_fila_tlb* aux;
+	t_fila_tlb* aux = NULL;
 
 	bool tiene_igual_pid (void* elemento){
 		return ((t_fila_tlb*) elemento)->pid==pid;
