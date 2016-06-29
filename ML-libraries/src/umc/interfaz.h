@@ -12,6 +12,7 @@
 #include "../sockets/server.h"
 #include "../sockets/client.h"
 #include "../sockets/package.h"
+#include "../string/convertir.h"
 
 #define INICIALIZAR_PROGRAMA_UMC 1
 #define LEER_PAGINA_UMC 2
