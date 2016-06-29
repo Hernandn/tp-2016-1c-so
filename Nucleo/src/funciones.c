@@ -122,7 +122,7 @@ void handleConsolas(void* arguments){
 		{
 			if (FD_ISSET (socketCliente[i], &descriptoresLectura))
 			{
-				Package* package = malloc(sizeof(Package));
+				Package* package = createPackage();
 				/* Se lee lo enviado por el cliente y se escribe en pantalla */
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
 					//logDebug("Consola %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
@@ -130,7 +130,7 @@ void handleConsolas(void* arguments){
 						logDebug("Consola %d solicito el inicio de un nuevo programa.",i+1);
 						iniciarPrograma(socketCliente[i],package->message);
 					}
-					destroyPackage(package);
+
 				}
 				else
 				{
@@ -141,6 +141,7 @@ void handleConsolas(void* arguments){
 					abortarPrograma(socketCliente[i]);
 					socketCliente[i] = -1;
 				}
+				destroyPackage(package);
 			}
 		}
 
@@ -211,7 +212,6 @@ void handleCPUs(void* arguments){
 				if(recieve_and_deserialize(package,socketCliente[i]) > 0){
 					//logDebug("CPU %d envía [message code]: %d, [Mensaje]: %s", i+1, package->msgCode, package->message);
 					analizarMensajeCPU(socketCliente[i],package,args);
-					destroyPackage(package);
 				}
 				else
 				{
@@ -222,6 +222,7 @@ void handleCPUs(void* arguments){
 					eliminarCPU(listaCPUs,socketCliente[i]);
 					socketCliente[i] = -1;
 				}
+				destroyPackage(package);
 			}
 		}
 
@@ -296,13 +297,14 @@ int conectarConUMC(Configuration* config){
 	}
 
 	//Se espera el handshake de la UMC para confirmar conexion
-	package=malloc(sizeof(Package));
+	package = createPackage();
 	if(recieve_and_deserialize(package, socket) > 0) {
 		if(package->msgCode==HANDSHAKE_UMC){
 			config->size_pagina = atoi(package->message);//recibo el tamanio de pagina
 			logDebug("Conexion con UMC confirmada, tamanio de pagina: %d",config->size_pagina);
 		}
 	}
+	destroyPackage(package);
 
 	//Le aviso a la UMC que soy un nucleo
 	enviarMensajeSocket(socket,HANDSHAKE_NUCLEO,"");
@@ -391,7 +393,9 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	if(package->msgCode==EXECUTION_FINISHED){
 		logTrace("CPU %d me informa que finalizo de ejecutar la instruccion",socketCPU);
 		logTrace("Enviando al CPU la orden de Quantum Sleep");
-		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,string_itoa(args->config->quantum_sleep));
+		char* tmp = string_itoa(args->config->quantum_sleep);
+		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,tmp);
+		free(tmp);
 	} else if(package->msgCode==QUANTUM_FINISHED){
 		logTrace("CPU %d informa que finalizo 1 Quantum",socketCPU);
 		quantumFinishedCallback(atoi(package->message),getQuantum(),socketCPU);

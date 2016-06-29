@@ -205,28 +205,14 @@ t_fila_tlb* algoritmoLRU (t_list* filas)
 
 void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar)
 {
-	uint32_t posicion;
-	uint32_t cont = 0;
-
-	void buscarPosicion(void* aux)
+	bool misma_entrada(void* aux)
 	{
 		t_fila_tlb* fila = (t_fila_tlb *) aux;
 
-		if((filaQuitar->pid == fila->pid) && (filaQuitar->numero_marco == fila->numero_marco) && (filaQuitar->numero_pagina == fila->numero_pagina))
-		{
-			posicion = cont;
-		}
-		else
-		{
-			cont ++;
-		}
+		return ((filaQuitar->pid == fila->pid) && (filaQuitar->numero_marco == fila->numero_marco) && (filaQuitar->numero_pagina == fila->numero_pagina));
 	}
 
-	list_iterate(filas,buscarPosicion);
-
-	if(posicion < list_size(filas)){//si se encontro la posicion, se borra
-		list_remove(filas,posicion);
-	}
+	list_remove_and_destroy_by_condition(filas,misma_entrada,destructor_fila_tlb);
 }
 
 void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
@@ -529,17 +515,13 @@ void generar_reporte_tablas(FILE *reporte, uint32_t pid, int screen_print){
 
 void crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
 
-	char *bits_bitMap = malloc(sizeof(char)*cantidad_paginas),
-		 *bits_modificacion = malloc(sizeof(char)*cantidad_paginas),
-		 *bits_activo = malloc(sizeof(char)*cantidad_paginas);
+	char *bits_bitMap = malloc(sizeof(char)*cantidad_paginas);
 	int i;
 
 	logDebug("Creando memoria principal de tamanio %d\n", cantidad_paginas*size_pagina);
 
 	for(i=0;i<cantidad_paginas;i++){
 		bits_bitMap[i]=0;
-		bits_modificacion[i]=0;
-		bits_activo[i]=0;
 	}
 
 	memoria_principal.memoria = malloc(cantidad_paginas*size_pagina);

@@ -122,7 +122,7 @@ int escribir_variable_en_umc(uint32_t variable, dir_memoria* dir){
 	char* buffer = malloc(sizeof(char)*sizeof(uint32_t));
 	memcpy(buffer,&variable,sizeof(uint32_t));
 	int resultado = escribir_pagina(dir->pagina,dir->offset,dir->size,buffer);
-	printf("\n****** RESULTADO ESCRITURA %d *******\n",resultado);
+	logTrace("Resultado Escritura en UMC: %d",resultado);
 	if(resultado<=0){
 		informarException();
 	}
@@ -138,27 +138,23 @@ int escribir_variable_en_umc(uint32_t variable, dir_memoria* dir){
 t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 	t_puntero puntero = -1;
 	if(!verificarStackOverflow()){
-		printf("Definir la variable %c\n", variable_nom);
+		logTrace("Definir la variable %c", variable_nom);
 
 		contexto* contexto = getContextoActual();
 
 		dir_memoria dir;
 		if(isdigit(variable_nom)){
 			crearArgumento(variable_nom);
-			printf("Argumento definido: Nom: %c\n",contexto->argumentos[contexto->arg_len-1].nombre);
+			logTrace("Argumento definido: Nom: %c",contexto->argumentos[contexto->arg_len-1].nombre);
 			puntero = direccion_logica_a_puntero(&(contexto->argumentos[contexto->arg_len-1].direccion));
 			dir = contexto->argumentos[contexto->arg_len-1].direccion;
 		} else {
 			crearVariable(variable_nom);
-			printf("Variable definida: Nom: %c\n",contexto->variables[contexto->var_len-1].nombre);
+			logTrace("Variable definida: Nom: %c",contexto->variables[contexto->var_len-1].nombre);
 			puntero = direccion_logica_a_puntero(&(contexto->variables[contexto->var_len-1].direccion));
 			dir = contexto->variables[contexto->var_len-1].direccion;
 		}
-
-		uint32_t variable;//variable sin inicializar para guardar el valor (basura) en la UMC
-		escribir_variable_en_umc(variable,&dir);//ignorar el warning
-
-		printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir.pagina,dir.offset,dir.size,puntero);
+		logTrace("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d",dir.pagina,dir.offset,dir.size,puntero);
 	}
 	return puntero;
 }
@@ -166,7 +162,7 @@ t_puntero ml_definirVariable(t_nombre_variable variable_nom) {
 t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable_nom) {
 	t_puntero puntero = -1;
 	if(!hubo_exception){
-		printf("Obtener posicion de %c\n", variable_nom);
+		logTrace("Obtener posicion de %c", variable_nom);
 
 		variable* variable = NULL;
 		if(isdigit(variable_nom)){
@@ -177,19 +173,19 @@ t_puntero ml_obtenerPosicionVariable(t_nombre_variable variable_nom) {
 
 		dir_memoria* dir = &(variable->direccion);
 		puntero = direccion_logica_a_puntero(dir);
-		printf("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d\n",dir->pagina,dir->offset,dir->size,puntero);
+		logTrace("Direccion logica a puntero: Pag:%d,Off:%d,Size:%d, puntero:%d",dir->pagina,dir->offset,dir->size,puntero);
 	}
 	return puntero;
 }
 
 t_valor_variable ml_dereferenciar(t_puntero puntero) {
-	uint32_t valor = -1;
+	t_valor_variable valor = -1;
 	if(!hubo_exception){
 		dir_memoria* dir = puntero_a_direccion_logica(puntero);
-		printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+		logTrace("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d",puntero,dir->pagina,dir->offset,dir->size);
 		char* contenido = NULL;
 		int resultado = leer_pagina(dir->pagina,dir->offset,dir->size,&contenido);
-		printf("****** RESULTADO LECTURA %d *******\n",resultado);
+		logTrace("Resultado Lectura en UMC: %d",resultado);
 
 
 		if(resultado>0){
@@ -200,17 +196,17 @@ t_valor_variable ml_dereferenciar(t_puntero puntero) {
 		}
 		free(dir);
 
-		printf("Dereferenciar %d y su valor es: %d\n", puntero, valor);
+		logTrace("Dereferenciar %d y su valor es: %d", puntero, valor);
 	}
 	return valor;
 }
 
 void ml_asignar(t_puntero puntero, t_valor_variable variable) {
 	if(!hubo_exception){
-		printf("Asignando en %d el valor %d\n", puntero, variable);
+		logTrace("Asignando en %d el valor %d", puntero, variable);
 
 		dir_memoria* dir = puntero_a_direccion_logica(puntero);
-		printf("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d\n",puntero,dir->pagina,dir->offset,dir->size);
+		logTrace("Puntero a Direccion logica: puntero:%d, Pag:%d,Off:%d,Size:%d",puntero,dir->pagina,dir->offset,dir->size);
 
 		escribir_variable_en_umc(variable,dir);
 
@@ -219,42 +215,42 @@ void ml_asignar(t_puntero puntero, t_valor_variable variable) {
 }
 
 void ml_imprimir(t_valor_variable valor) {
-	printf("Imprimir %d\n", valor);
+	logTrace("Imprimir %d", valor);
 	informarNucleoImprimirVariable(socketNucleo,pcbActual->processID,valor);
 }
 
 void ml_imprimirTexto(char* texto) {
-	printf("ImprimirTexto: %s", texto);
+	logTrace("ImprimirTexto: %s", texto);
 	informarNucleoImprimirTexto(socketNucleo,pcbActual->processID,texto);
 }
 
 t_valor_variable ml_obtenerValorCompartida(t_nombre_compartida variable){
-	printf("Obteniendo Valor Variable compartida: %s\n",variable);
+	logTrace("Obteniendo Valor Variable compartida: %s",variable);
 	t_valor_variable valor = getValorCompartida(socketNucleo,variable);
 	return valor;
 }
 
 t_valor_variable ml_asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
-	printf("Asignando Valor Variable compartida: %s, valor: %d\n",variable,valor);
+	logTrace("Asignando Valor Variable compartida: %s, valor: %d",variable,valor);
 	setValorCompartida(socketNucleo,variable,valor);
 	return valor;
 }
 
 void ml_irAlLabel(t_nombre_etiqueta nombre_etiqueta){
-	printf("Ejecutando Ir a Label: %s",nombre_etiqueta);
+	logTrace("Ejecutando Ir a Label: %s",nombre_etiqueta);
 	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, nombre_etiqueta, pcbActual->codeIndex->etiquetas_size);
-	printf("Ir a direccion: %d\n",pos);
+	logTrace("Ir a direccion: %d",pos);
 	pcbActual->programCounter = pos;
 }
 
 void ml_llamarSinRetorno(t_nombre_etiqueta etiqueta){
-	printf("\nEjecutando Llamar sin retorno a funcion: %s\n",etiqueta);
+	logTrace("Ejecutando Llamar sin retorno a funcion: %s (No implementado)",etiqueta);
 }
 
 void ml_llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
-	printf("Ejecutando Llamar con retorno a funcion: %s, Retorno: %d\n",etiqueta,donde_retornar);
+	logTrace("Ejecutando Llamar con retorno a funcion: %s, Retorno: %d",etiqueta,donde_retornar);
 	t_puntero_instruccion  pos = obtenerIndiceInstruccion(pcbActual->codeIndex->etiquetas, etiqueta, pcbActual->codeIndex->etiquetas_size);
-	printf("Indice de la funcion: %d\n",pos);
+	logTrace("Indice de la funcion: %d",pos);
 	crearNuevoContexto(pcbActual);
 	contexto* contexto = getContextoActual();
 	contexto->retPos = pcbActual->programCounter;
@@ -267,14 +263,14 @@ void ml_llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
 }
 
 void ml_finalizar(void){
-	printf("Ejecutando Finalizar\n");
+	logTrace("Ejecutando Finalizar");
 	programa_finalizado = 1;
 }
 
 void ml_retornar(t_valor_variable retorno){
-	printf("Ejecutando Retornar\n");
+	logTrace("Ejecutando Retornar");
 	dir_memoria* dir = &(getContextoActual()->retVar);
-	printf("Escribir en variable (%d,%d,%d) el valor de retorno: %d",dir->pagina,dir->offset,dir->size,retorno);
+	logTrace("Escribir en variable (%d,%d,%d) el valor de retorno: %d",dir->pagina,dir->offset,dir->size,retorno);
 
 	escribir_variable_en_umc(retorno,dir);
 
@@ -282,16 +278,16 @@ void ml_retornar(t_valor_variable retorno){
 }
 
 void ml_entradaSalida(t_nombre_dispositivo dispositivo, int tiempo){
-	printf("Ejecutando Entrada-Salida [Dispositivo: %s, Tiempo: %d]\n",dispositivo,tiempo);
+	logTrace("Ejecutando Entrada-Salida [Dispositivo: %s, Tiempo: %d]",dispositivo,tiempo);
 	ejecutarOperacionIO(dispositivo,tiempo);
 }
 
 void ml_wait(t_nombre_semaforo identificador_semaforo){
-	printf("Ejecutando Wait de semaforo: %s\n",identificador_semaforo);
+	logTrace("Ejecutando Wait de semaforo: %s",identificador_semaforo);
 	execute_wait(identificador_semaforo);
 }
 
 void ml_signal(t_nombre_semaforo identificador_semaforo){
-	printf("Ejecutando Signal de semaforo: %s\n",identificador_semaforo);
+	logTrace("Ejecutando Signal de semaforo: %s",identificador_semaforo);
 	execute_signal(identificador_semaforo);
 }

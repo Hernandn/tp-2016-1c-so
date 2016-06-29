@@ -392,7 +392,9 @@ contexto* deserializar_stack(char* serialized, uint32_t contextos_length){
 		char* serialized_contexto = malloc(sizeof(char)*size_contexto);
 		//contextos = realloc(contextos,sizeof(contexto)*(i+1));
 		deserializarDato(serialized_contexto,serialized,size_contexto,&offset);
-		contextos[i] = *(deserializar_contexto(serialized_contexto));
+		contexto* aux = deserializar_contexto(serialized_contexto);
+		contextos[i] = *(aux);
+		free(aux);
 		free(serialized_contexto);
 	}
 	return contextos;
@@ -571,7 +573,9 @@ void informarNucleoFinPrograma(int socketNucleo, PCB* pcb){
 }
 
 void informarNucleoQuantumFinished(int socketNucleo, PCB* pcb){
-	enviarMensajeSocket(socketNucleo,QUANTUM_FINISHED,string_itoa(pcb->processID));
+	char* tmp = string_itoa(pcb->processID);
+	enviarMensajeSocket(socketNucleo,QUANTUM_FINISHED,tmp);
+	free(tmp);
 }
 
 void informarNucleoContextSwitchFinished(int socketNucleo, PCB* pcb){
@@ -635,6 +639,7 @@ void setValorCompartida(int socketNucleo, char* var_id, uint32_t valor){
 	char* serialized = serializar_shared_var(valor,var_id);
 	uint32_t length = getLong_shared_var(var_id);
 	enviarMensajeSocketConLongitud(socketNucleo,SET_SHARED_VAR,serialized,length);
+	free(serialized);
 }
 
 
@@ -671,4 +676,5 @@ void informarValorVariableCompartida(int socketCPU, uint32_t valor){
 	char* serialized = malloc(sizeof(uint32_t));
 	memcpy(serialized,&valor,sizeof(uint32_t));
 	enviarMensajeSocketConLongitud(socketCPU,GET_SHARED_VAR,serialized,sizeof(uint32_t));
+	free(serialized);
 }

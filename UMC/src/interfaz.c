@@ -147,6 +147,11 @@ int finalizar_programa(char* mensaje_serializado){
 void nuevo_pid(char* mensaje_serializado){
 
 	uint32_t pid;
+	pid = -1;//jode valgrind si no se inicializa
+
+	pid = obtener_pid();
+	logDebug("Liberando entradas TLB de PID: %d",pid);
+	liberar_entradas_tlb(pid);
 
 	deserializar_parametros(1, mensaje_serializado, sizeof(uint32_t), (void*) &pid);
 	logDebug("Se recibio un nuevo pid %d",pid);

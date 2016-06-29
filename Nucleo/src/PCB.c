@@ -376,7 +376,9 @@ void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb){
 }*/
 
 void informarCPU(int socketCPU, int accion, int pid){
-	enviarMensajeSocket(socketCPU,accion,string_itoa(pid));
+	char* tmp = string_itoa(pid);
+	enviarMensajeSocket(socketCPU,accion,tmp);
+	free(tmp);
 }
 
 void iniciarPrograma(int consolaFD, char* programa){
@@ -537,7 +539,9 @@ bool findAndExitPCBblockedInSemaphore(int consolaFD){
 }
 
 void informarPlanificador(int accion, int pid){
-	enviarMensajeSocket(socketPlanificador,accion,string_itoa(pid));
+	char* tmp = string_itoa(pid);
+	enviarMensajeSocket(socketPlanificador,accion,tmp);
+	free(tmp);
 }
 
 int getCantidadPaginasPrograma(char* programa, int size_pagina){

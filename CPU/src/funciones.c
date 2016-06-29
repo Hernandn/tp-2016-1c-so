@@ -96,7 +96,7 @@ void iniciarEjecucionCPU(void* arguments){
 	}
 
 	logDebug("Realizando handshake con Nucleo");
-	Package* package=malloc(sizeof(Package));
+	Package* package = createPackage();
 	if(recieve_and_deserialize(package, socketNucleo) > 0) {
 		if(package->msgCode==HANDSHAKE_CPU_NUCLEO){
 			if(package->msgCode==HANDSHAKE_CPU_NUCLEO){
@@ -221,23 +221,14 @@ void ejecutarInstruccion(){
 		//incremento el PC antes de ejecutar la instruccion por si se bloquea
 		pcbActual->programCounter++;
 
-		printf("=================================\n");
-		printf("Ejecutando '%s'\n", instruccion);
+		logDebug("=================================");
+		logDebug("Ejecutando '%s'", instruccion);
 		analizadorLinea(instruccion, &functions, &kernel_functions);
-		printf("=================================\n");
+		logDebug("=================================");
 	}
 	if(instruccion!=NULL){
 		free(instruccion);
 	}
-}
-
-
-void analizarRespuestaUMC(){
-	Package* package = malloc(sizeof(Package));
-	if(recieve_and_deserialize(package,socketUMC) > 0){
-		logDebug("UMC envía [message code]: %d, [Mensaje]: %s", package->msgCode, package->message);
-	}
-	destroyPackage(package);
 }
 
 int getSocketUMC(){
@@ -303,7 +294,7 @@ char* getInstruccionFromUMC(int offset, int length){
 char* pedirCodigoUMC(uint32_t pagina, uint32_t offset, uint32_t size){
 	char* contenido = NULL;
 	int resultado = leer_pagina(pagina,offset,size,&contenido);
-	printf("****** RESULTADO LECTURA %d *******\n",resultado);
+	logTrace("Resultado Lectura en UMC: %d",resultado);
 	if(resultado<=0){
 		informarException();
 	}
@@ -321,7 +312,7 @@ void finalizarPrograma(){
 	//envia el PCB de nuevo al Nucleo
 	informarNucleoFinPrograma(socketNucleo,pcbActual);
 	destroyPCB(pcbActual);
-	logTrace("CPU se encuentra libre");
+	logDebug("CPU se encuentra libre");
 }
 
 void execute_wait(char* sem_id){
@@ -352,6 +343,7 @@ void execute_signal(char* sem_id){
 	char* serialized = serializar_semaforo(pcbActual->processID,sem_id);
 	uint32_t length = getLong_semaforo(sem_id);
 	enviarMensajeSocketConLongitud(socketNucleo,SEM_SIGNAL,serialized,length);
+	free(serialized);
 }
 
 void informarStackOverflow(){

@@ -62,7 +62,6 @@ void quantumSleep(arg_struct *args, int milisegundos);
 bool programaFinalizado();
 void abortarProceso(arg_struct *args);
 void ejecutarInstruccion();
-void analizarRespuestaUMC();
 int getSocketUMC();
 char* getInstruccion(char* codigo, int offset, int length);
 char* getSiguienteInstruccion();
