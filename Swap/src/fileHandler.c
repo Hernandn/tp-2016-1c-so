@@ -19,7 +19,8 @@ void inicializarSwap(Configuration* conf){
 	crearArchivoSwap();
 }
 
-void crearBitMap(){
+void crearBitMap()
+{
 	char* bits = malloc(sizeof(char)*config->cantidad_paginas);
 	int i;
 	for(i=0; i<config->cantidad_paginas; i++){
@@ -28,20 +29,23 @@ void crearBitMap(){
 	bitMap = bitarray_create(bits,config->cantidad_paginas);
 }
 
-int getFirstAvailableBlock(int cantPaginas){
+int getFirstAvailableBlock(int cantPaginas)
+{
 	//total(espacio libre fragmentado), cont(contador de espacio contiguo)
 	int total = 0, cont = 0, i;
 
 	for(i=0; i<bitMap->size; i++){
 		//si encuentro un bit en 0 (espacio libre) incremento, si no reseteo el contiguo
-		if(!bitarray_test_bit(bitMap,i)){
+		if(!bitarray_test_bit(bitMap,i))
+		{
 			cont++;
 			total++;
 		} else {
 			cont = 0;
 		}
 		//si encuentro un espacio contiguo de la cantidad de paginas pedidas, corto el for
-		if(cont>=cantPaginas){
+		if(cont>=cantPaginas)
+		{
 			i++;
 			break;
 		}
@@ -68,9 +72,11 @@ int escribirPaginaEnFrame(int frame, pagina pag){
 	}
 }
 
-void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas){
+void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas)
+{
 	int i;
-	for(i=0; i<cantPaginas; i++){
+	for(i=0; i<cantPaginas; i++)
+	{
 		escribirPaginaEnFrame(frame+i,paginas[i]);
 	}
 }
@@ -120,9 +126,11 @@ tableRow* getTablaDePaginas(){
 	return tabla;
 }
 
-void nuevoPrograma(int frame, int pid, int cantPaginas){
+void nuevoPrograma(int frame, int pid, int cantPaginas)
+{
 	int i,j=0;
-	for(i=frame; i<(cantPaginas+frame); i++){
+	for(i=frame; i<(cantPaginas+frame); i++)
+	{
 		bitarray_set_bit(bitMap,i);
 		tabla[i].pid = pid;
 		tabla[i].page = j;
@@ -130,11 +138,14 @@ void nuevoPrograma(int frame, int pid, int cantPaginas){
 	}
 }
 
-void eliminarPrograma(int pid){
+void eliminarPrograma(int pid)
+{
 	int i;
-	for(i=0; i<config->cantidad_paginas; i++){
+	for(i=0; i<config->cantidad_paginas; i++)
+	{
 		//si encuentra un registro con el mismo processID, hace la baja logica y libera el espacio en el bitmap
-		if(tabla[i].pid==pid){
+		if(tabla[i].pid==pid)
+		{
 			tabla[i].pid=-1;
 			tabla[i].page=-1;
 			bitarray_clean_bit(bitMap,i);
@@ -159,7 +170,8 @@ int escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
 		return escribirPaginaEnFrame(frame,pag);
 	}
 }
-pagina leerPaginaDeProceso(int pid, int paginaNro){
+pagina leerPaginaDeProceso(int pid, int paginaNro)
+{
 	int frame = buscarFramePorPagina(pid,paginaNro);
 	if(frame>=0){
 		logDebug("Lectura: [PID: %d, Page: %d, F: %d]",pid,paginaNro,frame);
@@ -169,7 +181,8 @@ pagina leerPaginaDeProceso(int pid, int paginaNro){
 	}
 }
 
-int obtener_primer_disponible(int offset){
+int obtener_primer_disponible(int offset)
+{
 	//contado de espacio contiguo
 	int i;
 	for(i=offset; i<bitMap->size; i++){
@@ -181,7 +194,8 @@ int obtener_primer_disponible(int offset){
 	return i;
 }
 
-int ultimo_disponible(int primero){
+int ultimo_disponible(int primero)
+{
 	//contado de espacio contiguo
 	int  i;
 
@@ -195,7 +209,8 @@ int ultimo_disponible(int primero){
 	return i;
 }
 
-void moverFrame(int frame_origen, int frame_destino){
+void moverFrame(int frame_origen, int frame_destino)
+{
 	pagina pag;
 	//setea el frame donde se va mover en 1
 	bitarray_set_bit(bitMap,frame_destino);
@@ -213,9 +228,10 @@ void moverFrame(int frame_origen, int frame_destino){
 	bitarray_clean_bit(bitMap,frame_origen);
 }
 
-void compactarSwap(){
+void compactarSwap()
+{
 	logInfo("Realizando compactacion de espacio: %d ms",config->retardo_compact);
-	usleep(config->retardo_compact*1000);//convierto micro en milisegundos
+	usleep(config->retardo_compact*1000);   //convierto micro en milisegundos
 	int ultimo_frame_disponible = 0;
 	int j=0;
 	while(j<config->cantidad_paginas){
@@ -237,6 +253,7 @@ void compactarSwap(){
 				i++;
 			}
 			j++;
+
 		}
 	}
 	logInfo("Compactacion finalizada");
