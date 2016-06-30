@@ -1,4 +1,4 @@
-#!/bin/Consola
+#!/usr/bin/Consola
 begin
 variables f, i, t
 	i=0

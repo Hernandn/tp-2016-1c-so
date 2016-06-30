@@ -21,7 +21,7 @@ typedef struct tableRow {
 void inicializarSwap(Configuration* conf);
 void crearBitMap();
 int getFirstAvailableBlock(int cantPaginas);
-void escribirPaginaEnFrame(int frame, pagina pag);
+int escribirPaginaEnFrame(int frame, pagina pag);
 void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas);
 int getFileSize();
 void cerrarArchivoSwap();
@@ -35,7 +35,7 @@ void nuevoPrograma(int frame, int pid, int cantPaginas);
 void eliminarPrograma(int pid);
 int buscarFramePorPagina(int pid, int pagina);
 pagina leerPaginaDeProceso(int pid, int paginaNro);
-void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag);
+int escribirPaginaDeProceso(int pid, int paginaNro, pagina pag);
 int obtener_primer_disponible(int offset);
 int ultimo_disponible(int primero);
 void moverFrame(int frame_origen, int frame_destino);

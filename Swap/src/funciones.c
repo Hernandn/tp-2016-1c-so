@@ -110,10 +110,9 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		int pid = getProcessID_EscribirPagina(package->message);
 		int numeroPagina = getNumeroPagina_EscribirPagina(package->message);
 		pagina pagina = getPagina_EscribirPagina(package->message,config->size_pagina);
-		escribirPaginaDeProceso(pid,numeroPagina,pagina);
+		int result = escribirPaginaDeProceso(pid,numeroPagina,pagina);
 		free(pagina);
-		logDebug("Escritura: [PID: %d, Pagina: %d]",pid,numeroPagina);
-		buff_tmp=string_itoa(0);
+		buff_tmp=string_itoa(result);
 		enviarMensajeSocket(socketUMC,ALMACENAR_PAGINA_SWAP,buff_tmp);//retorna 0 si pudo escribir bien la pagina
 		free(buff_tmp);
 
@@ -124,7 +123,6 @@ void analizarMensaje(Package* package, int socketUMC, Configuration* config){
 		pagina page = leerPaginaDeProceso(pid,numeroPagina);
 		enviarMensajeSocketConLongitud(socketUMC,SOLICITAR_PAGINA_SWAP,page,config->size_pagina);
 		free(page);
-		logDebug("Lectura: [PID: %d, Pagina: %d]",pid,numeroPagina);
 
 	} else if(package->msgCode==NUEVO_PROGRAMA_SWAP){
 

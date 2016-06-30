@@ -1,4 +1,4 @@
-#!/bin/Consola
+#!/usr/bin/Consola
 begin	
 	:etiqueta
 	textPrint Ejecutando io Disco 5

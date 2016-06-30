@@ -19,7 +19,7 @@ $(TARGET): create-dirs $(OBJECTS)
 
 #Defino el entorno necesario para que corra la consola
 env:
-	ln -sf $(TARGET) /bin
+	ln -sf $(TARGET) /usr/bin
 	echo 'export CONF_CONSOLA="$(TARGET_PATH)consola.conf"' > /etc/profile.d/consola.sh
 
 install: all env

@@ -1,4 +1,4 @@
-#!/bin/Consola
+#!/usr/bin/Consola
 begin
 	variables a, b
 	a = 3

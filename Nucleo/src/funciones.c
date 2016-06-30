@@ -458,6 +458,7 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 			PCB* pcbActualizado = informarCPUbloqueoSemaforo(socketCPU);
 			PCB* pcbLocal = removeFromEXEC(action->pid);
 			actualizarPCB(pcbLocal,pcbActualizado);
+			reiniciarQuantumsEjecutados(pcbLocal);
 			bloquearEnSemaforo(pcbLocal,action->sem_id);
 			destroyPCB(pcbActualizado);
 		} else {

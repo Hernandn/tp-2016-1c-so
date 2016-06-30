@@ -57,6 +57,7 @@ PCB* getFromEXEC(int pid);
 bool hayProcesosEnREADY();
 int addQuantumToExecProcess(PCB* proceso, int quantum);
 void quantumFinishedCallback(int pid, int quantum, int socketCPU);
+void reiniciarQuantumsEjecutados(PCB* pcb);
 void contextSwitchFinishedCallback(PCB* pcbActualizado);
 void notifyProcessREADY(PCB* pcb);
 void finalizarPrograma(PCB* pcb, int socketCPU);

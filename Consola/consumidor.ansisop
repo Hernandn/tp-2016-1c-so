@@ -1,11 +1,10 @@
-#!/bin/Consola
+#!/usr/bin/Consola
 begin	
 	:etiqueta
 	
-	wait sem_a
-		!colas = !colas - 1
+	wait c
 		print !colas
-	signal sem_b
+	signal b
 	
 	#Ciclar indefinidamente
 	goto etiqueta

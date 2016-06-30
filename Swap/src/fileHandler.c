@@ -57,9 +57,15 @@ int getFirstAvailableBlock(int cantPaginas){
 	return retorna;
 }
 
-void escribirPaginaEnFrame(int frame, pagina pag){
-	fseek(file,frame*config->size_pagina,SEEK_SET);
-	fwrite(pag,config->size_pagina,1,file);
+int escribirPaginaEnFrame(int frame, pagina pag){
+	if(fseek(file,frame*config->size_pagina,SEEK_SET)){
+		return -1;//error
+	}
+	if(fwrite(pag,config->size_pagina,1,file)>0){
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 void escribirPaginasEnFrame(int frame, pagina* paginas, int cantPaginas){
@@ -146,15 +152,17 @@ int buscarFramePorPagina(int pid, int pagina){
 	return -1;//retorna -1 si no encuentra la pagina del proceso en la tabla
 }
 
-void escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
+int escribirPaginaDeProceso(int pid, int paginaNro, pagina pag){
 	int frame = buscarFramePorPagina(pid,paginaNro);
+	logDebug("Escritura: [PID: %d, Page: %d, F: %d]",pid,paginaNro,frame);
 	if(frame>=0){
-		escribirPaginaEnFrame(frame,pag);
+		return escribirPaginaEnFrame(frame,pag);
 	}
 }
 pagina leerPaginaDeProceso(int pid, int paginaNro){
 	int frame = buscarFramePorPagina(pid,paginaNro);
 	if(frame>=0){
+		logDebug("Lectura: [PID: %d, Page: %d, F: %d]",pid,paginaNro,frame);
 		return leerPaginaFromFrame(frame);
 	} else {
 		return NULL;

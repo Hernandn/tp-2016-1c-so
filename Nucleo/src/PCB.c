@@ -296,7 +296,7 @@ void quantumFinishedCallback(int pid, int quantum, int socketCPU){
 		if(proceso->consolaActiva){
 			//si se le terminaron los quantums al proceso
 			if(addQuantumToExecProcess(proceso,quantum)<=0){
-				proceso->executedQuantums=0;//reinicio los quantums ejecutados
+				reiniciarQuantumsEjecutados(proceso);//reinicio los quantums ejecutados
 				switchProcess(pid,socketCPU);
 			} else {
 				continueExec(socketCPU,proceso);
@@ -309,10 +309,15 @@ void quantumFinishedCallback(int pid, int quantum, int socketCPU){
 	}
 }
 
+void reiniciarQuantumsEjecutados(PCB* pcb){
+	pcb->executedQuantums = 0;
+}
+
 void contextSwitchFinishedCallback(PCB* pcbActualizado){
 	PCB* proceso = removeFromEXEC(pcbActualizado->processID);
 	if(proceso!=NULL){
 		actualizarPCB(proceso,pcbActualizado);
+		reiniciarQuantumsEjecutados(proceso);
 		logTrace("Context Switch finished callback: PCB:%d / PC: %d/%d",proceso->processID,proceso->programCounter,proceso->codeIndex->instrucciones_size);
 		notifyProcessREADY(proceso);
 	}
@@ -642,6 +647,7 @@ void atenderSolicitudDispositivoIO(solicitud_io* solicitud){
 	int io_index = getPosicionDispositivo(config->io_ids,config->io_length,solicitud->io_id);
 	PCB* pcb = removeFromEXEC(solicitud->pcb->processID);
 	actualizarPCB(pcb,solicitud->pcb);
+	reiniciarQuantumsEjecutados(pcb);
 
 	destroyPCB(solicitud->pcb);
 
@@ -706,6 +712,7 @@ int getPosicionSemaforo(char* sem_id){
 
 void bloquearEnSemaforo(PCB* pcb, char* sem_id){
 	int sem_pos = getPosicionSemaforo(sem_id);
+	logDebug("Bloqueado en Semaforo %s, PID: %d",sem_id,pcb->processID);
 	queue_push(sem_blocked[sem_pos],pcb);
 }
 
@@ -718,7 +725,7 @@ int execute_wait(char* sem_id){
 	int bloquear = 0;
 	int pos = getPosicionSemaforo(sem_id);
 	sem_values[pos]--;
-	logTrace("[WAIT] Semaforo %s. Valor actual: %d",sem_id,sem_values[pos]);
+	logDebug("[WAIT] Semaforo %s. Valor actual: %d",sem_id,sem_values[pos]);
 	if(sem_values[pos]<0){
 		bloquear = 1;
 	}
@@ -728,9 +735,10 @@ int execute_wait(char* sem_id){
 void execute_signal(char* sem_id){
 	int pos = getPosicionSemaforo(sem_id);
 	sem_values[pos]++;
-	logTrace("[SIGNAL] Semaforo %s. Valor actual: %d",sem_id,sem_values[pos]);
+	logDebug("[SIGNAL] Semaforo %s. Valor actual: %d",sem_id,sem_values[pos]);
 	if(sem_values[pos]<=0){
 		PCB* pcb = getNextFromSemaforo(pos);
+		logDebug("Desbloqueado de Semaforo %s, PID: %d",sem_id,pcb->processID);
 		if(pcb!=NULL){
 			if(consola_desconectada(pcb->consolaFD)){
 				sendToEXIT(pcb);
