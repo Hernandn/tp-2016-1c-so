@@ -7,7 +7,7 @@ variables f,  A,  g
     A = 	0
     !compartida = 1+A
     print !compartida
-    jnz !compartida Siguiente
+    jnz !compartida Siguiente 
 :Proximo
 	
     f = 8	  
@@ -32,6 +32,7 @@ variables f
     return f
 end
 
-:Siguiente
+:Siguiente	
 	print A+1
 goto Proximo
+

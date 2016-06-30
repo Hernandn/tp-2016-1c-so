@@ -217,6 +217,9 @@ void remover_fila_tlb(t_list* filas, t_fila_tlb* filaQuitar)
 
 void copiar_pagina_a_tlb(uint32_t numero_pagina, uint32_t numero_marco)
 {
+	if(config->tamanio_tlb<=0){
+		return;
+	}
 	logDebug("Copiando entrada a TLB: (PID:%d,Pag:%d,Marco:%d)",obtener_pid(),numero_pagina,numero_marco);
 	t_fila_tlb* filaQuitar;
 	t_fila_tlb* filaAgregar;
