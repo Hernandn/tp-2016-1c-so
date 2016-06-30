@@ -19,6 +19,7 @@
 #include <mllibs/stack/stack.h>
 #include <semaphore.h>
 #include "planificador.h"
+#include "Nucleo.h"
 
 //Estructura que contiene las colas/listas del diagrama de Estados
 Estados* estados;
@@ -364,11 +365,26 @@ void continueExec(int socketCPU, PCB* pcb){
 	continuarEjecucionProcesoCPU(socketCPU);
 }
 
-void startExec(int socketCPU){
+void startExec(CPU* cpu){
 	PCB* proceso = getNextFromREADY(estados);
 	sendToEXEC(proceso);
+	cpu->pid = proceso->processID;
 	logTrace("Informando CPU [Execute new process]");
-	ejecutarNuevoProcesoCPU(socketCPU,proceso);
+	ejecutarNuevoProcesoCPU(cpu->cpuFD,proceso);
+}
+
+void returnProcessToReady(CPU* cpu){
+	bool mismoPid(void* tmp){
+		PCB* aux = (PCB*) tmp;
+		return aux->processID == cpu->pid;
+	}
+
+	pthread_mutex_lock(&executeMutex);
+	PCB* pcb = list_remove_by_condition(estados->execute,mismoPid);
+	pthread_mutex_unlock(&executeMutex);
+	if(pcb!=NULL){
+		notifyProcessREADY(pcb);
+	}
 }
 
 /*
@@ -411,9 +427,7 @@ void iniciarPrograma(int consolaFD, char* programa){
 		logTrace("Destruyendo PCB [PID:%d]",nuevo->processID);
 		destroyPCB(nuevo);
 	} else {
-		sendToREADY(nuevo);
-		logTrace("Informando Planificador [Program READY]");
-		informarPlanificador(PROGRAM_READY,nuevo->processID);
+		notifyProcessREADY(nuevo);
 	}
 }
 
@@ -744,7 +758,7 @@ void execute_signal(char* sem_id){
 				sendToEXIT(pcb);
 				informarPlanificadorFinalizarPrograma();
 			} else {
-				sendToREADY(pcb);
+				notifyProcessREADY(pcb);
 			}
 		}
 	}

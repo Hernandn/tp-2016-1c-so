@@ -5,12 +5,11 @@
  *      Author: hernan
  */
 
-#include "PCB.h"
-#include "configuration.h"
-#include <mllibs/nucleoCpu/interfaz.h>
-
 #ifndef NUCLEO_H_
 #define NUCLEO_H_
+
+#include "configuration.h"
+#include <mllibs/nucleoCpu/interfaz.h>
 
 #define MAX_CPUS 20	//cantidad de CPUs que se pueden conectar
 #define MAX_CONSOLAS 20	//cantidad de Consolas que se pueden conectar
@@ -41,6 +40,7 @@ typedef struct arg_struct {
 //contiene el estado de un CPU conectado al Nucleo
 typedef struct CPU {
     int cpuFD;	//file descriptor del socket del cpu
+    int pid;	//PID del proceso que esta ejecutando actualmente
     int libre;	// 0:ocupado / 1:libre
 } CPU;
 

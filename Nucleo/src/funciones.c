@@ -7,6 +7,7 @@
 
 #include "Nucleo.h"
 #include "planificador.h"
+#include "PCB.h"
 
 void handleClients(Configuration* config){
 
@@ -334,6 +335,7 @@ void destroyCPU(CPU* self){
 //si se tiene el CPU
 void liberarCPU(CPU* cpu){
 	cpu->libre = 1;	//true
+	cpu->pid = 0;
 	logTrace("Informando Planificador(%d) [CPU LIBRE]",socketPlanificador);
 	informarPlanificador(CPU_LIBRE,cpu->cpuFD);
 }
@@ -359,11 +361,13 @@ CPU* buscarCPUporSocketFD(int socketCPU, t_list* listaCPUs){
 }
 
 void eliminarCPU(t_list* listaCPUs,int socketCPU){
+
 	int i;
 	CPU* aEliminar = NULL;
 	for(i=0;i<listaCPUs->elements_count;i++){
 		aEliminar = list_get(listaCPUs,i);
 		if(aEliminar->cpuFD==socketCPU){
+			returnProcessToReady(aEliminar);
 			list_remove_and_destroy_element(listaCPUs,i,(void*)destroyCPU);
 		}
 	}

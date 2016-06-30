@@ -13,6 +13,7 @@
 #include <parser/metadata_program.h>
 #include <mllibs/umc/interfaz.h>
 #include <mllibs/nucleoCpu/interfaz.h>
+#include "Nucleo.h"
 
 
 /*
@@ -65,7 +66,8 @@ void actualizarPCB(PCB* local, PCB* actualizado);
 void switchProcess(int pid, int socketCPU);
 void abortProcess(int pid, int socketCPU);
 void continueExec(int socketCPU, PCB* pcb);
-void startExec(int socketCPU);
+void startExec(CPU* cpu);
+void returnProcessToReady(CPU* cpu);
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb);
 void informarCPU(int socketCPU, int accion, int pid);
 void iniciarPrograma(int consolaFD, char* programa);

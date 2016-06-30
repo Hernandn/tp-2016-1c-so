@@ -102,7 +102,7 @@ void planificar(void* arguments){
 void atenderProcesos(t_list* listaCPUs){
 	CPU* cpu = getCPUlibre(listaCPUs);
 	while(cpu!=NULL && hayProcesosEnREADY()){
-		startExec(cpu->cpuFD);
+		startExec(cpu);
 		cpu->libre = 0;
 
 		cpu = getCPUlibre(listaCPUs);
