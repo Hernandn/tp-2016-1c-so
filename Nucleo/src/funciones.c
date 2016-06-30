@@ -370,7 +370,7 @@ void eliminarCPU(t_list* listaCPUs,int socketCPU){
 	for(i=0;i<listaCPUs->elements_count;i++){
 		aEliminar = list_get(listaCPUs,i);
 		if(aEliminar->cpuFD==socketCPU){
-			returnProcessToReady(aEliminar);
+			abortExecutingProcess(aEliminar);
 			list_remove_and_destroy_element(listaCPUs,i,(void*)destroyCPU);
 		}
 	}

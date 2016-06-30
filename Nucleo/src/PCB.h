@@ -67,7 +67,7 @@ void switchProcess(int pid, int socketCPU);
 void abortProcess(int pid, int socketCPU);
 void continueExec(int socketCPU, PCB* pcb);
 void startExec(CPU* cpu);
-void returnProcessToReady(CPU* cpu);
+void abortExecutingProcess(CPU* cpu);
 void informarEjecucionCPU(int socketCPU, int accion, PCB* pcb);
 void informarCPU(int socketCPU, int accion, int pid);
 void iniciarPrograma(int consolaFD, char* programa);

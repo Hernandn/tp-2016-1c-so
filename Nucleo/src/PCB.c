@@ -373,7 +373,7 @@ void startExec(CPU* cpu){
 	ejecutarNuevoProcesoCPU(cpu->cpuFD,proceso);
 }
 
-void returnProcessToReady(CPU* cpu){
+void abortExecutingProcess(CPU* cpu){
 	bool mismoPid(void* tmp){
 		PCB* aux = (PCB*) tmp;
 		return aux->processID == cpu->pid;
@@ -383,7 +383,9 @@ void returnProcessToReady(CPU* cpu){
 	PCB* pcb = list_remove_by_condition(estados->execute,mismoPid);
 	pthread_mutex_unlock(&executeMutex);
 	if(pcb!=NULL){
-		notifyProcessREADY(pcb);
+		logTrace("Plan: PCB:%d / EXEC -> abort",pcb->processID);
+		sendToEXIT(pcb);
+		informarPlanificadorFinalizarPrograma();
 	}
 }
 
