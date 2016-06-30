@@ -26,6 +26,9 @@ void handleClients(Configuration* config){
 
 	pthread_mutex_init(&quantum_mutex,NULL);
 	setQuantum(config->quantum);
+	pthread_mutex_init(&quantum_sleep_mutex,NULL);
+	setQuantumSleep(config->quantum_sleep);
+
 
 	//abrir server para escuchar CPUs
 	args.socketServerCPU = abrirSocketInetServer(config->ip_nucleo,config->puerto_nucleo_cpu);
@@ -397,7 +400,7 @@ void analizarMensajeCPU(int socketCPU , Package* package, arg_struct *args){
 	if(package->msgCode==EXECUTION_FINISHED){
 		logTrace("CPU %d me informa que finalizo de ejecutar la instruccion",socketCPU);
 		logTrace("Enviando al CPU la orden de Quantum Sleep");
-		char* tmp = string_itoa(args->config->quantum_sleep);
+		char* tmp = string_itoa(getQuantumSleep());
 		enviarMensajeSocket(socketCPU,QUANTUM_SLEEP_CPU,tmp);
 		free(tmp);
 	} else if(package->msgCode==QUANTUM_FINISHED){
@@ -504,6 +507,21 @@ int getQuantum(){
 	return valor;
 }
 
+void setQuantumSleep(int valor){
+	pthread_mutex_lock(&quantum_sleep_mutex);
+	quantum_sleep = valor;
+	logInfo("Modificado Quantum Sleep: %d ms",valor);
+	pthread_mutex_unlock(&quantum_sleep_mutex);
+}
+
+int getQuantumSleep(){
+	int valor;
+	pthread_mutex_lock(&quantum_sleep_mutex);
+	valor = quantum_sleep;
+	pthread_mutex_unlock(&quantum_sleep_mutex);
+	return valor;
+}
+
 void handleInotify(void* arguments){
 
 	char buffer[BUF_LEN];
@@ -552,6 +570,10 @@ void handleInotify(void* arguments){
 								char* valor = config_get_string_value(tConfig,QUANTUM);
 								if(valor!=NULL){
 									setQuantum(atoi(valor));
+								}
+								char* valor2 = config_get_string_value(tConfig,QUANTUM_SLEEP);
+								if(valor2!=NULL){
+									setQuantumSleep(atoi(valor2));
 								}
 								free(tConfig);
 							}

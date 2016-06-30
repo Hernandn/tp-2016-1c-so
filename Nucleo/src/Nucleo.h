@@ -49,6 +49,8 @@ int socketPlanificador;
 
 int quantum;
 pthread_mutex_t quantum_mutex;
+int quantum_sleep;
+pthread_mutex_t quantum_sleep_mutex;
 
 //prototipos de funciones
 void handleClients(Configuration* config);
@@ -72,6 +74,8 @@ int getSocketUMC();
 void borrarSocketConsola(arg_struct *args, int socketConsola);
 void setQuantum(int valor);
 int getQuantum();
+void setQuantumSleep(int valor);
+int getQuantumSleep();
 void handleInotify(void* arguments);
 void finalizarProgramaException(PCB* pcb, char* mensaje);
 
