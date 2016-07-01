@@ -34,6 +34,8 @@ void handleClients(){
 	pthread_mutex_init(&activo_mutex,NULL);
 	pthread_mutex_init(&modificacion_mutex,NULL);
 
+	pthread_mutex_init(&pid_mutex,NULL);
+
 	//Completo los atributos de thread para que sea detached. Se va a usar para los thread de CPU
 	pthread_attr_init(&thread_detached_attr);
 	pthread_attr_setdetachstate(&thread_detached_attr,PTHREAD_CREATE_DETACHED);
@@ -52,6 +54,8 @@ void handleClients(){
 
 	//Conecto el socket swap
 	conectarConSwap();
+
+	crear_lista_pids_en_uso();
 
 	/* Bucle infinito.
 	 * Se atiende a si hay más clientes para conectar y a los mensajes enviados
@@ -226,8 +230,9 @@ uint32_t obtener_pid(){
 	uint32_t *pid;
 	pid=pthread_getspecific(key_pid);
 
-	if(pid==NULL) return 0;
-	else return *pid;
+	if(pid) return *pid;
+
+	return 0;
 }
 
 void handleNucleo(t_arg_thread_nucleo* args){

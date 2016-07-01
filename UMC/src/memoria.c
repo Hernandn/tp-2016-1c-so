@@ -10,6 +10,7 @@
 static t_memoria_principal memoria_principal;
 static t_list *tablas_de_paginas;
 static t_tabla_tlb *tlb;
+static t_dictionary *pids_en_uso;
 
 void log_reporte( FILE *fp, char screen_log, char* message_template, ...){
 
@@ -519,6 +520,32 @@ void generar_reporte_tablas(FILE *reporte, uint32_t pid, int screen_print){
 
 }
 
+pthread_mutex_t* obtener_mutex_pid(uint32_t pid){
+	pthread_mutex_t *mutex;
+	char *pid_str = string_itoa(pid);
+
+	pthread_mutex_lock(&pid_mutex);
+	mutex = dictionary_get(pids_en_uso,pid_str);
+	pthread_mutex_unlock(&pid_mutex);
+
+	free(pid_str);
+
+	return mutex;
+}
+
+void lock_pid(uint32_t pid){
+	pthread_mutex_t *mutex;
+
+	if((mutex = obtener_mutex_pid(pid))) pthread_mutex_lock(mutex);
+
+}
+
+void unlock_pid(uint32_t pid){
+	pthread_mutex_t *mutex;
+
+	if((mutex = obtener_mutex_pid(pid))) pthread_mutex_unlock(mutex);
+}
+
 //----------------------------------PUBLICO---------------------------------------
 
 void crearMemoriaPrincipal(int cantidad_paginas, int size_pagina){
@@ -551,12 +578,15 @@ void crear_tabla_de_paginas(uint32_t pid, uint32_t cant_paginas){
 
 void eliminar_tabla_de_paginas(uint32_t pid){
 
+	lock_pid(pid);
+
 	bool tiene_igual_pid (void* elemento){
 		return ((t_tabla*) elemento)->pid==pid;
 	}
 
 	list_remove_and_destroy_by_condition(tablas_de_paginas,tiene_igual_pid,destructor_tabla);
 
+	unlock_pid(pid);
 }
 
 void crear_tlb(uint32_t tamanio){
@@ -580,12 +610,20 @@ void elimina_tlb(t_tabla_tlb *tabla){
 
 int obtener_contenido_memoria(char** contenido, uint32_t numero_pagina, uint32_t offset, uint32_t tamanio){
 
-	int numero_marco=obtener_numero_marco(numero_pagina),
-			 dir_fisica=numero_marco*config->size_pagina;
-	memoria mem=memoria_principal.memoria+offset+dir_fisica;
+	int numero_marco,
+		dir_fisica;
+	memoria mem;
+
+	lock_pid(obtener_pid());
+
+	numero_marco = obtener_numero_marco(numero_pagina);
 
 	//Si no se pudo encontrar la direccion fisica devuelvo el codigo de error
-	if(dir_fisica<0) return dir_fisica;
+	if(numero_marco<0) return numero_marco;
+
+	 dir_fisica = numero_marco*config->size_pagina;
+	 mem = memoria_principal.memoria+offset+dir_fisica;
+
 
 	//Pueden mandarme un puntero a NULL o un puntero a espacio ya reservado (actualmente solo pasa la primera)
 	if(*contenido==NULL) *contenido=malloc(tamanio);
@@ -594,22 +632,32 @@ int obtener_contenido_memoria(char** contenido, uint32_t numero_pagina, uint32_t
 
 	marcar_pagina_accedida(numero_pagina);
 
+	unlock_pid(obtener_pid());
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que lei
 }
 
 int escribir_contenido_memoria(uint32_t numero_pagina, uint32_t offset, uint32_t tamanio, char* contenido){
 
-	uint32_t numero_marco=obtener_numero_marco(numero_pagina),
-			 dir_fisica=numero_marco * config->size_pagina;
-	memoria mem=memoria_principal.memoria+offset+dir_fisica;
+	uint32_t numero_marco,
+			 dir_fisica;
+	memoria mem;
+
+	lock_pid(obtener_pid());
+
+	numero_marco = obtener_numero_marco(numero_pagina);
 
 	//Si no se pudo encontrar la direccion fisica devuelvo el codigo de error
-	if(numero_marco<0) return numero_marco;
+	if(numero_marco < 0) return numero_marco;
+
+	dir_fisica = numero_marco * config->size_pagina;
+	mem = memoria_principal.memoria+offset+dir_fisica;
 
 	memcpy(mem,contenido,tamanio);
 
 	marcar_pagina_accedida(numero_pagina);
 	marcar_pagina_modificada(numero_pagina);
+
+	unlock_pid(obtener_pid());
 
 	return tamanio;	//Si salio bien devuelvo el la cantidad de bytes que escribi
 }
@@ -626,6 +674,7 @@ void liberar_memoria(uint32_t pid){
 
 	t_tabla *tabla_buscada;
 
+	lock_pid(pid);
 	tabla_buscada=obtener_tabla(pid);
 
 	void liberar_memoria_con_fila(void* fila){
@@ -637,11 +686,15 @@ void liberar_memoria(uint32_t pid){
 	pthread_mutex_lock(&bitMap_mutex);
 	list_iterate(tabla_buscada->filas,liberar_memoria_con_fila);
 	pthread_mutex_unlock(&bitMap_mutex);
+
+	unlock_pid(pid);
 }
 
 void liberar_entradas_tlb(uint32_t pid){
 
 	t_fila_tlb* aux = NULL;
+
+	lock_pid(pid);
 
 	bool tiene_igual_pid (void* elemento){
 		return ((t_fila_tlb*) elemento)->pid==pid;
@@ -651,6 +704,8 @@ void liberar_entradas_tlb(uint32_t pid){
 		destructor_fila_tlb(aux);
 	}
 	pthread_mutex_unlock(&tlb_mutex);
+
+	unlock_pid(pid);
 }
 
 void flush_tlb(){
@@ -687,4 +742,36 @@ void generar_reporte(FILE *reporte, uint32_t pid, int reporte_memoria, int repor
 	//printf("Generando reporte, pid: %d logMemoria: %d, logTabla: %d, scree_print: %d\n",pid, reporte_memoria, reporte_tabla, screen_print);
 	if(reporte_memoria) genearar_reporte_memoria(reporte, pid, screen_print);
 	if(reporte_tabla) generar_reporte_tablas(reporte, pid, screen_print);
+}
+
+void crear_lista_pids_en_uso(){
+	pids_en_uso = dictionary_create();
+}
+
+void agregar_mutex_pid(uint32_t pid){
+	pthread_mutex_t *mutex = malloc(sizeof(pthread_mutex_t));
+	char *pid_str = string_itoa(pid);
+
+	pthread_mutex_init(mutex,NULL);
+
+	pthread_mutex_lock(&pid_mutex);
+	dictionary_put(pids_en_uso,pid_str,mutex);
+	pthread_mutex_unlock(&pid_mutex);
+
+	logDebug("Mutex creado para pid: %d",pid);
+
+}
+
+void eliminar_mutex_pid(uint32_t pid){
+	char *pid_str = string_itoa(pid);
+
+	void destructor_mutex(void *mutex){
+		pthread_mutex_destroy(mutex);
+		free(mutex);
+	}
+
+	pthread_mutex_lock(&pid_mutex);
+	dictionary_remove_and_destroy(pids_en_uso,pid_str,destructor_mutex);
+	pthread_mutex_unlock(&pid_mutex);
+
 }

@@ -65,6 +65,7 @@ int inicializar_programa(char* mensaje_serializado){
 			for(i=0; i<cant_paginas; i++){
 				escribirPaginaSwap(pid,i,tamanio_pagina,tmp + (i * tamanio_pagina));
 			}
+			agregar_mutex_pid(pid);
 			crear_tabla_de_paginas(pid,cant_paginas);
 		}
 	}
@@ -138,6 +139,7 @@ int finalizar_programa(char* mensaje_serializado){
 	liberar_entradas_tlb(pid);
 	eliminar_tabla_de_paginas(pid);
 	finalizarProgramaSwap(pid);
+	eliminar_mutex_pid(pid);
 
 	logDebug("----------------------Finaliza finalizacion de programa----------------------\n");
 

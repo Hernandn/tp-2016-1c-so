@@ -58,7 +58,8 @@ typedef struct tabla_tlb{
 pthread_mutex_t bitMap_mutex,
 				modificacion_mutex,
 				activo_mutex,
-				tlb_mutex;
+				tlb_mutex,
+				pid_mutex;
 
 void crearMemoriaPrincipal(int, int);
 void crear_tabla_de_paginas(uint32_t,uint32_t);
@@ -74,5 +75,8 @@ void flush_tlb();
 void flush_memory();
 void crearListaDeTablas();
 void generar_reporte(FILE*,uint32_t,int,int,int);
+void crear_lista_pids_en_uso();
+void agregar_mutex_pid(uint32_t);
+void eliminar_mutex_pid(uint32_t);
 
 #endif /* MEMORIA_H_ */
