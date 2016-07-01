@@ -158,20 +158,22 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 					contenido_lectura=NULL;
 					result = leer_pagina(package_receive->message,&contenido_lectura);
 
-					//Si la operacion salio bien result es el tamanio de contenido leido
-					if(result > 0){
+					if(*socket_cpu > 0){
+						//Si la operacion salio bien result es el tamanio de contenido leido
+						if(result > 0){
 
-						//Creo un buffer y serializo el resultado + el contenido leido
-						result_serializado=(char*)malloc(sizeof(uint32_t)+result);
-						memcpy(result_serializado,&result,sizeof(uint32_t));
-						memcpy(result_serializado+sizeof(uint32_t),contenido_lectura,result);
+							//Creo un buffer y serializo el resultado + el contenido leido
+							result_serializado=(char*)malloc(sizeof(uint32_t)+result);
+							memcpy(result_serializado,&result,sizeof(uint32_t));
+							memcpy(result_serializado+sizeof(uint32_t),contenido_lectura,result);
 
-						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,result_serializado,sizeof(uint32_t)+result);
-						free(result_serializado);
+							enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,result_serializado,sizeof(uint32_t)+result);
+							free(result_serializado);
 
-					}else
-						enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+						}else
+							enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
 
+					}
 						free(contenido_lectura);
 
 					break;
@@ -181,7 +183,7 @@ void handle_cpu(t_arg_thread_cpu* argumentos){
 					logDebug("Se ha solicitado la escritura de Bytes en pagina.");
 
 					result = escribir_pagina(package_receive->message);
-					enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
+					if(*socket_cpu > 0) enviarMensajeSocketConLongitud(*socket_cpu,RESULTADO_OPERACION,(char*)&result,sizeof(uint32_t));
 
 					break;
 

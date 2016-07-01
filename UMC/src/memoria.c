@@ -349,6 +349,11 @@ int agregar_pagina_a_memoria(uint32_t pid, uint32_t numero_pagina, char* pagina)
 	int marco_libre;
 	t_tabla *tabla_buscada = obtener_tabla(obtener_pid());
 
+	/* Se puede dar que no exista la tabla si se cae un CPU mientras
+	 * se esta esperando la respuesta de swap por lo que se devuelve -3
+	 */
+	if(!tabla_buscada) return -3;
+
 	pthread_mutex_lock(&bitMap_mutex);//lockeo el mutex para buscar un marco libre
 
 	if(tabla_buscada->filas->elements_count < config->marcos_x_proc){
