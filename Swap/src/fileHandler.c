@@ -14,6 +14,7 @@ Configuration* config;
 
 void inicializarSwap(Configuration* conf){
 	config = conf;
+	logDebug("Inicializando estructuras %d marcos",config->cantidad_paginas);
 	crearBitMap();
 	crearTablaDePaginas();
 	crearArchivoSwap();
