@@ -34,6 +34,14 @@ static void deserializar_parametros(int cant_parametros, char* mensaje, ...){
 
 }
 
+int getCantidadPaginasPrograma(int size_programa, int size_pagina){
+	int cantidad = size_programa/size_pagina;
+	if(size_programa%size_pagina!=0){
+		cantidad++;//agrego una pagina mas para lo que resta
+	}
+	return cantidad;
+}
+
 //----------------------------------PUBLICO---------------------------------------
 
 int inicializar_programa(char* mensaje_serializado){
@@ -52,17 +60,19 @@ int inicializar_programa(char* mensaje_serializado){
 	contenido = calloc(sizeof(char),size_programa);
 	memcpy(contenido,mensaje_serializado+sizeof(uint32_t)*3,size_programa);
 
-	logDebug("Inicializando programa %d, cantidad paginas %d", pid, cant_paginas);
+	int cantidad_a_escribir = getCantidadPaginasPrograma(size_programa, tamanio_pagina);
+
+	logDebug("Inicializando programa %d, cantidad paginas: %d, paginas de codigo: %d", pid, cant_paginas, cantidad_a_escribir);
 
 	if((resultado = comunicarSWAPNuevoPrograma(pid,cant_paginas)) == 0){
 		if((resultado = hayMarcosLibres()) >= 0){
 
 			//Guardo el codigo en un buffer de tamanio multipo de tamanio de pagina
-			tmp = malloc(tamanio_pagina * cant_paginas);
+			tmp = malloc(tamanio_pagina * cantidad_a_escribir);
 			memcpy(tmp,contenido,strlen(contenido));
 
 			//Si hay espacio mando las paginas una por una y creo la tabla de paginas
-			for(i=0; i<cant_paginas; i++){
+			for(i=0; i<cantidad_a_escribir; i++){
 				escribirPaginaSwap(pid,i,tamanio_pagina,tmp + (i * tamanio_pagina));
 			}
 			agregar_mutex_pid(pid);

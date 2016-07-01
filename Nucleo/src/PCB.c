@@ -429,7 +429,12 @@ void iniciarPrograma(int consolaFD, char* programa){
 		logTrace("Destruyendo PCB [PID:%d]",nuevo->processID);
 		destroyPCB(nuevo);
 	} else {
-		notifyProcessREADY(nuevo);
+		if(nuevo->consolaActiva){
+			notifyProcessREADY(nuevo);
+		} else {
+			sendToEXIT(nuevo);
+			informarPlanificadorFinalizarPrograma();
+		}
 	}
 }
 

@@ -47,7 +47,7 @@ void comunicacionConNucleo(Configuration* config, char* arch_programa){
 				continua = 0;
 				logDebug("Nucleo me informa: %s",package->message);
 			} else if(package->msgCode==PRINT_VARIABLE){
-				uint32_t valor = deserializar_imprimirVariable_consola(package->message);
+				int valor = deserializar_imprimirVariable_consola(package->message);
 				printf("print> %d\n",valor);
 			} else if(package->msgCode==PRINT_TEXT){
 				printf("print> %s\n",package->message);
