@@ -53,8 +53,6 @@ void planificar(void* arguments){
 		if (maximo < socketServidor)
 			maximo = socketServidor;
 
-		logTrace("Planificador: Esperando conexiones");
-
 		/* Espera indefinida hasta que alguno de los descriptores tenga algo
 		 * que decir: un nuevo cliente o un cliente ya conectado que envía un
 		 * mensaje */

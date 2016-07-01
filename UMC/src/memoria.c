@@ -759,7 +759,6 @@ void agregar_mutex_pid(uint32_t pid){
 	pthread_mutex_unlock(&pid_mutex);
 
 	logDebug("Mutex creado para pid: %d",pid);
-
 }
 
 void eliminar_mutex_pid(uint32_t pid){
@@ -774,4 +773,5 @@ void eliminar_mutex_pid(uint32_t pid){
 	dictionary_remove_and_destroy(pids_en_uso,pid_str,destructor_mutex);
 	pthread_mutex_unlock(&pid_mutex);
 
+	free(pid_str);
 }

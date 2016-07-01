@@ -631,17 +631,18 @@ void ejecutarIO(void* arguments){
 
 		sem_wait(&io_sem_array[io_index]);//consumo 1, se suspende el hilo aca si no hay ninguno esperando en cola de bloqueados para este dispositivo
 
-		solicitud_io* solicitud = getNextFromBlock(io_index);
-
 		//operacion critica de I/O
 		pthread_mutex_lock(&io_mutex_array[io_index]);
 
-		logTrace("Ejecutando %d operaciones de %s (%d ms sleep)",solicitud->cant_operaciones,solicitud->io_id,config->io_sleep[io_index]);
+		solicitud_io* solicitud = getNextFromBlock(io_index);
+
+		logDebug("Ejecutando %d operaciones de %s (%d ms sleep)",solicitud->cant_operaciones,solicitud->io_id,config->io_sleep[io_index]);
 		//hago un sleep del tiempo del dispositivo por la cantidad de operaciones
 		usleep(config->io_sleep[io_index]*solicitud->cant_operaciones*1000);//paso de micro a milisegundos (*1000)
 
 		pthread_mutex_unlock(&io_mutex_array[io_index]);
 
+		logDebug("Ejecucion IO de %s finalizada (%d ms) PCB:%d",solicitud->io_id,config->io_sleep[io_index]*solicitud->cant_operaciones,solicitud->pcb->processID);
 
 		if(consola_desconectada(solicitud->pcb->consolaFD)){
 			sendToEXIT(solicitud->pcb);
